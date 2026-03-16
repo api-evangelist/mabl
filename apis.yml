@@ -21,7 +21,7 @@ type: Contract
 image: https://kinlane-productions.s3.amazonaws.com/apis-json/apis-json-logo.jpg
 access: 3rd-Party
 created: '2025-01-08'
-modified: '2025-01-13'
+modified: '2026-03-16'
 position: Consuming
 description: >-
   mabl, the leading AI-native test automation platform, empowers software teams
@@ -32,5 +32,5 @@ description: >-
   how teams approach software quality.
 maintainers:
   - FN: Kin Lane
-    email: info@apievangelist.com
+    email: kin@apievangelist.com
 specificationVersion: '0.19'
