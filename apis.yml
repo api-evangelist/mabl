@@ -3,8 +3,7 @@ url: https://raw.githubusercontent.com/api-evangelist/mabl/refs/heads/main/apis.
 apis:
   - aid: mabl:mabl
     name: Mabl
-    tags:
-      - API
+    tags: []
     humanURL: https://mabl.com
     properties:
       - url: https://mabl.com
@@ -14,9 +13,9 @@ apis:
       integrating mabl API endpoints into your workflow, you can...
 name: Mabl
 tags:
-  - Testing
   - Automation
   - Platform
+  - Testing
 type: Contract
 image: https://kinlane-productions.s3.amazonaws.com/apis-json/apis-json-logo.jpg
 access: 3rd-Party
