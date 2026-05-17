@@ -1,7 +1,7 @@
 aid: mabl
 name: Mabl
 url: https://raw.githubusercontent.com/api-evangelist/mabl/refs/heads/main/apis.yml
-type: Contract
+kind: contract
 image: https://kinlane-productions.s3.amazonaws.com/apis-json/apis-json-logo.jpg
 access: 3rd-Party
 tags:
