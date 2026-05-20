@@ -40,6 +40,10 @@ apis:
       - type: APIReference
         url: https://api.help.mabl.com/reference/intro-to-the-mabl-api
 common:
+  - type: GitHubOrganization
+    url: https://github.com/mablhq
+  - type: LinkedIn
+    url: https://www.linkedin.com/company/mabl
   - type: Website
     url: https://www.mabl.com
   - type: Documentation
