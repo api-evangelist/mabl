@@ -50,6 +50,8 @@ common:
     url: https://help.mabl.com/
   - type: APIReference
     url: https://api.help.mabl.com/reference/intro-to-the-mabl-api
+  - type: LLMsTxt
+    url: https://api.help.mabl.com/llms.txt
 maintainers:
   - FN: Kin Lane
     email: kin@apievangelist.com
