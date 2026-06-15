@@ -1,0 +1,706 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "mabl API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "basic",
+      "username": "{{username}}",
+      "password": "{{password}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Applications",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get applications by workspace",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/applications",
+            "params": [
+              {
+                "name": "workspace_id",
+                "value": "",
+                "type": "query"
+              }
+            ]
+          },
+          "docs": "Get applications by workspace"
+        },
+        {
+          "info": {
+            "name": "Create application",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.mabl.com/applications",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create application"
+        },
+        {
+          "info": {
+            "name": "Get application by ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/applications/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get application by ID"
+        },
+        {
+          "info": {
+            "name": "Update an existing application",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.mabl.com/applications/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Update an existing application"
+        },
+        {
+          "info": {
+            "name": "Remove application",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://api.mabl.com/applications/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Remove application"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Credentials",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Query credentials",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/credentials"
+          },
+          "docs": "Query credentials"
+        },
+        {
+          "info": {
+            "name": "Create credentials",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.mabl.com/credentials",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create credentials"
+        },
+        {
+          "info": {
+            "name": "Retrieve credentials by ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/credentials/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Retrieve credentials by ID"
+        },
+        {
+          "info": {
+            "name": "Update existing credentials",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.mabl.com/credentials/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Update existing credentials"
+        },
+        {
+          "info": {
+            "name": "Remove credentials",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://api.mabl.com/credentials/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Remove credentials"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Database Connections",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get database connections by workspace",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/database-connections"
+          },
+          "docs": "Get database connections by workspace"
+        },
+        {
+          "info": {
+            "name": "Create database connection",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.mabl.com/database-connections",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create database connection"
+        },
+        {
+          "info": {
+            "name": "Get database connection",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/database-connections/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get database connection"
+        },
+        {
+          "info": {
+            "name": "Update database connection",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.mabl.com/database-connections/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Update database connection"
+        },
+        {
+          "info": {
+            "name": "Remove database connection",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://api.mabl.com/database-connections/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Remove database connection"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Environments",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get environments by workspace",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/environments"
+          },
+          "docs": "Get environments by workspace"
+        },
+        {
+          "info": {
+            "name": "Create environment",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.mabl.com/environments",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create environment"
+        },
+        {
+          "info": {
+            "name": "Get environment by ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/environments/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get environment by ID"
+        },
+        {
+          "info": {
+            "name": "Update environment",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.mabl.com/environments/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Update environment"
+        },
+        {
+          "info": {
+            "name": "Remove environment",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://api.mabl.com/environments/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Remove environment"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Deployment Events",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Query deployment events",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/events/deployment"
+          },
+          "docs": "Query deployment events"
+        },
+        {
+          "info": {
+            "name": "Trigger tests on deployment",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.mabl.com/events/deployment",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Trigger tests on deployment"
+        },
+        {
+          "info": {
+            "name": "Get a deployment result summary",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/execution/result/event/:deployment-event-id",
+            "params": [
+              {
+                "name": "deployment-event-id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get a deployment result summary"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Tests",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get test metadata",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/tests/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get test metadata"
+        },
+        {
+          "info": {
+            "name": "Update test metadata",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.mabl.com/tests/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Update test metadata"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Flows",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get flow metadata",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/flows/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get flow metadata"
+        },
+        {
+          "info": {
+            "name": "Update flow metadata",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.mabl.com/flows/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Update flow metadata"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Test Runs",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get a test run summary",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/test-runs/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get a test run summary"
+        },
+        {
+          "info": {
+            "name": "Get test run summaries over a time range",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/test-runs"
+          },
+          "docs": "Get test run summaries over a time range"
+        },
+        {
+          "info": {
+            "name": "Get a plan run summary",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/plan-runs/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get a plan run summary"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Issues",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Query workspace issues",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/issues"
+          },
+          "docs": "Query workspace issues"
+        },
+        {
+          "info": {
+            "name": "Create issue",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.mabl.com/issues",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create issue"
+        },
+        {
+          "info": {
+            "name": "Get issue",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/issues/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get issue"
+        },
+        {
+          "info": {
+            "name": "Update issue",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.mabl.com/issues/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Update issue"
+        },
+        {
+          "info": {
+            "name": "Remove issue",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://api.mabl.com/issues/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Remove issue"
+        }
+      ]
+    },
+    {
+      "info": {
+        "name": "Users",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Query users",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/users"
+          },
+          "docs": "Query users"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}
