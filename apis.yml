@@ -50,7 +50,7 @@ common:
     url: https://help.mabl.com/
   - type: APIReference
     url: https://api.help.mabl.com/reference/intro-to-the-mabl-api
-  - type: LLMsTxt
+  - type: LlmsText
     url: https://api.help.mabl.com/llms.txt
 maintainers:
   - FN: Kin Lane
