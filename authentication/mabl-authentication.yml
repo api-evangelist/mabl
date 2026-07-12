@@ -1,0 +1,13 @@
+generated: '2026-07-11'
+method: derived
+source: openapi/mabl-openapi.yml
+summary:
+  types:
+  - http
+schemes:
+- name: BasicAuth
+  type: http
+  scheme: basic
+  description: HTTP Basic with username "key" and a mabl API key as the password.
+  sources:
+  - openapi/mabl-openapi.yml

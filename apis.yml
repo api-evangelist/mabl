@@ -40,6 +40,12 @@ apis:
       - type: APIReference
         url: https://api.help.mabl.com/reference/intro-to-the-mabl-api
 common:
+  - type: TrustCenter
+    url: security/mabl-trust-center.yml
+  - type: DomainSecurity
+    url: security/mabl-domain-security.yml
+  - type: Authentication
+    url: authentication/mabl-authentication.yml
   - type: GitHubOrganization
     url: https://github.com/mablhq
   - type: LinkedIn
@@ -52,6 +58,8 @@ common:
     url: https://api.help.mabl.com/reference/intro-to-the-mabl-api
   - type: LlmsText
     url: https://api.help.mabl.com/llms.txt
+  - url: https://www.mabl.com/blog/rss.xml
+    type: Blog
 maintainers:
   - FN: Kin Lane
     email: kin@apievangelist.com
