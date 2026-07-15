@@ -40,6 +40,8 @@ apis:
       - type: APIReference
         url: https://api.help.mabl.com/reference/intro-to-the-mabl-api
 common:
+  - type: AgenticAccess
+    url: agentic-access/mabl-agentic-access.yml
   - type: TrustCenter
     url: security/mabl-trust-center.yml
   - type: DomainSecurity
