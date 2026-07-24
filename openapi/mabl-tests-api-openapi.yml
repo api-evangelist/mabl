@@ -1,0 +1,57 @@
+openapi: 3.1.0
+info:
+  title: mabl Applications Tests API
+  description: The mabl REST API enables programmatic management of resources in a mabl workspace including applications, credentials, database connections, DataTables, environments, deployment events, flows, issues, Link agents, mailboxes, plans, tests, test runs, users, and reporting. Authentication uses HTTP Basic with the literal username "key" and a workspace-scoped API key as the password.
+  version: 1.0.0
+  contact:
+    name: mabl
+    url: https://api.help.mabl.com/reference
+servers:
+- url: https://api.mabl.com
+  description: Production
+security:
+- BasicAuth: []
+tags:
+- name: Tests
+paths:
+  /tests/{id}:
+    get:
+      tags:
+      - Tests
+      summary: Get test metadata
+      operationId: getTestMetadata
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Test metadata
+    put:
+      tags:
+      - Tests
+      summary: Update test metadata
+      operationId: updateTestMetadata
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic with username "key" and a mabl API key as the password.

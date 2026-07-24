@@ -1,0 +1,60 @@
+openapi: 3.1.0
+info:
+  title: mabl Applications Deployment Events API
+  description: The mabl REST API enables programmatic management of resources in a mabl workspace including applications, credentials, database connections, DataTables, environments, deployment events, flows, issues, Link agents, mailboxes, plans, tests, test runs, users, and reporting. Authentication uses HTTP Basic with the literal username "key" and a workspace-scoped API key as the password.
+  version: 1.0.0
+  contact:
+    name: mabl
+    url: https://api.help.mabl.com/reference
+servers:
+- url: https://api.mabl.com
+  description: Production
+security:
+- BasicAuth: []
+tags:
+- name: Deployment Events
+paths:
+  /events/deployment:
+    post:
+      tags:
+      - Deployment Events
+      summary: Trigger tests on deployment
+      operationId: onDeploy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Deployment event created
+    get:
+      tags:
+      - Deployment Events
+      summary: Query deployment events
+      operationId: queryDeploymentEvents
+      responses:
+        '200':
+          description: Deployment events
+  /execution/result/event/{deployment-event-id}:
+    get:
+      tags:
+      - Deployment Events
+      summary: Get a deployment result summary
+      operationId: getExecutionResultForEvent
+      parameters:
+      - name: deployment-event-id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution result summary
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic with username "key" and a mabl API key as the password.

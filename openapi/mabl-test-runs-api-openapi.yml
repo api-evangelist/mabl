@@ -1,0 +1,61 @@
+openapi: 3.1.0
+info:
+  title: mabl Applications Test Runs API
+  description: The mabl REST API enables programmatic management of resources in a mabl workspace including applications, credentials, database connections, DataTables, environments, deployment events, flows, issues, Link agents, mailboxes, plans, tests, test runs, users, and reporting. Authentication uses HTTP Basic with the literal username "key" and a workspace-scoped API key as the password.
+  version: 1.0.0
+  contact:
+    name: mabl
+    url: https://api.help.mabl.com/reference
+servers:
+- url: https://api.mabl.com
+  description: Production
+security:
+- BasicAuth: []
+tags:
+- name: Test Runs
+paths:
+  /test-runs/{id}:
+    get:
+      tags:
+      - Test Runs
+      summary: Get a test run summary
+      operationId: getTestRunResult
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Test run summary
+  /test-runs:
+    get:
+      tags:
+      - Test Runs
+      summary: Get test run summaries over a time range
+      operationId: getBatchTestRunResults
+      responses:
+        '200':
+          description: Batch test run results
+  /plan-runs/{id}:
+    get:
+      tags:
+      - Test Runs
+      summary: Get a plan run summary
+      operationId: getPlanRunResult
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Plan run summary
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic with username "key" and a mabl API key as the password.
