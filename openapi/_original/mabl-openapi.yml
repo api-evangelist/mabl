@@ -1,0 +1,525 @@
+openapi: 3.1.0
+info:
+  title: mabl API
+  description: >-
+    The mabl REST API enables programmatic management of resources in a mabl
+    workspace including applications, credentials, database connections,
+    DataTables, environments, deployment events, flows, issues, Link agents,
+    mailboxes, plans, tests, test runs, users, and reporting. Authentication
+    uses HTTP Basic with the literal username "key" and a workspace-scoped
+    API key as the password.
+  version: "1.0.0"
+  contact:
+    name: mabl
+    url: https://api.help.mabl.com/reference
+servers:
+  - url: https://api.mabl.com
+    description: Production
+security:
+  - BasicAuth: []
+tags:
+  - name: Applications
+  - name: Credentials
+  - name: Database Connections
+  - name: DataTables
+  - name: Environments
+  - name: Deployment Events
+  - name: Flows
+  - name: Issues
+  - name: Link Agents
+  - name: Mailboxes
+  - name: Test Runs
+  - name: Tests
+  - name: Users
+paths:
+  /applications:
+    get:
+      tags: [Applications]
+      summary: Get applications by workspace
+      operationId: queryApplications
+      parameters:
+        - name: workspace_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Applications
+    post:
+      tags: [Applications]
+      summary: Create application
+      operationId: createApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Created
+  /applications/{id}:
+    get:
+      tags: [Applications]
+      summary: Get application by ID
+      operationId: getApplication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Application
+    put:
+      tags: [Applications]
+      summary: Update an existing application
+      operationId: updateApplication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Applications]
+      summary: Remove application
+      operationId: removeApplication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Removed
+  /credentials:
+    get:
+      tags: [Credentials]
+      summary: Query credentials
+      operationId: queryCredentials
+      responses:
+        '200':
+          description: Credentials
+    post:
+      tags: [Credentials]
+      summary: Create credentials
+      operationId: createCredentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Created
+  /credentials/{id}:
+    get:
+      tags: [Credentials]
+      summary: Retrieve credentials by ID
+      operationId: getCredentials
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credentials
+    put:
+      tags: [Credentials]
+      summary: Update existing credentials
+      operationId: updateCredentials
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Credentials]
+      summary: Remove credentials
+      operationId: removeCredentials
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Removed
+  /database-connections:
+    get:
+      tags: [Database Connections]
+      summary: Get database connections by workspace
+      operationId: queryDatabaseConnections
+      responses:
+        '200':
+          description: Database connections
+    post:
+      tags: [Database Connections]
+      summary: Create database connection
+      operationId: createDatabaseConnection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Created
+  /database-connections/{id}:
+    get:
+      tags: [Database Connections]
+      summary: Get database connection
+      operationId: getDatabaseConnection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Database connection
+    put:
+      tags: [Database Connections]
+      summary: Update database connection
+      operationId: updateDatabaseConnection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Database Connections]
+      summary: Remove database connection
+      operationId: deleteDatabaseConnection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Removed
+  /environments:
+    get:
+      tags: [Environments]
+      summary: Get environments by workspace
+      operationId: queryEnvironments
+      responses:
+        '200':
+          description: Environments
+    post:
+      tags: [Environments]
+      summary: Create environment
+      operationId: createEnvironment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Created
+  /environments/{id}:
+    get:
+      tags: [Environments]
+      summary: Get environment by ID
+      operationId: getEnvironment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Environment
+    put:
+      tags: [Environments]
+      summary: Update environment
+      operationId: updateEnvironment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Environments]
+      summary: Remove environment
+      operationId: removeEnvironment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Removed
+  /events/deployment:
+    post:
+      tags: [Deployment Events]
+      summary: Trigger tests on deployment
+      operationId: onDeploy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Deployment event created
+    get:
+      tags: [Deployment Events]
+      summary: Query deployment events
+      operationId: queryDeploymentEvents
+      responses:
+        '200':
+          description: Deployment events
+  /execution/result/event/{deployment-event-id}:
+    get:
+      tags: [Deployment Events]
+      summary: Get a deployment result summary
+      operationId: getExecutionResultForEvent
+      parameters:
+        - name: deployment-event-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Execution result summary
+  /tests/{id}:
+    get:
+      tags: [Tests]
+      summary: Get test metadata
+      operationId: getTestMetadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Test metadata
+    put:
+      tags: [Tests]
+      summary: Update test metadata
+      operationId: updateTestMetadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+  /flows/{id}:
+    get:
+      tags: [Flows]
+      summary: Get flow metadata
+      operationId: getFlowMetadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Flow metadata
+    put:
+      tags: [Flows]
+      summary: Update flow metadata
+      operationId: updateFlowMetadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+  /test-runs/{id}:
+    get:
+      tags: [Test Runs]
+      summary: Get a test run summary
+      operationId: getTestRunResult
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Test run summary
+  /test-runs:
+    get:
+      tags: [Test Runs]
+      summary: Get test run summaries over a time range
+      operationId: getBatchTestRunResults
+      responses:
+        '200':
+          description: Batch test run results
+  /plan-runs/{id}:
+    get:
+      tags: [Test Runs]
+      summary: Get a plan run summary
+      operationId: getPlanRunResult
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plan run summary
+  /issues:
+    get:
+      tags: [Issues]
+      summary: Query workspace issues
+      operationId: queryIssuesByWorkspaceId
+      responses:
+        '200':
+          description: Issues
+    post:
+      tags: [Issues]
+      summary: Create issue
+      operationId: createIssue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Created
+  /issues/{id}:
+    get:
+      tags: [Issues]
+      summary: Get issue
+      operationId: getIssue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Issue
+    put:
+      tags: [Issues]
+      summary: Update issue
+      operationId: updateIssue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Issues]
+      summary: Remove issue
+      operationId: removeIssue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Removed
+  /users:
+    get:
+      tags: [Users]
+      summary: Query users
+      operationId: queryUsers
+      responses:
+        '200':
+          description: Users
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic with username "key" and a mabl API key as the password.

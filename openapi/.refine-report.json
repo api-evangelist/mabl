@@ -1,0 +1,32 @@
+{
+  "provider": "mabl",
+  "sources": [
+    "mabl-applications-api-openapi.yml",
+    "mabl-credentials-api-openapi.yml",
+    "mabl-database-connections-api-openapi.yml",
+    "mabl-deployment-events-api-openapi.yml",
+    "mabl-environments-api-openapi.yml",
+    "mabl-flows-api-openapi.yml",
+    "mabl-issues-api-openapi.yml",
+    "mabl-test-runs-api-openapi.yml",
+    "mabl-tests-api-openapi.yml",
+    "mabl-users-api-openapi.yml"
+  ],
+  "outputs": [
+    "mabl-applications-api-openapi.yml",
+    "mabl-credentials-api-openapi.yml",
+    "mabl-database-connections-api-openapi.yml",
+    "mabl-deployment-events-api-openapi.yml",
+    "mabl-environments-api-openapi.yml",
+    "mabl-flows-api-openapi.yml",
+    "mabl-issues-api-openapi.yml",
+    "mabl-test-runs-api-openapi.yml",
+    "mabl-tests-api-openapi.yml",
+    "mabl-users-api-openapi.yml"
+  ],
+  "archived": [],
+  "errors": [],
+  "warnings": [],
+  "notes": [],
+  "skipped": []
+}
