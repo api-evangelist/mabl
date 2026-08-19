@@ -1,0 +1,69 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "mabl Applications Deployment Events API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "basic",
+      "username": "{{username}}",
+      "password": "{{password}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Deployment Events",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Query deployment events",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/events/deployment"
+          },
+          "docs": "Query deployment events"
+        },
+        {
+          "info": {
+            "name": "Trigger tests on deployment",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.mabl.com/events/deployment",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Trigger tests on deployment"
+        },
+        {
+          "info": {
+            "name": "Get a deployment result summary",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/execution/result/event/:deployment-event-id",
+            "params": [
+              {
+                "name": "deployment-event-id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get a deployment result summary"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

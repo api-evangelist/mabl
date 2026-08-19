@@ -1,0 +1,109 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "mabl Applications Issues API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "basic",
+      "username": "{{username}}",
+      "password": "{{password}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Issues",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Query workspace issues",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/issues"
+          },
+          "docs": "Query workspace issues"
+        },
+        {
+          "info": {
+            "name": "Create issue",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.mabl.com/issues",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create issue"
+        },
+        {
+          "info": {
+            "name": "Get issue",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.mabl.com/issues/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get issue"
+        },
+        {
+          "info": {
+            "name": "Update issue",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.mabl.com/issues/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Update issue"
+        },
+        {
+          "info": {
+            "name": "Remove issue",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://api.mabl.com/issues/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Remove issue"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}
