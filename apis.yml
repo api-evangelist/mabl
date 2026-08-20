@@ -45,6 +45,9 @@ apis:
   tags:
   - Test Automation
   - QA
+  tags_raw:
+  - Test Automation
+  - QA
   - API
   properties:
   - type: Documentation
@@ -56,6 +59,8 @@ apis:
   description: The Applications API from Mabl — 2 operation(s) for applications.
   humanURL: https://mabl.com
   tags:
+  - Application
+  tags_raw:
   - Applications
   properties:
   - type: OpenAPI
@@ -137,6 +142,8 @@ apis:
   description: The Users API from Mabl — 1 operation(s) for users.
   humanURL: https://mabl.com
   tags:
+  - User
+  tags_raw:
   - Users
   properties:
   - type: OpenAPI
