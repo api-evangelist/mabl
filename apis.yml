@@ -109,6 +109,8 @@ apis:
   description: The Environments API from Mabl — 2 operation(s) for environments.
   humanURL: https://mabl.com
   tags:
+  - Environment
+  tags_raw:
   - Environments
   properties:
   - type: OpenAPI
@@ -118,6 +120,8 @@ apis:
   description: The Flows API from Mabl — 1 operation(s) for flows.
   humanURL: https://mabl.com
   tags:
+  - Flow
+  tags_raw:
   - Flows
   properties:
   - type: OpenAPI
