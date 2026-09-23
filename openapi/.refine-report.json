@@ -1,16 +1,7 @@
 {
   "provider": "mabl",
   "sources": [
-    "mabl-applications-api-openapi.yml",
-    "mabl-credentials-api-openapi.yml",
-    "mabl-database-connections-api-openapi.yml",
-    "mabl-deployment-events-api-openapi.yml",
-    "mabl-environments-api-openapi.yml",
-    "mabl-flows-api-openapi.yml",
-    "mabl-issues-api-openapi.yml",
-    "mabl-test-runs-api-openapi.yml",
-    "mabl-tests-api-openapi.yml",
-    "mabl-users-api-openapi.yml"
+    "_original/mabl-openapi.yml"
   ],
   "outputs": [
     "mabl-applications-api-openapi.yml",
@@ -27,6 +18,21 @@
   "archived": [],
   "errors": [],
   "warnings": [],
-  "notes": [],
-  "skipped": []
+  "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
+    "mabl-openapi.yml: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
+    "apis.yml register: already-registered"
+  ],
+  "skipped": [
+    "mabl-applications-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-credentials-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-database-connections-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-deployment-events-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-environments-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-flows-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-issues-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-test-runs-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-tests-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "mabl-users-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
 }
