@@ -29,7 +29,62 @@ edges:
       - Track
   detected_by: sweep-cdp.py
   first_seen: '2026-10-14'
+- partner_name: GitHub Marketplace (apps)
+  partner: github
+  partner_match: aggregator
+  type: marketplace
+  marketplace: github-apps
+  channel: partner-built
+  relationship: platform-app
+  direction: third-party
+  evidence: https://github.com/marketplace/mabl-bot
+  listing_count: 1
+  apps:
+  - mabl bot
+  publisher_name: mabl
+  badges:
+  - Verified domain
+  detected_by: sweep-devtools.py
+  detected: '2026-10-14'
+- partner_name: GitHub Marketplace (actions)
+  partner: github-actions
+  partner_match: aggregator
+  type: marketplace
+  marketplace: github-actions
+  channel: partner-built
+  relationship: platform-app
+  direction: third-party
+  evidence: https://github.com/marketplace/actions/run-mabl-tests
+  listing_count: 2
+  apps:
+  - Run mabl tests
+  - Setup mabl CLI
+  publisher_name: mabl
+  badges:
+  - Verified creator
+  detected_by: sweep-devtools.py
+  detected: '2026-10-14'
+- partner_name: Atlassian Marketplace
+  partner: atlassian
+  partner_match: aggregator
+  type: marketplace
+  marketplace: atlassian
+  channel: partner-built
+  relationship: platform-app
+  direction: third-party
+  evidence: https://marketplace.atlassian.com/vendors/1215729/mablhq
+  listing_count: 2
+  apps:
+  - 'mabl: Automated Testing with Jira & Rovo'
+  - 'mabl: Automated Testing with Bamboo'
+  publisher_name: mablhq
+  detected_by: sweep-devtools.py
+  detected: '2026-10-14'
 method: searched
 checked:
+- https://github.com/marketplace?type=actions
+- https://github.com/marketplace?type=apps
+- https://marketplace.atlassian.com/
 - https://www.twilio.com/docs/segment/connections/destinations/catalog/mabl
 source: https://www.twilio.com/docs/segment/connections/destinations/catalog/mabl
+marketplace_apps: []
