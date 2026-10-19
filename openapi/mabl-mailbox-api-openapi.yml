@@ -1,0 +1,565 @@
+openapi: 3.2.0
+info:
+  title: mabl Mailbox API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Mailbox
+paths:
+  /mailbox:
+    post:
+      tags:
+      - Mailbox
+      summary: Create Mailbox
+      description: Create new mabl Mailbox address
+      operationId: createPermanentMailbox
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePermanentMailboxRequest'
+        required: true
+      responses:
+        '201':
+          description: Mailbox created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailbox'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Mailbox
+      x-mabl-scope: public
+  /mailbox/address:
+    post:
+      tags:
+      - Mailbox
+      summary: Create Mailbox
+      description: Create new mabl Mailbox address
+      operationId: createMailboxAddress
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMailboxRequest'
+        required: true
+      responses:
+        '200':
+          description: Mailbox created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailbox'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Mailbox
+  /mailbox/address/workspace/{workspace_id}:
+    get:
+      tags:
+      - Mailbox
+      summary: Get information on Mailboxes by workspace ID
+      description: Get permanent email addresses in workspace and number of remaining allowed permanent Mailboxes for workspace
+      operationId: queryMailboxesInWorkspace
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Information about permanent Mailboxes in this workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailboxesInWorkspaceResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No workspace matching this ID could be found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mailbox
+      x-mabl-scope: public
+  /mailbox/address/{email_address_or_id}:
+    get:
+      tags:
+      - Mailbox
+      summary: Get Mailbox
+      description: Get a Mailbox by email address or ID
+      operationId: getMailboxAddress
+      parameters:
+      - name: email_address_or_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Mailbox requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailbox'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No Mailbox could be found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mailbox
+      x-mabl-scope: public
+  /mailbox/address/{id}:
+    delete:
+      tags:
+      - Mailbox
+      summary: Delete Mailbox
+      description: Delete a Mailbox by ID
+      operationId: deleteMailboxAddress
+      parameters:
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Mailbox successfully deleted
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Mailbox
+      x-mabl-scope: public
+    patch:
+      tags:
+      - Mailbox
+      summary: Update Mailbox
+      description: Update the name and description of a permanent Mailbox. The email address cannot be changed.
+      operationId: updateMailboxAddress
+      parameters:
+      - name: id
+        in: path
+        description: ID of Mailbox to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Mailbox'
+        required: true
+      responses:
+        '200':
+          description: Mailbox updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailbox'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No Mailbox matching this ID could be found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Mailbox
+      x-mabl-scope: public
+  /mailbox/address/{id}/status:
+    patch:
+      tags:
+      - Mailbox
+      summary: Update Mailbox status
+      description: Enable or disable a Mailbox
+      operationId: updateMailboxStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMailboxStatusRequest'
+        required: true
+      responses:
+        '200':
+          description: Mailbox updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailbox'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No Mailbox matching this ID could be found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Mailbox
+      x-mabl-scope: public
+  /recover/mailbox/{id}:
+    post:
+      tags:
+      - Mailbox
+      summary: Recover Mailbox
+      description: Undelete a Mailbox
+      operationId: recoverMailboxAddress
+      parameters:
+      - name: id
+        in: path
+        description: ID of Mailbox to recover
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Recovered Mailbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mailbox'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Mailbox not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Recover::Mailbox
+components:
+  schemas:
+    MailboxesInWorkspaceResponse:
+      type: object
+      properties:
+        mailboxes:
+          type: array
+          description: All permanent Mailboxes in workspace
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Mailbox'
+          x-mabl-scope: public
+        remaining_allowed_mailboxes:
+          type: integer
+          description: Remaining number of permanent Mailboxes that the workspace is allowed to create
+          readOnly: true
+          x-mabl-scope: public
+      description: Contains permanent Mailbox addresses in workspace and the remaining number of Mailboxes allowed
+    MailboxLifespanType:
+      type: string
+      description: Defines how long email address will be accessible. Permanent Mailboxes are always accessible. Variable Mailboxes are accessible only during a single context (test run / training session). Note that accessibility here refers to the email address itself, not the contents of the Mailbox. When undefined, defaults to variable.
+      enum:
+      - permanent
+      - variable
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    UpdateMailboxStatusRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          description: Mailbox status, either 'enabled' or 'disabled'
+          enum:
+          - enabled
+          - disabled
+          x-mabl-scope: public
+      description: Request body for updating Mailbox status
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    CreateMailboxRequest:
+      required:
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: ID of Workspace in which to create Mailbox
+        context_id:
+          type: string
+          description: ID of context in which the Mailbox was created, for variable Mailboxes only
+        address_prefix:
+          maxLength: 30
+          minLength: 1
+          type: string
+          description: Desired prefix before UUID and domain when permanent email address
+        name:
+          maxLength: 50
+          minLength: 1
+          type: string
+          description: Mailbox name, for permanent Mailboxes only
+        description:
+          maxLength: 500
+          type: string
+          description: Mailbox description, for permanent Mailboxes only
+        lifespan:
+          $ref: '#/components/schemas/MailboxLifespanType'
+      description: Request body for creating a new Mailbox. Provide a context_id for creating a variable Mailbox or an address_prefix for creating a permanent Mailbox. If lifespan is unspecified, it defaults to variable.
+      x-implements-interface:
+      - HasWorkspaceId
+    CreatePermanentMailboxRequest:
+      required:
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: ID of Workspace in which to create Mailbox
+          x-mabl-scope: public
+        address_prefix:
+          maxLength: 30
+          minLength: 1
+          type: string
+          description: Desired prefix before UID and domain
+          x-mabl-scope: public
+        name:
+          maxLength: 50
+          minLength: 1
+          type: string
+          description: Mailbox name
+          x-mabl-scope: public
+        description:
+          maxLength: 500
+          type: string
+          description: Mailbox description
+          x-mabl-scope: public
+      description: Request body for creating a new Mailbox
+      x-implements-interface:
+      - HasWorkspaceId
+    Mailbox:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        email_address:
+          type: string
+          description: Email address to be used in Mailbox steps
+          x-mabl-scope: public
+        context_id:
+          type: string
+          description: Context ID for which email address is being generated
+        created_time:
+          type: integer
+          description: Time Mailbox was created
+          format: int64
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: ID of user who created Mailbox
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time Mailbox was last updated
+          format: int64
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: ID of user who last updated Mailbox
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          x-mabl-scope: public
+        name:
+          type: string
+          description: Email address name (permanent emails only)
+          x-mabl-scope: public
+        description:
+          type: string
+          description: Email address description (permanent emails only)
+          x-mabl-scope: public
+        lifespan:
+          $ref: '#/components/schemas/MailboxLifespanType'
+        disabled_time:
+          type: integer
+          description: Time Mailbox was disabled. If null, the Mailbox is enabled.
+          format: int64
+          x-mabl-scope: public
+          x-dao-apply-nulls: true
+      x-dao-apply-nulls: true
+      x-implements-interface:
+      - HasId
+      - HasCreatedActivity
+      - HasWorkspaceId
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

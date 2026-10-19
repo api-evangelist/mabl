@@ -1,0 +1,606 @@
+openapi: 3.2.0
+info:
+  title: mabl Analysis Cache API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: AnalysisCache
+paths:
+  /workspaces/{workspace_id}/analysisCache:
+    get:
+      tags:
+      - AnalysisCache
+      summary: Get the latest cached analysis for a scope
+      description: 'Returns the latest cached analysis entry for the given workspace + scope.
+
+        Cache rows are immutable: each refresh writes a new row, and this read
+
+        returns the most recent entry by commit timestamp.'
+      operationId: getLatestAnalysisCache
+      parameters:
+      - name: workspace_id
+        in: path
+        description: ID of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: scope_type
+        in: query
+        description: Cache scope level
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/AnalysisCacheScopeType'
+      - name: scope_key
+        in: query
+        description: 'Scope identifier — for `test` scope, the test invariant id with the
+
+          `-j` suffix (e.g. `abc123-j`). For `plan` scope, the plan id (e.g.
+
+          `abc123-p`). For `workspace` scope, the composite
+
+          `{app_id or ''*''}:{env_id or ''*''}`.
+
+          '
+        required: true
+        style: form
+        explode: true
+        schema:
+          maxLength: 256
+          minLength: 1
+          type: string
+      responses:
+        '200':
+          description: Latest cache for the given scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisCache'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::AiAnalysis
+    post:
+      tags:
+      - AnalysisCache
+      summary: Persist a new cached analysis entry
+      description: 'Creates a new analysis_cache row for the given workspace + scope. Cache
+
+        rows are immutable: each refresh writes a new row, and the read path
+
+        returns the latest by created_time. The server generates
+
+        `analysis_cache_id` and `created_time` — they should be omitted from
+
+        the request body. Internal endpoint, server-to-server only (API key
+
+        with write scope on `ai_analysis`).'
+      operationId: createAnalysisCache
+      parameters:
+      - name: workspace_id
+        in: path
+        description: ID of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisCache'
+        required: true
+      responses:
+        '201':
+          description: Cache row persisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisCache'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::AiAnalysis
+  /workspaces/{workspace_id}/analysisCache/refresh:
+    post:
+      tags:
+      - AnalysisCache
+      summary: Trigger a stats refresh for a cache scope
+      description: 'Enqueues an AI_ANALYSIS_CACHE_REFRESH task for the given scope; the
+
+        queue-consumer worker recomputes stats and regenerates the LLM narrative
+
+        asynchronously. Requires the `ai_analysis` write scope. Because it triggers
+
+        a downstream LLM call, the workspace must have `generative_ai` enabled and
+
+        not excluded; otherwise the endpoint returns 403. Supports `test` scope
+
+        (scope_key = test invariant id) and `workspace` scope (scope_key = `*:*`);
+
+        other scope types, and any other workspace scope_key, return 400.'
+      operationId: refreshAnalysisCache
+      parameters:
+      - name: workspace_id
+        in: path
+        description: ID of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisCacheRefreshRequest'
+        required: true
+      responses:
+        '202':
+          description: Refresh task accepted and enqueued for asynchronous processing.
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::AiAnalysis
+components:
+  schemas:
+    AnalysisCacheVariantBreakdown:
+      type: object
+      properties:
+        variant_id:
+          type: string
+        run_count:
+          type: integer
+          description: 'Total runs for this variant in the window, including non-conclusive
+
+            (running / skipped / terminated) runs. May exceed passed_count + failed_count.
+
+            '
+          format: int64
+        passed_count:
+          type: integer
+          format: int64
+        failed_count:
+          type: integer
+          format: int64
+        first_run_time:
+          type: integer
+          description: Unix epoch ms — earliest run of this variant in the cache window
+          format: int64
+        last_run_time:
+          type: integer
+          description: Unix epoch ms — latest run of this variant in the cache window
+          format: int64
+      description: Run counts and time span for a single test variant in the cache window
+    AnalysisCacheStats:
+      type: object
+      properties:
+        version_context:
+          $ref: '#/components/schemas/AnalysisCacheVersionContext'
+        quality_metrics:
+          $ref: '#/components/schemas/AnalysisCacheQualityMetrics'
+        breakdowns:
+          type: object
+          additionalProperties: true
+          description: 'Ad-hoc per-dimension stat breakdowns keyed by dimension name — the
+
+            map stays open for future dimensions (e.g. pass_rate_by_env,
+
+            failure_count_by_app, pass_rate_by_browser). Workspace-scope rows
+
+            populate, and the RAA workspace reader consumes, these keys:
+
+            `top_failing_plans` (array of PlanRunWorkspaceTopFailingPlanEntry),
+
+            `top_failing_tests` (array of TestRunWorkspaceTopFailingTestEntry),
+
+            `top_failing_plans_exhaustive` / `top_failing_tests_exhaustive` (booleans, present
+
+            alongside the corresponding list — see AnalysisCacheSubWindow''s fields of the same
+
+            name for the exhaustive/sampled semantics),
+
+            `sub_windows` (array of AnalysisCacheSubWindow),
+
+            `runs_by_day` (array of WorkspaceDayVolumeEntry),
+
+            `failure_categories` (object, failure_category_id to failed test run count over the
+
+            window, categorized failures only),
+
+            `failure_categories_by_day` (array of WorkspaceFailureCategoryDayEntry).
+
+            '
+      description: 'Structured stats. Two named sub-objects are first-class; ad-hoc
+
+        per-dimension breakdowns live under `breakdowns`.
+
+        '
+    AnalysisCache:
+      type: object
+      properties:
+        analysis_cache_id:
+          type: string
+          description: Unique ID for this cache row
+        workspace_id:
+          type: string
+        scope_type:
+          $ref: '#/components/schemas/AnalysisCacheScopeType'
+        scope_key:
+          maxLength: 256
+          minLength: 1
+          type: string
+          description: 'Scope identifier — test_invariant_id, plan_id, or composite for workspace
+
+            '
+        created_time:
+          type: integer
+          description: Unix epoch ms — when this cache entry was written
+          format: int64
+        stats_json:
+          $ref: '#/components/schemas/AnalysisCacheStats'
+        reference_summary_md:
+          maxLength: 4000
+          type: string
+          description: 'Terse, information-dense markdown that the agent reads into its
+
+            context. Cap is a token-budget guardrail — the cache writer
+
+            should produce summaries comfortably under this limit.
+
+            '
+        failure_signatures_json:
+          type: array
+          description: Array of failure-pattern fingerprints
+          items:
+            $ref: '#/components/schemas/AnalysisCacheFailureSignature'
+        coverage_through_time:
+          type: integer
+          description: Unix epoch ms — latest run included in this cache
+          format: int64
+        coverage_from_time:
+          type: integer
+          description: Unix epoch ms — earliest run included in this cache
+          format: int64
+        entity_modified_time:
+          type: integer
+          description: 'Unix epoch ms — last modification time of the focal entity (test or
+
+            plan) at the moment the cache was written. Lets consumers detect
+
+            edits that happened after this cache entry and decide whether to
+
+            refresh. Populated for `test` and `plan` scope; omitted for
+
+            `workspace` scope.
+
+            '
+          format: int64
+      description: A cached analysis entry for a test, plan, or workspace scope
+    AnalysisCacheQualityMetrics:
+      type: object
+      properties:
+        pass_rate:
+          type: number
+          description: Fraction of runs that passed (0.0–1.0)
+          format: double
+        stability_rate:
+          type: number
+          description: Fraction of consecutive runs with the same outcome (0.0–1.0)
+          format: double
+        reliability_rate:
+          type: number
+          description: 'Fraction of runs without an error after a passing run, indicating
+
+            how often the test breaks once it has been working (0.0–1.0)
+
+            '
+          format: double
+        total_plan_runs:
+          type: integer
+          description: Total plan-run count in the cache window. Populated at workspace and plan scope; omitted at test scope (use total_test_runs).
+          format: int64
+        passed_plan_runs:
+          type: integer
+          description: Passed plan-run count in the cache window. Populated at workspace and plan scope.
+          format: int64
+        failed_plan_runs:
+          type: integer
+          description: Failed plan-run count in the cache window. Populated at workspace and plan scope.
+          format: int64
+        total_test_runs:
+          type: integer
+          description: Total test-run count in the cache window. Populated at test scope (count of runs for this test), at plan scope as the sum of test_runs across this plan's plan_runs, and at workspace scope from the workspace test-run aggregate.
+          format: int64
+        passed_test_runs:
+          type: integer
+          description: Passed test-run count in the cache window. Same population rules as total_test_runs.
+          format: int64
+        failed_test_runs:
+          type: integer
+          description: Failed test-run count in the cache window. Same population rules as total_test_runs.
+          format: int64
+        distinct_plans:
+          type: integer
+          description: 'Count of distinct plans that ran in the cache window. Derived from distinct plan_id
+
+            across test runs, so it counts plans that produced at least one test run. Workspace scope.
+
+            '
+          format: int64
+        distinct_tests:
+          type: integer
+          description: 'Count of distinct tests (by journey_invariant_id) that ran in the cache window. Workspace scope.
+
+            '
+          format: int64
+      description: Pass / stability / reliability rates plus run counts over the cache window.
+    AnalysisCacheRefreshRequest:
+      required:
+      - scope_key
+      - scope_type
+      type: object
+      properties:
+        scope_type:
+          $ref: '#/components/schemas/AnalysisCacheScopeType'
+        scope_key:
+          maxLength: 256
+          minLength: 1
+          type: string
+          description: 'Scope identifier. For `test` scope, the test invariant id with
+
+            the `-j` suffix (e.g. `abc123-j`). For `workspace` scope, the
+
+            composite `{app_id or ''*''}:{env_id or ''*''}` — v1 accepts `*:*` only.
+
+            '
+        initiating_request_id:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: 'Optional idempotency key. The dataflow trigger generates a UUID
+
+            per debounced refresh and sends it here; a Beam retry of the
+
+            HTTP step replays the same key. Server-side dedup on this key
+
+            is a follow-up; today the field is accepted by the contract
+
+            but not yet acted on.
+
+            '
+      description: 'Body of the refreshAnalysisCache endpoint. The path workspace_id is
+
+        authoritative for the workspace; this body identifies which scope
+
+        within that workspace to recompute. `scope_type=test` (scope_key = test
+
+        invariant id) and `scope_type=workspace` (scope_key = `*:*`) are
+
+        accepted; other scopes return 400.
+
+        '
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    AnalysisCacheVersionContext:
+      type: object
+      properties:
+        latest_variant_id:
+          type: string
+          description: 'Variant ID of the most recently active test version in the cache
+
+            window. May differ from the focal test_run''s variant if that run
+
+            is on an older version — cross-check with the focal run''s variant
+
+            before applying same-version fields below.
+
+            '
+        latest_version_ever_passed:
+          type: boolean
+          description: True if latest_variant_id has at least one passing run in the cache window
+        last_passed_run_same_version_id:
+          type: string
+          description: Test run ID of the most recent passing run on latest_variant_id, if any
+        last_passed_run_same_version_time:
+          type: integer
+          description: Unix epoch ms — start time of last_passed_run_same_version_id
+          format: int64
+        version_breakdown:
+          type: array
+          description: 'One entry per variant seen in the cache window, ordered by
+
+            last_run_time DESC (newest variant first). More than one entry
+
+            means the test was edited during the window; use first_run_time
+
+            on the newest entry to see when the modification happened.
+
+            '
+          items:
+            $ref: '#/components/schemas/AnalysisCacheVariantBreakdown'
+      description: 'Test-version snapshot for the focal entity. Test scope only; absent
+
+        for plan and workspace scopes. All counts and timestamps are computed
+
+        over the full cache window (not a recent-runs slice).
+
+        '
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    AnalysisCacheScopeType:
+      type: string
+      description: Cache scope level
+      enum:
+      - test
+      - plan
+      - workspace
+    AnalysisCacheFailureSignature:
+      required:
+      - occurrence_count
+      type: object
+      properties:
+        category:
+          type: string
+          description: Failure category from mabl's existing failure-category taxonomy
+        affected_step:
+          maxLength: 500
+          type: string
+          description: Human-readable description of the step the failure was observed on
+        error_fragment:
+          maxLength: 1000
+          type: string
+          description: Short excerpt of the error text
+        occurrence_count:
+          type: integer
+          description: Number of times this signature was observed in the cache window
+          format: int64
+        first_seen:
+          type: integer
+          description: Unix epoch ms — earliest observation of this signature
+          format: int64
+        last_seen:
+          type: integer
+          description: Unix epoch ms — latest observation of this signature
+          format: int64
+      description: 'A failure-pattern fingerprint observed across the cache''s run window.
+
+        '
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

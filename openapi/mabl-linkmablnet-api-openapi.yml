@@ -1,0 +1,1927 @@
+openapi: 3.2.0
+info:
+  title: Link Mablnet API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: LinkMablnet
+paths:
+  /link/mablnet/peer-ca:
+    get:
+      tags:
+      - LinkMablnet
+      summary: Get the current mablnet peer-CA trust bundle for a link infrastructure cluster
+      description: 'Returns the publisher-signed envelope carrying the X.509 root certificate(s) every mablnet client trusts as peer-CA roots when verifying mabl-side Host certs during the peer-to-peer QUIC TLS handshake. One bundle per link infrastructure cluster: the shared cluster''s unless `infrastructure_key` names a dedicated one, and the same bundle for every caller asking for that cluster. A dedicated cluster''s envelope carries its key in a signed `cluster` field, which a caller must check against the key it asked for; the shared cluster''s has none. Bundle bytes come from the cluster''s published trust bundle — the same anchors its Link Routers load on startup. More than one anchor may be present: a root rotation publishes the incoming anchor alongside the outgoing one, and callers should trust every certificate in the envelope.
+
+        The anchors are **non-secret** — X.509 root certificates are public artefacts by definition; protection here is integrity, not confidentiality. Auth is required for attribution / rate-limiting / audit, not because the bytes are sensitive. Integrity is what the envelope provides, and it is the only thing that makes these anchors safe to fetch: a caller must verify the signature against a publisher key it already holds, and must not accept anchors from anywhere else in this response.
+
+        Conditional refetch: callers send their last-known ETag as `If-None-Match` on each poll. The server returns `304 Not Modified` (no body) when the bundle is unchanged. The current ETag is mirrored in both the standard `ETag` header and the mabl-specific `x-mabl-entity-version` header (the latter survives upstream gzip-Vary stripping).'
+      operationId: getMablnetPeerCa
+      parameters:
+      - name: infrastructure_key
+        in: query
+        description: 'Link infrastructure key of the cluster whose bundle to return, as reported by `link_infrastructure_key` on the Link Agent or `infrastructure_key` on a resolved tunnel. Omit it, or pass `mabl`, for the shared cluster.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: If-None-Match
+        in: header
+        description: Last ETag the caller observed; server returns 304 when current ETag matches.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Current bundle returned in body; current ETag in headers.
+          headers:
+            ETag:
+              description: Content-derived version of the bundle (SHA-256 hex of the published envelope bytes).
+              style: simple
+              explode: false
+              schema:
+                type: string
+            x-mabl-entity-version:
+              description: Mirror of ETag; survives upstream gzip stripping.
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetPeerCa'
+        '304':
+          description: Bundle unchanged since the supplied If-None-Match. Empty body; ETag headers still present.
+          headers:
+            ETag:
+              style: simple
+              explode: false
+              schema:
+                type: string
+            x-mabl-entity-version:
+              style: simple
+              explode: false
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: 'No trust bundle is published for this deployment or cluster — the environment is not configured for mablnet, the cluster does not exist, or its bundle has not been written yet. Distinguish this from a mistyped path by the error body. Deliberately not a 5xx: the server is up and answering, and 503 is a status the proxies in front of the api own.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '429':
+          description: 'Too many bundles for dedicated clusters this server has not loaded yet were requested at once. Retry after the `Retry-After` header; this does not mean the cluster has no bundle.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+  /link/mablnet/authorize/host:
+    post:
+      tags:
+      - LinkMablnet
+      summary: Authorize a mablnet Host to join a Link Label's tunnel
+      description: 'Validates a `HostCredentials` blob presented by a mablnet client (Link Agent, execution Host, or future desktop-app Host) and returns the `tenantId` / `hostIdentity` / `validUntil` triple the mablnet protocol needs to admit the client. Internally called by Link Router on every carrier-join — see `mablnet-client-authorization.md in link/mablnet/docs` for the full design.
+
+        Three caller types are accepted, all auth''d against the standard mabl-api chain: `link_agent` API keys (workspace-scoped Link Agent keys), `execution` API keys (workspace-scoped, TTL''d, minted per test run), or user OAuth tokens (workspace members with write permission, mabl support admins included). The request body''s `workspace_id` is cross-checked against the auth principal.
+
+        Failure semantics: `401` for bad credential / malformed body / stale `issued_at` / replayed `nonce` / (link_agent callers only) `host_id` not matching any active Link Agent; `402` for billing-suspended or LINK feature disabled; `403` for auth principal not authorised on `workspace_id`; `404` for a workspace that does not exist; `5xx` for transient backend failures including Redis-unavailable (fail-closed on the nonce cache).'
+      operationId: authorizeMablnetClient
+      requestBody:
+        description: HostCredentials blob the client presented at carrier-join
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkLabelAuthorizationRequest'
+        required: true
+      responses:
+        '200':
+          description: Authorization granted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkLabelAuthorizationResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '402':
+          description: 'Credential is valid but the workspace is billing-suspended or the LINK feature is disabled — the customer-facing churn signal Link Tunnel uses today.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: The tunnel's workspace does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+  /link/mablnet/authorize/operator/tenant:
+    post:
+      tags:
+      - LinkMablnet
+      summary: Mint a tenant-scoped mablnet operator session (peer JOIN credential +…
+      description: 'Issues two short-lived signed artifacts the calling user needs to drive a mablnet operator session against a specific customer workspace:
+
+        1. A `peer_credential` — an Ed25519-signed blob the operator presents at JOIN time to be admitted as a peer in the customer''s tenant. The api''s `/authorize/host` endpoint recognises `role: "peer"` and validates the signature in lieu of an api_key check.
+
+        2. An `operator_token` — an Ed25519-signed blob carried per-request in `OperatorCommand.token`. The customer Host''s `MablOperatorAuthorizer` validates the signature, checks the embedded `workspace_id` matches the Host''s own workspace, and verifies the requested capability''s required scope is in the granted scope list.
+
+        Both artifacts bind to one customer workspace (the `workspace_id` request parameter) so a leaked credential cannot cross tenant boundaries. The mabl-deployment private key is held in Cloud KMS; the api never sees the bytes. For operating on the Router fleet itself (not a customer Host), use `/authorize/operator/fleet`.
+
+        Auth: user-OAuth callers only — operator tokens are an interactive support / engineering capability, not a workspace-scoped API. Requires **both** the mabl support-admin claim **and** access to the tunnel, because the two answer different questions. Tunnel access — a user who can modify the workspace (owner, editor, or a support admin where the workspace has enabled Support Access), a company member for a company-owned tunnel, or the owner of a personal tunnel — is what `/authorize/peer` asks on its own, since minting a peer credential for test training is ordinary. The token minted here instead carries `drain:host`, carrier recycle/disconnect and fault injection, so consent gates the reach and the support-admin role gates the capability. The mabl global-admin claim administers mabl''s own resources and grants nothing here.
+
+        Scope policy: every admitted caller gets the whole tenant scope catalog — every `read:*`, `probe:destination`, the `recycle:carrier` / `disconnect:carrier` / `drain:host` mutations, and the diagnostic + fault-injection `start:*` / `stop:*` activities. Reaching the tunnel is the access control; there is no tier behind it. Callers do not request scopes — the api decides.
+
+        Lifetime: 30 minutes per issued session; callers re-fetch when needed.'
+      operationId: authorizeMablnetOperatorTenant
+      requestBody:
+        description: Operator session parameters (the customer workspace to operate on).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablnetOperatorSessionRequest'
+        required: true
+      responses:
+        '200':
+          description: Operator session minted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetOperatorSessionResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          description: 'Caller is authenticated but is not authorized for the requested tunnel — not a mabl support admin, or the tunnel''s owner has not granted them access.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: The requested workspace does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+  /link/mablnet/authorize/operator/fleet:
+    post:
+      tags:
+      - LinkMablnet
+      summary: Mint a fleet-scoped mablnet operator session (peer JOIN credential +…
+      description: 'Issues the same pair of short-lived signed artifacts as `/authorize/operator/tenant`, but for a **fleet** operator session — one that operates on the Link Router fleet itself (Router inventory, drain a Router) rather than a customer Host.
+
+        Both artifacts bind to the fleet sentinel workspace (`mabl`) rather than a customer workspace. The `peer_credential` is recognised locally by a Router''s `OperatorTenantAuthenticator` (verified against the same KMS-held Ed25519 key, never resolved against a customer tunnel) and admits the operator to the Router''s operator tenant; the `operator_token` carries the fleet scope set and is validated by the Router''s `MablFleetOperatorAuthorizer`.
+
+        Auth: user-OAuth callers who are mabl **global admins only**. Fleet operations act across customers, so the support-admin diagnostic tier admitted by the tenant endpoint is deliberately excluded here.
+
+        Scope policy: global admins get the fleet scope set (`read:router-inventory`, `drain:router`, `write:log-level`). Callers do not request scopes — the api decides.
+
+        Lifetime: 30 minutes per issued session; callers re-fetch when needed.'
+      operationId: authorizeMablnetOperatorFleet
+      requestBody:
+        description: Fleet operator session parameters (audit label only; binds to the fleet sentinel workspace).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablnetFleetOperatorSessionRequest'
+        required: false
+      responses:
+        '200':
+          description: Fleet operator session minted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetOperatorSessionResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          description: 'Caller is authenticated but is not a mabl global admin.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+  /link/mablnet/authorize/peer:
+    post:
+      tags:
+      - LinkMablnet
+      summary: Mint a mablnet peer JOIN credential for an OAuth-authenticated user
+      description: 'Issues a single short-lived signed `peer_credential` the calling user presents at JOIN time to be admitted as a peer in a customer tenant. Unlike `/authorize/operator/tenant`, no operator-command token is minted — callers using this endpoint dial the customer''s services (e.g., `socks5` for test training) as regular intra-tenant peers; no operator-interface capabilities are involved.
+
+        Auth: user-OAuth callers entitled to the tunnel''s owner. For a workspace owner, a user with write access to the workspace — customer workspace members training against the workspace''s SOCKS5 service, and mabl support admins where the workspace has enabled Support Access. For a company owner, a company admin or any member of the company; there is no standalone mabl global / support admin grant, because no company-level consent flag exists yet to gate one. For a user owner, that user alone.
+
+        Lifetime: 30 minutes per issued credential. To keep a longer session alive without changing the bound Host identity, refresh by re-minting with the prior credential''s `host_id`.'
+      operationId: authorizeMablnetPeer
+      requestBody:
+        description: Peer credential parameters (the customer workspace to JOIN).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablnetPeerCredentialRequest'
+        required: true
+      responses:
+        '200':
+          description: Peer credential minted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetPeerCredentialResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+  /link/mablnet/artifacts/{artifact}/manifest:
+    get:
+      tags:
+      - LinkMablnet
+      summary: Resolve the current mablnet worker manifest for the calling Host's channel
+      description: 'Returns the signed release manifest the calling Host should run, after applying the channel''s staged-rollout decision for this Host. The manifest body is an opaque, Ed25519-signed document (see `manifest-format.md in link/mablnet/docs`); the api stores and returns it without altering field *values*, so the consumer''s JCS re-canonicalisation still verifies — see `link/mablnet/docs/deployment/release-pipeline-api.md` § Opaque signed documents. Rollout resolution (which version this Host receives) is computed server-side from the per-channel rollout state plus a stable per-Host bucket — see § Manifest resolution.
+
+        Conditional refetch: callers send their last-known ETag as `If-None-Match`; the server returns `304 Not Modified` (no body) when the resolved manifest is unchanged. The current ETag is mirrored in both the `ETag` header and the mabl-specific `x-mabl-entity-version` header.'
+      operationId: getMablnetManifest
+      parameters:
+      - name: artifact
+        in: path
+        description: 'Release artifact the channel belongs to: `mablnet-host` (the worker binary) or `link-agent` (the Java Link Agent bundle). Channels are namespaced per artifact, so `stable` for one artifact is unrelated to `stable` for another.
+
+          '
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,63}'
+          type: string
+      - name: channel
+        in: query
+        description: 'Release channel to resolve against, within the artifact. The well-known channels are `latest` (newest main build — dev/non-prod) and `stable` (tag-promoted release — prod); ephemeral per-branch channels named for the branch (sanitised to `[A-Za-z0-9._-]`, as the release workflows publish them) are also accepted, as is a major-version channel such as `3` for the Link Agent. An operator-declared channel alias (see `PUT /link/mablnet/artifacts/{artifact}/channels/{channel}/alias`) is followed transparently — e.g. a request for `dev` resolves to `latest` when that alias is set — so an older client sending a renamed channel keeps working.
+
+          '
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: host_id
+        in: query
+        description: 'Stable per-Host identifier used to bucket this Host within the channel''s staged rollout. When omitted, the workspace id from the API key is used, which moves a whole workspace''s Hosts together. See design doc § Bucketing identity.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: 'Workspace owning the calling Host''s tunnel. With `label`, identifies the Link Label (tenant) whose operator-set `worker_release_override` is applied before the channel''s staged rollout — a tenant pin can redirect the channel and/or pin an exact version. The override is a worker pin and is consulted only for artifact `mablnet-host`; other artifacts follow the channel rollout regardless. Omit (or omit `label`) for callers with no tenant pin. See design doc § Per-tenant pin.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        description: 'Link Label (tunnel name) the calling Host belongs to. Paired with `workspace_id` to resolve the tenant whose `worker_release_override` is consulted.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+      - name: If-None-Match
+        in: header
+        description: Last ETag the caller observed; server returns 304 when the resolved manifest is unchanged.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Resolved manifest in body; current ETag in headers.
+          headers:
+            ETag:
+              description: Content-derived version of the resolved manifest.
+              style: simple
+              explode: false
+              schema:
+                type: string
+            x-mabl-entity-version:
+              description: Mirror of ETag; survives upstream gzip stripping.
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetManifestEnvelope'
+        '304':
+          description: Resolved manifest unchanged since the supplied If-None-Match. Empty body; ETag headers still present.
+          headers:
+            ETag:
+              style: simple
+              explode: false
+              schema:
+                type: string
+            x-mabl-entity-version:
+              style: simple
+              explode: false
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: 'No release is current for the requested channel, or this deployment publishes no mablnet worker distribution at all.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+  /link/mablnet/keystore:
+    get:
+      tags:
+      - LinkMablnet
+      summary: Get a mablnet publisher keystore document
+      description: 'Returns the signed keystore document (publisher public keys) a supervisor uses to verify manifest signatures. Defaults to the latest keystore; pass `keystore_version` to fetch a specific one — a supervisor does this when a manifest''s `requiredKeystoreVersion` exceeds its local keystore version. Like the manifest, the body is an opaque Ed25519-signed document returned with field values preserved.
+
+        Conditional refetch via `If-None-Match` / `ETag`, identical to the manifest endpoint.'
+      operationId: getMablnetKeystore
+      parameters:
+      - name: keystore_version
+        in: query
+        description: Specific keystore version to fetch; the latest keystore is returned when omitted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: If-None-Match
+        in: header
+        description: Last ETag the caller observed; server returns 304 when the keystore is unchanged.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Keystore document in body; current ETag in headers.
+          headers:
+            ETag:
+              style: simple
+              explode: false
+              schema:
+                type: string
+            x-mabl-entity-version:
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetKeystoreEnvelope'
+        '304':
+          description: Keystore unchanged since the supplied If-None-Match. Empty body; ETag headers still present.
+          headers:
+            ETag:
+              style: simple
+              explode: false
+              schema:
+                type: string
+            x-mabl-entity-version:
+              style: simple
+              explode: false
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No keystore exists at the requested version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+  /link/mablnet/releases:
+    post:
+      tags:
+      - LinkMablnet
+      summary: Publish a new mablnet worker release (operator / release CI)
+      description: 'Stores a signed release manifest and initialises the channel''s rollout. The request body is the signed manifest produced by the release pipeline (see `link/mablnet/docs/deployment/release-pipeline.md` § Aggregate job). The api derives `artifact`, `channel` and `version` from the manifest, stores the manifest verbatim, sets the channel''s `current_version` to the new version and `fallback_version` to the prior current, and applies the default staged rollout schedule (1% → 10% → 50% → 100% over 24h).
+
+        Auth: a release-engineering identity, not an interactive customer. The publishing principal is CI rather than a user-OAuth admin, so the exact machine-auth shape is an open api-team decision — see design doc § Release-publisher auth.'
+      operationId: publishMablnetRelease
+      requestBody:
+        description: The signed release manifest to publish.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablnetManifestEnvelope'
+        required: true
+      responses:
+        '200':
+          description: Release stored; the resulting channel rollout state is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetRolloutState'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '409':
+          description: A release with this artifact + channel + version already exists (republish goes through PUT artifacts/{artifact}/channels/{channel}/current).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Mablnet
+  /link/mablnet/artifacts/{artifact}/releases/{version}/rollout:
+    get:
+      tags:
+      - LinkMablnet
+      summary: Inspect a channel's rollout state (operator)
+      description: Returns the current rollout state for the channel the given `version` belongs to. Rollout state is keyed by channel, so `channel` is a required query parameter that disambiguates which channel's state to read. Operator-only.
+      operationId: getMablnetRollout
+      parameters:
+      - name: artifact
+        in: path
+        description: 'Release artifact the channel belongs to: `mablnet-host` (the worker binary) or `link-agent` (the Java Link Agent bundle). Channels are namespaced per artifact, so `stable` for one artifact is unrelated to `stable` for another.
+
+          '
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,63}'
+          type: string
+      - name: version
+        in: path
+        description: Release version whose channel rollout is being inspected.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: channel
+        in: query
+        description: Channel the version belongs to (rollout state is keyed by channel).
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Current rollout state for the channel.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetRolloutState'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No rollout state exists for the requested channel.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+    patch:
+      tags:
+      - LinkMablnet
+      summary: Modify a channel's rollout — pause / resume / force-advance (operator)
+      description: 'Adjusts the in-flight rollout for the channel the given `version` belongs to: pause or resume the staged schedule, or force the rolled-out percentage to an explicit value (overriding the time-based schedule). Operator-only. See design doc § Operator commands.'
+      operationId: patchMablnetRollout
+      parameters:
+      - name: artifact
+        in: path
+        description: 'Release artifact the channel belongs to: `mablnet-host` (the worker binary) or `link-agent` (the Java Link Agent bundle). Channels are namespaced per artifact, so `stable` for one artifact is unrelated to `stable` for another.
+
+          '
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,63}'
+          type: string
+      - name: version
+        in: path
+        description: Release version whose channel rollout is being modified.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: channel
+        in: query
+        description: Channel the version belongs to (rollout state is keyed by channel).
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: The rollout adjustment to apply.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablnetRolloutUpdate'
+        required: true
+      responses:
+        '200':
+          description: Updated rollout state for the channel.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetRolloutState'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No rollout state exists for the requested channel.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Mablnet
+  /link/mablnet/artifacts/{artifact}/channels/{channel}/current:
+    put:
+      tags:
+      - LinkMablnet
+      summary: Force a channel's current version — rollback / pin (operator)
+      description: 'Republishes an already-stored version as the channel''s current — the rollback / pinning primitive. By default the forced version inherits a staged rollout; pass a single-stage `rollout_schedule` of `[{percent: 100, since_ms: 0}]` for an immediate fleet-wide swap. Operator-only. See design doc § Operator commands.'
+      operationId: putMablnetChannelCurrent
+      parameters:
+      - name: artifact
+        in: path
+        description: 'Release artifact the channel belongs to: `mablnet-host` (the worker binary) or `link-agent` (the Java Link Agent bundle). Channels are namespaced per artifact, so `stable` for one artifact is unrelated to `stable` for another.
+
+          '
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,63}'
+          type: string
+      - name: channel
+        in: path
+        description: Channel whose current version is being forced.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The version to make current, with an optional rollout schedule override.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablnetChannelCurrent'
+        required: true
+      responses:
+        '200':
+          description: Updated rollout state for the channel.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetRolloutState'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: The requested version is not a stored release on this channel.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Mablnet
+  /link/mablnet/artifacts/{artifact}/channels/{channel}/alias:
+    get:
+      tags:
+      - LinkMablnet
+      summary: Inspect a channel's alias, if any (operator)
+      description: Returns the channel `{channel}` is an alias of, or `404` if it is a normal (canonical) channel with no alias. See design doc `release-channel-aliasing-and-selection.md in link/mablnet/docs`.
+      operationId: getMablnetChannelAlias
+      parameters:
+      - name: artifact
+        in: path
+        description: 'Release artifact the channel belongs to: `mablnet-host` (the worker binary) or `link-agent` (the Java Link Agent bundle). Channels are namespaced per artifact, so `stable` for one artifact is unrelated to `stable` for another.
+
+          '
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,63}'
+          type: string
+      - name: channel
+        in: path
+        description: The (possibly aliased) channel name to inspect.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The channel is an alias; its target is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetChannelAlias'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: The channel is not an alias (it is a canonical channel, or does not exist).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+    put:
+      tags:
+      - LinkMablnet
+      summary: Declare a channel to be an alias of another channel (operator)
+      description: 'Makes `{channel}` an alias of the body''s `target` within the same artifact: manifest resolution (and the operator rollout endpoints) resolve a request for `{channel}` to `target`''s manifest and rollout, transparently to clients — the global, publisher-level generalization of the per-tenant `worker_release_override` redirect. Used to rename a channel without breaking older clients that still send the old name (alias `dev` → `latest`), or to neutralize a legacy channel default (`prod` → `stable`). Replaces any existing alias on `{channel}`; a target equal to the channel, or one that would create a cycle, is rejected. Operator-only (mabl global / support admin). See design doc `release-channel-aliasing-and-selection.md in link/mablnet/docs`.'
+      operationId: setMablnetChannelAlias
+      parameters:
+      - name: artifact
+        in: path
+        description: 'Release artifact the channel belongs to: `mablnet-host` (the worker binary) or `link-agent` (the Java Link Agent bundle). Channels are namespaced per artifact, so `stable` for one artifact is unrelated to `stable` for another.
+
+          '
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,63}'
+          type: string
+      - name: channel
+        in: path
+        description: The channel name to turn into an alias.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The alias target (the channel `{channel}` should resolve to).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablnetChannelAlias'
+        required: true
+      responses:
+        '200':
+          description: The alias was set; the stored alias is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetChannelAlias'
+        '400':
+          description: The target is missing, equals the channel, or would create an alias cycle.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Mablnet
+    delete:
+      tags:
+      - LinkMablnet
+      summary: Remove a channel's alias (operator)
+      description: Clears the alias on `{channel}`, so the name resolves to its own (canonical) channel again. Safe to call whether or not an alias existed. Operator-only (mabl global / support admin).
+      operationId: clearMablnetChannelAlias
+      parameters:
+      - name: artifact
+        in: path
+        description: 'Release artifact the channel belongs to: `mablnet-host` (the worker binary) or `link-agent` (the Java Link Agent bundle). Channels are namespaced per artifact, so `stable` for one artifact is unrelated to `stable` for another.
+
+          '
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,63}'
+          type: string
+      - name: channel
+        in: path
+        description: The alias channel name to clear.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The alias was cleared (or none existed).
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Mablnet
+  /link/mablnet/labels/{workspace_id}/{label}/release-override:
+    put:
+      tags:
+      - LinkMablnet
+      summary: Set a Link Label's per-tenant worker-release override (operator)
+      description: Sets the per-tenant worker-release override on a Link Label — pin this tenant to a specific `channel` and/or `version`, consulted by the worker manifest resolution (`GET /link/mablnet/artifacts/mablnet-host/manifest`) ahead of the channel's staged rollout. Used to give one customer an experimental / branch build to confirm a fix before promoting it channel-wide. Replaces any existing override. Clear it with `DELETE` once the version is promoted (via `PUT /link/mablnet/artifacts/mablnet-host/channels/{channel}/current`). Operator-only (mabl global / support admin); customers cannot set their own pin.
+      operationId: setMablnetWorkerReleaseOverride
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace owning the Link Label.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: label
+        in: path
+        description: Link Label (tunnel name) to pin.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+      requestBody:
+        description: The override to apply (channel and/or version; at least one should be set).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablnetWorkerReleaseOverride'
+        required: true
+      responses:
+        '200':
+          description: The updated Link Label.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkLabel'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No Link Label exists for that workspace + label.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Mablnet
+    delete:
+      tags:
+      - LinkMablnet
+      summary: Clear a Link Label's per-tenant worker-release override (operator)
+      description: Removes the per-tenant worker-release override from a Link Label, returning the tenant to the normal channel rollout. Use after promoting the pinned version channel-wide. Operator-only (mabl global / support admin).
+      operationId: clearMablnetWorkerReleaseOverride
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace owning the Link Label.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: label
+        in: path
+        description: Link Label (tunnel name) to clear.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+      responses:
+        '200':
+          description: The updated Link Label with the override removed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkLabel'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No Link Label exists for that workspace + label.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Mablnet
+  /link/mablnet/tunnels/resolve:
+    get:
+      tags:
+      - LinkMablnet
+      summary: Resolve the mablnet tunnel target for an owner + label
+      description: 'Resolves which mablnet tunnel to reach for a given `label`, and where (the mablnet WSS Router endpoint + whether a live agent is serving it). Two modes:
+
+        **Run resolution (default, `owner_type` omitted).** The cloud-test-run path: a test executor knows the run''s `workspace_id` and the configured label but not the tunnel''s owner. A company-owned tunnel `(company, label)` with a live agent wins, so standing up a company tunnel under a workspace tunnel''s label moves that workspace onto it with no environment change, and stopping the company agent moves it back. Otherwise a workspace-owned tunnel `(workspace_id, label)` is returned, live or not (so the caller fails the run rather than silently routing elsewhere); otherwise the company tunnel with no live agent, if one exists. `404` when neither exists. A workspace that needs its own tunnel must use a label its company does not also use. (Company tunnels carry no `workspace_id`, so the workspace agent listing cannot find them — this is why the endpoint encapsulates the resolution.)
+
+        **Owner-aware (`owner_type` set).** Resolves the tunnel for an explicit owner — used by user-facing tooling (`mabl link-agents test …`) to reach a `user` (personal) or an explicit `company` tunnel. `owner_id` is required for `company`/`workspace`; for `user` it must be the caller''s own id (a personal tunnel is private to its owner). Authorized like `POST /link/mablnet/authorize/peer`: a `user` owner only by that user, a `company` owner by a company admin/member, a `workspace` owner by a user who can modify it. `404` when no such tunnel exists.
+
+        `has_live_agent` reports whether a `ready` Link Agent advertising `mablnet_wss` has heartbeated within the liveness window for the resolved owner — the caller''s pre-run "is this tunnel serviceable" gate, mirroring the legacy Link Server check.'
+      operationId: resolveMablnetTunnel
+      parameters:
+      - name: workspace_id
+        in: query
+        description: 'Run-resolution mode (`owner_type` omitted): the run''s workspace, from which its company is derived. Required in this mode; ignored when `owner_type` is set.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        description: Tunnel (Link Label) configured on the run's environment.
+        required: true
+        style: form
+        explode: true
+        schema:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+      - name: owner_type
+        in: query
+        description: 'Owner-aware mode: the kind of owner to resolve the tunnel for. Omit for the default run resolution.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+      - name: owner_id
+        in: query
+        description: 'Owner-aware mode: the owner''s id. Required when `owner_type` is `company` or `workspace`; for `user` it must be the caller''s own user id (a personal tunnel is private to its owner).
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The resolved tunnel target.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetTunnelTarget'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: 'No resolvable mablnet tunnel for that workspace + label — either no tunnel (workspace- or company-owned) exists, or the owner''s cluster publishes no carrier endpoint. Both answer 404 deliberately: a status that distinguished them would tell an unauthorized caller which labels exist.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+  /link/mablnet/infrastructure-keys:
+    get:
+      tags:
+      - LinkMablnet
+      summary: List the link infrastructure keys in use
+      description: 'Operator-only: every dedicated link infrastructure key currently assigned to a company (`Company.link_infrastructure_key`), plus the shared cluster''s key (`mabl`), each with its derived carrier FQDNs and holder company ids. Fleet tooling (mops) fans cluster-scoped operations out over this list, and the decommission runbook verifies a key has zero holders before removing its terraform `clusters` entry. See dedicated-link-infra.md in link/mablnet/docs.'
+      operationId: getMablnetInfrastructureKeys
+      responses:
+        '200':
+          description: The keys in use.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablnetInfrastructureKeysResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Mablnet
+components:
+  schemas:
+    MablnetKeystoreEnvelope:
+      required:
+      - keystore
+      type: object
+      properties:
+        keystore:
+          type: string
+          description: 'Base64 of the exact signed keystore bytes. Decode, then verify + parse per manifest-format.md.
+
+            '
+      description: 'Transport envelope carrying a signed mablnet publisher keystore as opaque bytes (structure: `manifest-format.md` § Keystore document format). Same rationale as `MablnetManifestEnvelope` — base64 of the exact signed bytes so the signature survives the api''s JSON layer untouched.
+
+        '
+    MablnetRolloutState:
+      required:
+      - artifact
+      - channel
+      - current_version
+      - paused
+      - rollout_schedule
+      type: object
+      properties:
+        id:
+          type: string
+          description: 'Datastore key for this entity — `<artifact>/<channel>` (one entity per artifact + channel). Server-set.
+
+            '
+          readOnly: true
+        artifact:
+          type: string
+          description: Release artifact this state governs (`mablnet-host`, `link-agent`).
+        channel:
+          type: string
+          description: Release channel this state governs, within `artifact`.
+        current_version:
+          type: string
+          description: The version being rolled out to (Hosts inside the rolled-out percentage receive this).
+        fallback_version:
+          type: string
+          description: 'What Hosts not yet inside the rollout receive. Unset once a rollout reaches 100% and the current version is fully rolled out.
+
+            '
+        rollout_schedule:
+          type: array
+          description: Time-based stages; the rolled-out percentage is the max stage whose `since_ms` has elapsed since `published_at`.
+          items:
+            $ref: '#/components/schemas/MablnetRolloutStage'
+        force_percent:
+          type: integer
+          description: 'When set, overrides the time-based schedule with an explicit rolled-out percentage (operator force-advance). Cleared by resuming the schedule.
+
+            '
+          format: int32
+        published_at:
+          type: string
+          description: When the current rollout started; the schedule's `since_ms` offsets are relative to this.
+          format: date-time
+        paused:
+          type: boolean
+          description: When true, the manifest endpoint stops advancing the rollout — Hosts stay on whichever version they have.
+      description: 'Per-channel staged-rollout state owned by the api (one entity per artifact + channel). Unlike the manifest/keystore this is api-owned data, not a signed document, so normal date-time handling applies. The manifest endpoint reads this to decide which version a given Host receives — see design doc § Manifest resolution.
+
+        '
+    MablnetInfrastructureKey:
+      type: object
+      properties:
+        key:
+          type: string
+          description: The cluster key (`mabl` = the shared multi-tenant cluster).
+          readOnly: true
+        wss_fqdn:
+          type: string
+          description: Derived WSS carrier hostname (`<key>-wss.<domain>`). Absent when the deployment has no mablnet domain configured.
+          readOnly: true
+        quic_fqdn:
+          type: string
+          description: Derived QUIC carrier hostname (`<key>-quic.<domain>:443`). Absent when the deployment has no mablnet domain configured.
+          readOnly: true
+        company_ids:
+          type: array
+          description: Companies holding this key (empty for `mabl` — shared-cluster residency is the keyless default, not an assignment).
+          readOnly: true
+          items:
+            type: string
+      description: One link infrastructure cluster key and the companies pinned to it.
+    MablnetPeerCredentialResponse:
+      required:
+      - expires_at
+      - peer_credential
+      type: object
+      properties:
+        peer_credential:
+          type: string
+          description: 'Base64 (standard alphabet, no URL safety) of the UTF-8 JSON bytes of the signed peer JOIN credential. Same shape as the `peer_credential` returned from `/authorize/operator/tenant`.
+
+            '
+          format: byte
+        expires_at:
+          type: string
+          description: 'RFC 3339 timestamp marking when the credential expires. Fixed 30-minute window from issue time.
+
+            '
+          format: date-time
+      description: 'Result of a successful `POST /link/mablnet/authorize/peer` call. Carries one signed peer JOIN credential bound to the requested workspace.
+
+        '
+    MablnetOperatorSessionResponse:
+      required:
+      - expires_at
+      - operator_token
+      - peer_credential
+      type: object
+      properties:
+        peer_credential:
+          type: string
+          description: 'Base64 (standard alphabet, no URL safety) of the UTF-8 JSON bytes of the signed peer JOIN credential. The caller presents these bytes as the mablnet `HostCredentials` blob at JOIN; api''s `/authorize/host` validates the Ed25519 signature and admits the user as a tenant peer.
+
+            '
+          format: byte
+        operator_token:
+          type: string
+          description: 'Base64 (standard alphabet, no URL safety) of the UTF-8 JSON bytes of the signed operator-command token. Carried per-request in `OperatorCommand.token` and validated by the customer Host''s `MablOperatorAuthorizer`.
+
+            '
+          format: byte
+        expires_at:
+          type: string
+          description: 'RFC 3339 timestamp marking when both artifacts expire. Fixed 30-minute window from issue time.
+
+            '
+          format: date-time
+      description: 'Result of a successful `POST /link/mablnet/authorize/operator/tenant` or `POST /link/mablnet/authorize/operator/fleet` call. Carries both artifacts the caller needs for one operator session: a peer JOIN credential and an operator-command token.
+
+        '
+    MablnetChannelAlias:
+      required:
+      - target
+      type: object
+      properties:
+        id:
+          type: string
+          description: Datastore key for this entity — `<artifact>/<alias channel>`. Server-set.
+          readOnly: true
+        artifact:
+          type: string
+          description: Release artifact the alias and its target belong to. Server-set.
+          readOnly: true
+        target:
+          type: string
+          description: 'The channel (within the same artifact) the alias resolves to. May itself be an alias (chains are followed), but must not equal the alias name and must not form a cycle.
+
+            '
+      description: 'Declares one release channel to be an alias of another. When set, the api resolves every request for the alias channel (manifest resolution + the operator rollout ops) to the `target` channel''s state, so a client that still sends the old name keeps working after a rename. Aliases are scoped to one artifact: the artifact and alias name are the `{artifact}` / `{channel}` path segments; the body carries only `target`. See design doc `release-channel-aliasing-and-selection.md in link/mablnet/docs`.
+
+        '
+    MablnetWorkerReleaseOverride:
+      type: object
+      properties:
+        channel:
+          type: string
+          description: 'Channel this tenant follows instead of the one its Host requests (e.g. `latest`, `stable`, or a branch name as published). Unset = use the requested channel. The effective channel is alias-resolved, so a channel alias applies here too.
+
+            '
+          x-mabl-scope: public
+        version:
+          type: string
+          description: 'Exact worker version pinned for this tenant, bypassing the staged rollout. Unset = follow the (effective) channel''s rollout.
+
+            '
+          x-mabl-scope: public
+      description: 'Per-tenant override of the worker release a Link Label receives, set by a mabl operator (not customer-writable). Consulted by `GET /link/mablnet/artifacts/mablnet-host/manifest` before the channel''s staged rollout: `channel` (when set) replaces the channel the Host requested; `version` (when set) pins that exact version, bypassing the staged percentage. Either or both may be set; an absent override means the tenant follows the normal channel rollout. Used to give one customer an experimental or branch build to confirm a fix, then cleared once the version is promoted channel-wide via `PUT /link/mablnet/artifacts/mablnet-host/channels/{channel}/current`.
+
+        '
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    LinkAgentOperatorTunables:
+      type: object
+      properties:
+        mablnet_min_carriers:
+          maximum: 16
+          minimum: 1
+          type:
+          - integer
+          - 'null'
+          description: 'Steady-state target carrier count for the mablnet Host. PATCH `null` to clear an override and fall back to the next merge layer.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_max_carriers:
+          maximum: 32
+          minimum: 1
+          type:
+          - integer
+          - 'null'
+          description: 'Advisory ceiling — overlap budget for in-flight carrier churn.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_join_timeout:
+          type:
+          - string
+          - 'null'
+          description: 'Per-carrier-join timeout. Tighten only when investigating a misbehaving LB.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_telemetry_export_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Cadence at which the Agent-side SDK MeterProvider flushes to the mablnet-metrics-collector. Drop to ~`PT5S` during incidents.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_recycle_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Period between proactive carrier-recycle ticks: the worker retires its oldest carrier (make-before-break, so existing QUIC sessions migrate without disruption) and the LB redistributes the replacement across the Router fleet. Default `PT60M`. Set `PT0S` to disable proactive recycle (the worker still retires unhealthy carriers). PATCH `null` to clear an override.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_recycle_jitter:
+          type:
+          - string
+          - 'null'
+          description: 'Random offset added to the first carrier-recycle tick, to desync the fleet so recycles don''t bunch into a thundering-herd reconnect. Default `PT30M`. No effect when `mablnet_carrier_recycle_interval` is `PT0S`.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_allowed_protocols:
+          type:
+          - array
+          - 'null'
+          description: 'The set of mablnet carrier protocols this tunnel is allowed to use (default `[mablnet_quic, mablnet_wss]`). This is the mabl-controlled *policy* — which carriers are permitted — NOT a try-order: order here is not significant. Each host selects the best available protocol from this set (and the fallback order among them) using local signals the operator can''t know ahead of time — UDP socket-buffer clamp, an HTTP proxy in the path, live reachability. Set `[mablnet_wss]` to disable QUIC for a tunnel on a known UDP-blocked network, or `[mablnet_quic]` to require QUIC. Only `mablnet_*` values are valid; the worker rebuilds on change. PATCH `null` to clear an override.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentProtocolEnum'
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_connect_timeouts:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: integer
+            format: int32
+          description: 'Per-protocol carrier establishment deadline in milliseconds, keyed by `LinkAgentProtocolEnum` value (default `{mablnet_quic: 8000, mablnet_wss: 45000}`): how long the worker waits for a carrier on that protocol to JOIN before falling back to the next protocol the host tries (from `mablnet_allowed_protocols`). The deadline is intrinsic to the protocol — QUIC fast-fails to escape silently-blackholing networks; WSS is patient — and is independent of order. A protocol absent from the map uses the worker''s built-in default. PATCH `null` to clear the override.
+
+            '
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_client_pool_size:
+          type:
+          - integer
+          - 'null'
+          description: 'Multi-carrier peer-pool size for CLIENT legs connecting to this tunnel. Deliberately has NO server-side default: unset means each client auto-selects a fixed pool size from its own machine''s resources (total memory, capped by cores) — the api can''t know them. An explicit value pins the size for every client of the tunnel: `1` = pool off, N > 1 boots N mablnet Hosts per client — one slot identity each, each with its own carriers — and spreads connections across them, lifting the one-pinned-carrier-per-peer throughput cap for many-connection workloads (browser tests). Does not speed up a single bulk stream, and the Link Agent itself is unaffected — this rides to clients on the resolved tunnel (`client_pool_size`). Consumers treat explicit values < 1 as 1; keep N modest (2-4). PATCH `null` to restore client auto-selection.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        ready_heartbeat_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Heartbeat cadence once the Agent reaches `ready` status. While the Agent is still bringing up the legacy / mablnet stacks (status != `ready`) it heartbeats at the hard-coded 10 s tick — fast feedback is what ops + the UI need during startup, and the startup window is short. Once `ready` the cadence drops to this value (default `PT60S`); steady-state Agents mostly only need the heartbeat to guard against sudden death (laptop suspend, network drop) and that doesn''t repay 10 s × every Agent in the fleet of api-side load. The Agent reverts to 10 s if `status` ever leaves `ready`. Must stay below the api''s dead-agent cleanup threshold (10 min) — `PT300S` (5 min) is a safe upper bound.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        agent_log_level:
+          type:
+          - string
+          - 'null'
+          description: 'Root logger level. Applied in-place — no Host rebuild.
+
+            Deliberately has no server-side default, and should not be given one. The Agent applies this to its process-global root logger on the first announce, which happens *after* it has applied the level from its own config file / command line — so any value set here silently overrides what the customer configured locally. Left unset (the default) the local config stays authoritative; set explicitly, it means an operator chose this level for this tunnel and it wins.
+
+            '
+          enum:
+          - trace
+          - debug
+          - info
+          - warn
+          - error
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+      description: 'Operator-tunable parameters for a running Link Agent. Used in two contexts: as the read-only resolved view (`operator_tunables`) and as the sparse overrides (`operator_tunables_overrides`). In the overrides context absent fields fall through to the next merge layer; `null` explicitly clears the override (`x-dao-apply-nulls: true` per-field). In the resolved-view context the api populates every field by merging static defaults (in `LinkLabelServiceImpl`) with label-level overrides and (on `LinkAgent`) agent-level overrides.
+
+        '
+      x-mabl-scope: public
+    MablnetTunnelTarget:
+      required:
+      - allowed_protocols
+      - carrier_endpoints
+      - has_live_agent
+      - owner_id
+      - owner_type
+      type: object
+      properties:
+        owner_type:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+        owner_id:
+          type: string
+          description: 'The resolved owner id — the run''s workspace id for a workspace tunnel, the company id for a company tunnel. This is the SOCKS5 username a client presents to the agent''s socks5 service, whose tripwire is `(owner_id, label)`.
+
+            '
+        label:
+          type: string
+          description: 'The resolved tunnel''s Link label — the second half of the SOCKS5 tripwire `(owner_id, label)`. Echoed so a caller resolving several tunnels at once (e.g. all of a user''s live personal tunnels) can tell them apart.
+
+            '
+        carrier_endpoints:
+          type: object
+          additionalProperties:
+            type: string
+          description: 'The deployment''s mablnet Router FQDN for each available carrier protocol, keyed by the `LinkAgentProtocolEnum` value (`mablnet_wss`, `mablnet_quic`). Bare hosts; the client normalises each to its scheme (`wss://` / `udp://`). A protocol absent from the map isn''t offered by this deployment (e.g. QUIC before it has rolled out to the region).
+
+            '
+          example:
+            mablnet_wss: mabl-wss.link.mabl.com
+            mablnet_quic: mabl-quic.link.mabl.com
+        allowed_protocols:
+          type: array
+          description: 'The set of mablnet carrier protocols this tunnel is allowed to use — the mabl-controlled policy, operator-tunable per tunnel via `LinkLabel.operator_tunables_overrides`. Order is not significant. Only `mablnet_*` values appear, and every entry has a matching key in `carrier_endpoints`. The client picks the best available protocol from this set, and the fallback order among them, using local signals the operator can''t know (UDP-buffer clamp, proxy in the path, reachability).
+
+            '
+          example:
+          - mablnet_quic
+          - mablnet_wss
+          items:
+            $ref: '#/components/schemas/LinkAgentProtocolEnum'
+        carrier_connect_timeouts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+          description: 'Per-protocol carrier establishment deadline in milliseconds, keyed by `LinkAgentProtocolEnum` value — how long the client waits for a carrier on that protocol to JOIN before falling back to the next protocol it tries (from `allowed_protocols`). The mabl-controlled, operator-tunable default (`{mablnet_quic: 8000, mablnet_wss: 45000}`); a protocol absent from the map uses the client''s built-in default.
+
+            '
+          example:
+            mablnet_quic: 8000
+            mablnet_wss: 45000
+        client_pool_size:
+          type: integer
+          description: 'Multi-carrier peer-pool size the client leg should boot for this tunnel, present only when the operator pinned one (the tunable `mablnet_client_pool_size`). Absent means the client auto-selects a fixed pool size from its own machine''s resources (total memory, capped by cores). An explicit N > 1 boots N mablnet Hosts — one slot identity each, each with its own carriers — and spreads connections across them, lifting the one-pinned-carrier-per-peer throughput cap for many-connection workloads; `1` = pool off. Treat explicit values < 1 as 1.
+
+            '
+          format: int32
+          example: 2
+        has_live_agent:
+          type: boolean
+          description: 'True when a `ready` Link Agent advertising a mablnet carrier for the resolved owner + label has heartbeated within the liveness window. The executor''s pre-run serviceability gate.
+
+            '
+        mablnet_tenant_id_hex:
+          type: string
+          description: 'Zero-padded 8-character lowercase hex of the tunnel''s mablnet tenant id, when the resolved Link Label carries one. Diagnostic / correlation aid; not required to connect.
+
+            '
+        infrastructure_key:
+          type: string
+          description: 'The link infrastructure cluster key the `carrier_endpoints` belong to — the owning company''s resolved key for workspace/company tunnels, the announce-time placement recorded on the Link Label for personal tunnels. Lets consumers apply cluster-eligibility rules (e.g. the personal-tunnel stripe-set filter) without re-resolving.
+
+            '
+          readOnly: true
+      description: 'The resolved mablnet tunnel a cloud test run should reach for a `(workspace_id, label)`, returned by `GET /link/mablnet/tunnels/resolve`. Unlike the legacy path''s list of Link Servers, a mablnet tunnel is a single tenant reached by dialing a mablnet Router; intra-tenant load-balancing across the tunnel''s agents is the Router''s job, so one target (not a list) is returned per label. The client connects with a carrier from `carrier_endpoints`, choosing the best of the `allowed_protocols` (and the fallback order among them) from what it knows locally.
+
+        '
+    MablnetChannelCurrent:
+      required:
+      - version
+      type: object
+      properties:
+        version:
+          type: string
+          description: The already-stored release version to make current on this channel.
+        rollout_schedule:
+          type: array
+          description: Optional rollout schedule override for the forced version; defaults to the standard staged schedule.
+          items:
+            $ref: '#/components/schemas/MablnetRolloutStage'
+      description: 'Body for `PUT /link/mablnet/artifacts/{artifact}/channels/{channel}/current`. Forces the channel''s current to an already-stored version (rollback / pin). Optionally overrides the rollout schedule for the forced version (e.g. a single 100%/0ms stage for an immediate fleet-wide swap).
+
+        '
+    MablnetPeerCredentialRequest:
+      required:
+      - label
+      type: object
+      properties:
+        owner_type:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+        owner_id:
+          type: string
+          description: The workspace id or company id (per `owner_type`) the user is joining.
+        workspace_id:
+          type: string
+          description: 'Deprecated alias for a workspace owner (`owner_type=workspace`, `owner_id=<workspace_id>`). Prefer `owner_type` + `owner_id`.
+
+            '
+        label:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+          description: Tunnel (Link Label) within the owner the user is joining.
+        host_id:
+          type: string
+          description: 'Optional. When present the minted credential reuses this `host_id` rather than generating a fresh one, so a long-lived peer session can refresh its credential without changing the Host identity the Router has bound. Shape-only for the peer path — the credential''s Ed25519 signature still binds it to the authorized (user, owner, label).
+
+            '
+      description: 'Request body for `POST /link/mablnet/authorize/peer`. Specifies which customer tunnel the user wants to JOIN as a peer: an owner (`owner_type` + `owner_id`, a workspace or a company) plus the `label`. `workspace_id` is a deprecated alias for `owner_type=workspace` + `owner_id=<workspace_id>`, accepted for older callers — supply either the owner pair or `workspace_id`.
+
+        '
+    MablnetRolloutUpdate:
+      type: object
+      properties:
+        paused:
+          type: boolean
+          description: Pause (true) or resume (false) the staged rollout.
+        force_percent:
+          type: integer
+          description: Force the rolled-out percentage to this explicit value (0–100), overriding the schedule.
+          format: int32
+      description: 'Body for `PATCH /link/mablnet/artifacts/{artifact}/releases/{version}/rollout`. All fields optional; supply the one(s) you want to change. `paused` toggles pause/resume; `force_percent` overrides the time-based schedule with an explicit percentage.
+
+        '
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    MablnetManifestEnvelope:
+      required:
+      - manifest
+      type: object
+      properties:
+        manifest:
+          type: string
+          description: 'Base64 of the exact signed manifest bytes. Decode, then verify + parse per manifest-format.md.
+
+            '
+        resolved_channel:
+          type: string
+          description: The channel the returned manifest was resolved on, after channel aliasing and any per-tenant release override. Equals the requested channel unless one of those redirected it. A consumer that checks the manifest's signed channel compares it to this, so a renamed channel keeps working; the check catches a manifest moved between channels by a publishing mistake or a middlebox, not a substitution by the api itself, which the signature covers.
+        rollout_schedule:
+          type: array
+          description: 'Optional rollout schedule for this publish. Omit for the default gradual staged schedule (prod / `stable`). Pass a single `[{percent: 100, since_ms: 0}]` stage to make the version current fleet-wide immediately — used for the `dev`/latest and per-branch channels, where the (typically single) tracking Host must resolve to the new build at once rather than wait out the gradual ramp. api-only orchestration metadata; rides outside the signed manifest bytes, so it does not affect the manifest''s signature.
+
+            '
+          items:
+            $ref: '#/components/schemas/MablnetRolloutStage'
+      description: 'Transport envelope carrying a signed mablnet worker release manifest as opaque bytes. The `manifest` field is the **exact** signed manifest document (structure: `manifest-format.md in link/mablnet/docs` § Schema), base64-encoded so it survives the api''s JSON layer byte-for-byte — the api never deserialises or reformats the manifest, which is what keeps its Ed25519/JCS signature verifiable on the consumer. The mabl-API transport wraps the manifest this way; the GCS and update-service transports return the same bytes unwrapped, so an API-channel consumer decodes this field before verifying.
+
+        '
+    MablnetInfrastructureKeysResponse:
+      type: object
+      properties:
+        keys:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/MablnetInfrastructureKey'
+      description: The link infrastructure keys in use across the deployment.
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    LinkAgentProtocolEnum:
+      type: string
+      description: "Protocol the Link Agent uses to reach the mabl side.\nLegacy values (pre-mablnet): - `wss`: WebSocket over TLS to a Link Server (the only one of the three that\n  shipped — `ssl` and `https` are historical placeholders).\n- `ssl`, `https`: never implemented; kept in the enum for backwards\n  compatibility with serialized records that captured them.\n\nNew values (mablnet): - `mablnet_wss`: WSS carrier to a mablnet Router, through the Application LB on\n  :443. The fallback substrate, and the only one that traverses an HTTP proxy.\n- `mablnet_quic`: UDP/QUIC carrier to a mablnet Router, on :443. The preferred\n  substrate where the network passes UDP; Agents fall back to `mablnet_wss`\n  where it does not.\n"
+      enum:
+      - ssl
+      - https
+      - wss
+      - mablnet_wss
+      - mablnet_quic
+      x-mabl-scope: public
+    MablnetOperatorSessionRequest:
+      required:
+      - label
+      - owner_id
+      - owner_type
+      type: object
+      properties:
+        owner_type:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+        owner_id:
+          type: string
+          description: The workspace id or company id (per `owner_type`) the session operates on.
+        label:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+          description: Tunnel (Link Label) within the owner the operator session targets.
+      description: 'Request body for `POST /link/mablnet/authorize/operator/tenant`. Specifies which tunnel the operator session targets. Both minted artifacts (peer credential + operator token) bind to this `(owner_type, owner_id, label)` tunnel, which maps to one mablnet tenant.
+
+        '
+    MablnetPeerCa:
+      required:
+      - signed_bundle
+      type: object
+      properties:
+        operator_public_key:
+          type: string
+          description: 'Base64-encoded X.509 SubjectPublicKeyInfo of the deployment''s operator-token Ed25519 public key. A Host registers the `mablnet-operator` command service (and verifies per-command operator tokens) against this key. Absent when the deployment has no operator-token signing key configured — in that case the Host runs without the operator interface.
+
+            '
+        signed_bundle:
+          type: string
+          description: 'The publisher-signed trust envelope, forwarded byte-for-byte as it was published. An Agent verifies these exact bytes against the publisher key embedded in its own binary and takes its trust anchors from inside the envelope, which is what makes the anchors safe to fetch over a channel the Agent cannot authenticate — most customers run TLS-intercepting proxies, so the Agent does not verify this connection''s certificate.
+
+            Carried as an opaque string rather than as fields on this schema on purpose: the signature covers the bytes the publisher produced, and spreading them across this schema would mean reserialising them through a generated model that silently drops any field it does not yet know about. Do not parse, reformat, or re-emit it — pass it through.
+
+            Always present when this endpoint returns 200. An unsigned trust bundle is refused rather than served, because anchors an Agent cannot verify are the problem the signature exists to solve; the endpoint reports the deployment as unconfigured until the bundle has been published signed.
+
+            '
+          readOnly: true
+      description: 'Mablnet deployment trust material. The trust anchors live *inside* `signed_bundle`, not beside it: a client verifies that envelope against the publisher key embedded in its own binary and takes the anchors from within.
+
+        This response therefore carries no plain rendering of those anchors. It used to, and every consumer ignored it — anchors handed over unsigned are exactly the ones nothing can verify, so serving them only offered a caller a way to get the trust decision wrong.
+
+        The optional `operator_public_key` carries the deployment''s operator-token Ed25519 public key, so a Host can verify operator-command tokens (and admit the operator interface) without a separate fetch. It rides this response because it is the same kind of artifact — a deployment-wide, non-secret mablnet trust root — and folds into this response''s ETag, so a key rotation invalidates the conditional-GET cache.
+
+        '
+    LinkTunnelOwnerType:
+      type: string
+      description: 'The kind of entity a mablnet tunnel is scoped to — its "owner". `workspace` is the classic scope: one tunnel per workspace. `company` scopes a single tunnel to an entire company, so every workspace under that company shares one mablnet tenant (and one Link Agent fleet) instead of needing a tunnel each. `user` is a personal tunnel scoped to a single user, private to that user — its egress is the user''s own machine, used to route a cloud test run through it. All three are mablnet-only: legacy Link Tunnel is always workspace-scoped.
+
+        '
+      enum:
+      - workspace
+      - company
+      - user
+      x-mabl-scope: public
+    LinkServerSize:
+      type: string
+      description: The size of the Link Server, which determines its resource allocation
+      enum:
+      - small
+      - large
+    LinkLabel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID for this Link Label
+          readOnly: true
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the Link Label was created
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        label:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+          description: The link label
+          readOnly: true
+          x-mabl-scope: public
+        cloud_safe_canonical_name:
+          type: string
+          description: The globally unique name for this label that is safe to use in FQDNs (based on label and workspace ID).
+          readOnly: true
+          x-mabl-scope: public
+        client_certificate:
+          type: string
+          description: 'The serialized X.509 certificate Link Agents use as their client identity on the legacy Link Tunnel mTLS path. Not used by mablnet: mablnet''s `HostCredentials` are a separate JSON blob (workspace_id + label + host_id + issued_at + nonce); the mabl-deployment `HostAuthenticator` validates that blob via the `POST /link/mablnet/authorize/host` endpoint and maps it to `mablnet_tenant_id`. Also distinct from the per-Host peer QUIC certs mablnet''s `CertificateAuthority` issues at join time, which embed `(tenantId, hostId)` in SAN OtherName extensions.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        server_certificate:
+          type: string
+          description: The serialized certificate for Link Servers to use
+          readOnly: true
+        client_fingerprint:
+          type: string
+          description: The fingerprint of the client certificate
+          readOnly: true
+          x-mabl-scope: public
+        client_public_key:
+          type: string
+          description: The public key of the client certificate
+          readOnly: true
+          x-mabl-scope: public
+        server_fingerprint:
+          type: string
+          description: The fingerprint of the server certificate
+          readOnly: true
+          x-mabl-scope: public
+        server_public_key:
+          type: string
+          description: The public key of the server certificate
+          readOnly: true
+          x-mabl-scope: public
+        link_server_image_tag:
+          type: string
+          description: If specified, overrides the default Link Server image tag in this environment
+          readOnly: true
+        link_server_size:
+          $ref: '#/components/schemas/LinkServerSize'
+        termination_time:
+          type: integer
+          description: The time this was terminated at
+          format: int64
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        terminated_by_id:
+          type: string
+          description: The client id that terminated this link labe;l
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: 'The workspace that owns this label, for `workspace`-owned tunnels. Also the identity the legacy Link Tunnel path and the per-label mTLS certs are keyed by. Unset for `company`-owned tunnels (which are mablnet-only) — read `owner_type`/`owner_id` for the canonical scope.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        owner_type:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+        owner_id:
+          type: string
+          description: 'The id of the owning entity — equals `workspace_id` for `workspace` tunnels, the company id for `company` tunnels.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        link_infrastructure_key:
+          type: string
+          description: 'The link infrastructure cluster this tunnel lives on, recorded for personal (`user`-owned) tunnels only. Server-derived at announce from the owner''s workspace associations and folded into the label''s identity (the label is a hash of `machine_identity` and this key), so a placement change produces a new tunnel rather than mutating this one. Absent on workspace- and company-owned labels — their placement always derives live from the owning company''s `link_infrastructure_key` — and on personal labels announced before placement existed, which live on the shared cluster.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        mablnet_tenant_id:
+          type: integer
+          description: '32-bit mablnet tenant identifier assigned at LinkLabel creation. Derived deterministically from a stable hash of `<owner-key>:<label>` — where `<owner-key>` is the workspace id for `workspace` tunnels and `company:<company-id>` for `company` tunnels — truncated into the 32-bit unsigned range, with a defensive collision check against existing LinkLabels — on the unlikely event the hash collides with an already-allocated tenant id, the value is offset (by 1 or a small random delta) until it lands in an unused slot. The chosen value is immutable for the lifetime of the LinkLabel. Used as the `tenantId` in mablnet''s protocol. Populated lazily for legacy labels during the migration cutover; absent until the LinkLabel has been migrated or recreated.
+
+            The legacy mablnet documentation calls this the "tenant id"; mabl''s customer-facing name for the same concept is "Link label", and this field ties the two together.
+
+            '
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        mablnet_tenant_id_hex:
+          type: string
+          description: 'Zero-padded 8-character lowercase hex form of `mablnet_tenant_id`, e.g. `bee85e2b`. Provided for log/grep/observability ergonomics; the numeric and hex forms always agree (both written in the same pass).
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        operator_tunables:
+          $ref: '#/components/schemas/LinkAgentOperatorTunables'
+        operator_tunables_overrides:
+          $ref: '#/components/schemas/LinkAgentOperatorTunables'
+        worker_release_override:
+          $ref: '#/components/schemas/MablnetWorkerReleaseOverride'
+      description: Represents a label used by a Link Agent and Server
+      x-dao-apply-nulls: true
+    MablnetRolloutStage:
+      required:
+      - percent
+      - since_ms
+      type: object
+      properties:
+        percent:
+          type: integer
+          description: Target rolled-out percentage at this stage (0–100).
+          format: int32
+        since_ms:
+          type: integer
+          description: Milliseconds after `published_at` at which this stage becomes active.
+          format: int64
+      description: One stage of a staged rollout — `percent` of Hosts get the current version once `since_ms` has elapsed.
+    LinkLabelAuthorizationResponse:
+      required:
+      - host_identity
+      - tenant_id
+      - valid_until
+      type: object
+      properties:
+        tenant_id:
+          type: integer
+          description: 'Unsigned 32-bit mablnet tenant identifier for this tunnel (`[0x00000001, 0xFEFFFFFF]`; system-tenant range `0xFFxxxxxx` reserved). Derived from the LinkLabel; see `mablnet-tenant-id-derivation.md in link/mablnet/docs`.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        host_identity:
+          type: string
+          description: 'The `host_id` the caller supplied, echoed back after caller-type-branched validation. Used by the mablnet library for reconnect-grace bookkeeping.
+
+            '
+          x-mabl-scope: public
+        valid_until:
+          type: string
+          description: 'RFC 3339 timestamp marking when this authorization expires. Fixed 1h window (`now + 1h`) regardless of caller type. The caller refreshes before this point via another `POST /link/mablnet/authorize/host`.
+
+            '
+          format: date-time
+          x-mabl-scope: public
+        access:
+          type: string
+          description: 'How much of the tenant this peer may reach once admitted. `full` — every service, subject to the usual tenant and visibility rules. `control_plane` — only services the Host registered as control-plane (the operator RPC surface); a stream to anything the Host advertises on its owner''s behalf, such as SOCKS or probes, is refused by the Host at accept.
+
+            Read off the peer credential''s signed `access` claim, so the decision is the one made at mint time. Always present on this response — unlike the credential claim itself, which is omitted when `full` to keep ordinary credentials byte-identical. **An absent value still means `full`**: it is what an api predating this field returns, and what every api-key join carries. Restriction is opted into, never inferred from absence.
+
+            The Router records this with the Host''s registration and serves it to other Hosts asking `PeerAccessQuery`; see `support-admin-tunnel-access.md in link/mablnet/docs`.
+
+            '
+          enum:
+          - full
+          - control_plane
+          x-mabl-scope: public
+      description: 'Authorization decision returned to Link Router on a successful call. Maps directly to the mablnet protocol''s `AuthenticatedHost` value.
+
+        '
+      x-mabl-scope: public
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    MablnetFleetOperatorSessionRequest:
+      type: object
+      properties:
+        label:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+          description: 'Optional audit / host-id readability label for the session (e.g. an incident id). Defaults server-side when omitted. Does not bind the session to any customer tunnel.
+
+            '
+        infrastructure_key:
+          pattern: ^[a-z]([a-z0-9-]{0,10}[a-z0-9])$
+          type: string
+          description: 'The link infrastructure key of the cluster whose fleet this session operates (`mabl` when omitted — the shared cluster). The minted operator token carries it as its `infrastructure_key` claim, and a Router only accepts fleet tokens naming its own cluster — so operating a dedicated customer''s fleet requires minting against that cluster''s key.
+
+            '
+      description: 'Request body for `POST /link/mablnet/authorize/operator/fleet`. A fleet operator session operates on the Link Router fleet itself, not a customer tunnel, so it takes no `workspace_id` — both minted artifacts bind to the fleet sentinel workspace. The only field is an optional audit label; the api defaults it when absent.
+
+        '
+    LinkLabelAuthorizationRequest:
+      type: object
+      properties:
+        peer_credential:
+          type: string
+          description: 'Base64 of the verbatim Ed25519-signed peer JOIN credential blob (`{role: "peer", sub, workspace_id, label, host_id, issued_at, expires_at, nonce, signature}` as minted). Present only on the peer path; its presence selects that path.
+
+            '
+          x-mabl-scope: public
+        owner_type:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+        owner_id:
+          type: string
+          description: 'The id of the owning entity — a workspace id when `owner_type` is `workspace`, a company id when `company`. Cross-checked against the auth principal: an api-key caller must be scoped to this workspace (or to a company that owns it, or — for a company owner — to a workspace within that company); a user-OAuth caller must be able to modify it. Required on the api-key path.
+
+            '
+          x-mabl-scope: public
+        label:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+          description: 'The Link Label name within the owner (the customer-facing "tunnel name"). `(owner_type, owner_id, label)` uniquely identifies a tunnel; multiple Hosts can be in the same tunnel concurrently. Required on the api-key path.
+
+            '
+          x-mabl-scope: public
+        host_id:
+          maxLength: 128
+          minLength: 1
+          type: string
+          description: 'Per-Host-instance identifier the caller advertises. For `link_agent` keys this is composite — `<link-agent-id>:<host-bundle-version>` — and the `LinkAgent.id` prefix (the segment before the first `:`, or the whole value when there is none) MUST match an active `LinkAgent.id` in `(workspace_id, label)`; the version suffix is accepted and echoed so each host-bundle generation is a distinct Host. For `execution` keys and user OAuth callers this is validated for shape only (UUID-like or `la-`-prefixed mabl uid, ≤128 chars). Echoed back as `host_identity` in the response.
+
+            '
+          x-mabl-scope: public
+        issued_at:
+          type: string
+          description: 'RFC 3339 timestamp when the caller constructed this blob. Rejected if more than ±5 minutes from server time (sliding-window replay bound).
+
+            '
+          format: date-time
+          x-mabl-scope: public
+        nonce:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: '16 random bytes from `SecureRandom`, hex-encoded (32 chars). One-shot uniqueness guard; the server-side cache rejects repeats within a 10 minute window per auth principal.
+
+            '
+          x-mabl-scope: public
+        router_infrastructure_key:
+          type: string
+          description: 'The link infrastructure key of the Router forwarding this JOIN (its LINK_ROUTER_INFRA_KEY — `mabl` for the shared cluster, the customer key for a dedicated cluster). When present, the api enforces cluster exclusivity for BOTH credential paths: the caller-tenant''s resolved key must equal this value or the JOIN is denied (a dedicated company''s tunnels cannot ride the shared cluster, and nobody outside the company can join its dedicated cluster). Absent on Routers that predate key-reporting — the check is skipped, which is correct only while such Routers exist; see dedicated-link-infra.md in link/mablnet/docs.
+
+            '
+          x-mabl-scope: public
+      description: 'Authorization request Link Router forwards to this endpoint for a mablnet carrier-join. Spec and rationale: `mablnet-client-authorization.md in link/mablnet/docs`.
+
+        Two credential types share this schema, discriminated by the presence of `peer_credential`:
+
+        1. `peer_credential` absent — the legacy api-key path. `api_key` flows in the `Authorization: Basic` header; the body carries `owner_type`, `owner_id`, `label`, `host_id`, `issued_at`, `nonce` (all required for this path). Validated against the owner''s API keys.
+
+        2. `peer_credential` present — an Ed25519-signed credential minted by `/link/mablnet/authorize/operator/tenant` or `/link/mablnet/authorize/peer`, forwarded verbatim as base64 of the exact `HostCredentials` bytes the peer presented at JOIN. The signature is verified over the blob''s own canonical body — never over fields reconstructed from this request — and every peer attribute (workspace, label, host id, expiry) is read from the verified blob; the other properties in this schema are ignored for this path. (Fleet operator peer credentials are verified Router-side, not here — they never reach this endpoint.) See `mablnet-client-authorization.md in link/mablnet/docs` § Operator credentials.
+
+        '
+      x-mabl-scope: public
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

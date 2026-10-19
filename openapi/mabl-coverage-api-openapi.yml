@@ -1,0 +1,1148 @@
+openapi: 3.2.0
+info:
+  title: mabl Coverage API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Coverage
+paths:
+  /test/coverage:
+    get:
+      tags:
+      - Coverage
+      summary: Query test coverage
+      description: Used to query test coverage/importance measures in terms of app places (URL patterns)
+      operationId: queryCoverage
+      parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace id to query for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: environment_id
+        in: query
+        description: Environment id filter
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Application id filter - only supported when use_cache is true and a coverage snapshot exists
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: url_host_filter
+        in: query
+        description: URL host (contains match) filter
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: url_path_filter
+        in: query
+        description: URL path (contains match) filter
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: coverage_days
+        in: query
+        description: Number of days to look back in calculating coverage measures
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 30
+          minimum: 1
+          type: integer
+          format: int32
+          default: 14
+      - name: sort_by
+        in: query
+        description: Coverage or importance measure to use in sorting query results
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - journey_count
+          - assertion_count
+          - interaction_count
+          - incoming_links_count
+          - depth_from_root_page
+          - dom_interactive_elements_count
+          - speed_index
+          - usage_unique_users
+          - usage_total_visits
+          default: interaction_count
+      - name: sort_order
+        in: query
+        description: Query result sort order, used with
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: desc
+      - name: kms_unsupported
+        in: query
+        description: KMS file download unsupported in client location
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: use_cache
+        in: query
+        description: Return results cached in snapshot tables
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of app place coverage stats (test coverage/importance measures for each URL-pattern place) matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Coverage
+  /test/coverage/refresh:
+    post:
+      tags:
+      - Coverage
+      summary: Create a request to refresh coverage stats
+      description: Called to request a refresh of test coverage/importance measures
+      operationId: refreshCoverage
+      requestBody:
+        description: Workspace id to refresh stats for
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoverageRefresh'
+        required: true
+      responses:
+        '201':
+          description: The refresh request that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageRefresh'
+        '400':
+          description: Invalid request was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: Missing or invalid API token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Given token is not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::Coverage
+  /test/coverage/place:
+    get:
+      tags:
+      - Coverage
+      summary: Query test coverage detail
+      description: Used to query test coverage/importance details for a specific app place (URL pattern)
+      operationId: queryCoverageDetail
+      parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace id to query for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: path_pattern
+        in: query
+        description: The URL path pattern/template for app place of interest
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: host_pattern
+        in: query
+        description: The URL hostname pattern/template for app place of interest
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: kms_unsupported
+        in: query
+        description: KMS file download unsupported in client location
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: The coverage/importance details for the given app place (URL pattern)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageDetail'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No matching URLs found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Coverage
+  /test/coverage/journey/{journey_invariant_id}:
+    get:
+      tags:
+      - Coverage
+      summary: Query test coverage for a journey
+      description: Used to query test coverage metrics in terms of URLs and partial URLs associated with a specific test (invariant)
+      operationId: queryCoverageByTest
+      parameters:
+      - name: journey_invariant_id
+        in: path
+        description: Restricts the query to locations associated with the given test (invariant) ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Coverage
+  /test/coverage/workspace/{workspace_id}/summary:
+    get:
+      tags:
+      - Coverage
+      summary: Query summary information on test coverage for a workspace
+      description: Used to query test coverage summary measures (current values and history) for a workspace.
+      operationId: queryCoverageSummary
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Query summary/history for the given workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Application id filter - only supported when use_cache is true and a coverage snapshot exists
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: coverage_days
+        in: query
+        description: Number of days to calculate history of summary measures.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 14
+          minimum: 0
+          type: integer
+          format: int32
+          default: 14
+      - name: use_cache
+        in: query
+        description: Return results calculated from cached coverage data
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageSummaryQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Coverage
+  /test/coverage/workspace/{workspace_id}/exclusions:
+    get:
+      tags:
+      - Coverage
+      summary: Get all exclusions for a workspace
+      description: Query for all coverage exclusions for a workspace
+      operationId: getAllExclusions
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Query coverage exclusions for the given workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 10
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageExclusionsResult'
+        '404':
+          description: Invalid or missing workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Coverage
+    post:
+      tags:
+      - Coverage
+      summary: Create a new exclusion for a workspace
+      operationId: createOrUpdateExclusion
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Create a new coverage exclusion for the given workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The coverage exclusion to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoverageExclusion'
+        required: true
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageExclusion'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '404':
+          description: Invalid or missing workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Coverage
+  /test/coverage/workspace/{workspace_id}/exclusions/{id}:
+    get:
+      tags:
+      - Coverage
+      summary: Get an exclusion for a workspace
+      description: Get one exclusion for a workspace
+      operationId: getExclusion
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Get one exclusion for the given workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: The ID of the exclusion
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageExclusion'
+        '404':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Coverage
+    patch:
+      tags:
+      - Coverage
+      summary: Update a coverage exclusion
+      operationId: updateExclusion
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Create a new coverage exclusion for the given workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: The ID of the exclusion
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The coverage exclusion to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoverageExclusion'
+        required: true
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageExclusion'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '404':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Coverage
+  /test/coverage/workspace/{workspace_id}/sources:
+    get:
+      tags:
+      - Coverage
+      summary: Query coverage sources currently in use
+      description: Used to query test coverage/importance sources currently being used in a workspace
+      operationId: queryCoverageSources
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to get available coverage data sources for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The coverage/importance data sources for the workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageCurrentSources'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Coverage
+  /test/coverage/workspace/{workspace_id}/application/{application_id}/pageGroups:
+    get:
+      tags:
+      - Coverage
+      summary: Get the set of page groups for an application in a workspace
+      operationId: getPageGroup
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Query coverage page groups for the given workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: application_id
+        in: path
+        description: Query coverage page groups for the given application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 10
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoveragePageGroup'
+        '404':
+          description: Invalid or missing workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Coverage
+    post:
+      tags:
+      - Coverage
+      summary: Create a new or updates the existing page group for an application in a…
+      description: Create a new or updates the existing page group for an application in a workspace
+      operationId: createOrUpdatePageGroup
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Create a new coverage page group for the given workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: application_id
+        in: path
+        description: Create a new coverage page group for the given application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The coverage page group to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoveragePageGroup'
+        required: true
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoveragePageGroup'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '404':
+          description: Invalid or missing workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Coverage
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    CoverageSummaryQueryResult:
+      type: object
+      properties:
+        coverageSummary:
+          $ref: '#/components/schemas/CoverageSummaryStats'
+        coverageSummaryHistory:
+          type: array
+          description: A time series of coverage summaries
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/CoverageSummaryStats'
+    CoverageDetailLatestRunsByTest:
+      type: object
+      properties:
+        journey_invariant_id:
+          type: string
+          description: Test (invariant) ID for a mablscript test covering this app place
+        journey_run_id:
+          type: string
+          description: Test run ID for most recent run of this journey that observed this app place
+        flow_index:
+          type: integer
+          description: Index of flow (execution) for earliest observation of this app place in this test run
+          format: int64
+        step_index:
+          type: integer
+          description: Index of step (execution) within flow for earliest observation of this app place in this test run
+          format: int64
+        run_start_time:
+          type: integer
+          description: The start time of this test run
+          format: int64
+      description: List of latest run/observation info per (mablscript) test covering this app place
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    CoverageQueryResult:
+      type: object
+      properties:
+        coverageDetails:
+          type: array
+          description: Coverage details for each app place matching query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/CoverageDetail'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+        cache_used:
+          type: boolean
+          description: Whether results were read from cache
+          readOnly: true
+        cache_updated_time:
+          type: integer
+          description: Time when the cache was updated
+          format: int64
+    CoverageExclusionsResult:
+      type: object
+      properties:
+        exclusions:
+          type: array
+          description: A list of coverage exclusions
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/CoverageExclusion'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    CoverageExclusion:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the coverage exclusion
+          readOnly: true
+        workspace_id:
+          type: string
+          description: The ID of the workspace to which this exclusion applies
+          readOnly: true
+        host_pattern:
+          type: string
+          description: The host name of the site to ignore
+        path_patterns:
+          type: array
+          description: The path/subpaths to ignore
+          items:
+            type: string
+        is_enabled:
+          type: boolean
+          description: Whether the exclusion is in effect
+          default: true
+        last_updated_time:
+          type: integer
+          description: Time at which the exclusion was last updated
+          format: int64
+          readOnly: true
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this exclusion
+          readOnly: true
+        created_time:
+          type: integer
+          description: Time at which the exclusion was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this exclusion
+          readOnly: true
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    CoverageRefresh:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the refresh request
+          readOnly: true
+        created_time:
+          type: integer
+          description: Time at which the refresh request was created
+          format: int64
+          readOnly: true
+        workspace_id:
+          type: string
+          description: The ID of the workspace to which this app place applies
+        cloud_safe_id:
+          type: string
+          description: Cloud safe ID representation of the workspace (e.g. GCP/email/Kubernetes safe)
+          readOnly: true
+    CoverageSummaryStats:
+      type: object
+      properties:
+        time_interval_start:
+          type: integer
+          description: Start of the time interval these coverage stats are calculated for (in epoch milliseconds)
+          format: int64
+        time_interval_end:
+          type: integer
+          description: Time point these coverage stats represent; specifically, the end of the time interval these coverage stats are calculated for (in epoch milliseconds)
+          format: int64
+        total_journey_covered_pages:
+          type: integer
+          description: Total number of distinct pages covered by at least one journey run in the corresponding time range
+          format: int64
+        total_known_pages:
+          type: integer
+          description: Total number of distinct pages known based on observations in the corresponding time range (e.g., from mablscript journey runs, link crawler runs, and end-user usage data)
+          format: int64
+      description: Coverage summary for a particular point in time, based on data for some time range ending at that point in time
+    CoveragePageGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the coverage page group
+          readOnly: true
+        workspace_id:
+          type: string
+          description: The ID of the workspace to which this page group applies
+          readOnly: true
+        application_id:
+          type: string
+          description: The ID of the application to which this page group applies
+          readOnly: true
+        path_patterns:
+          type: array
+          description: The page group to apply to coverage clustering
+          items:
+            type: string
+        is_enabled:
+          type: boolean
+          description: Whether the page group is in effect
+          default: true
+        last_updated_time:
+          type: integer
+          description: Time at which the page group was last updated
+          format: int64
+          readOnly: true
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this page group
+          readOnly: true
+        created_time:
+          type: integer
+          description: Time at which the page group was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this page group
+          readOnly: true
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+    CoverageSource:
+      type: object
+      properties:
+        source:
+          type: string
+        last_ingested_time:
+          type: integer
+          description: the last time data was ingested into coverage from this source.  For sources where data is processed by coverage periodically, this is the time that data was ingested into coverage, not necessarily ingested into mabl.
+          format: int64
+      description: a single coverage source
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    CoverageCurrentSources:
+      type: object
+      properties:
+        sources:
+          type: array
+          description: Array of data sources used by coverage
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/CoverageSource'
+      description: An array of data sources under use by coverage
+    CoverageDetail:
+      type: object
+      properties:
+        host_pattern:
+          type: string
+          description: The URL hostname pattern/template that partially defines this app place
+        path_pattern:
+          type: string
+          description: The URL path pattern/template that partially defines this app place
+        application_id:
+          type: string
+          description: The ID of the application to which this app place applies
+        application_name:
+          type: string
+          description: The name of the application to which this app place applies
+        workspace_id:
+          type: string
+          description: The ID of the workspace to which this app place applies
+        page_id:
+          type: string
+          description: The ID of the template page unique to the combination of workspace_id, host_pattern and path_pattern
+        coverage_measures:
+          type: object
+          properties:
+            latest_observation_time:
+              type: integer
+              description: The most recent time at which this app place was observed in a journey run used in calculating coverage measures
+              format: int64
+            earliest_observation_time:
+              type: integer
+              description: The earliest time at which this app place was observed in a journey run used in calculating coverage measures
+              format: int64
+            journey_count:
+              type: integer
+              description: Count of journeys (invariants) that have observed this app place in recent journey runs
+              format: int64
+            interaction_count:
+              type: integer
+              description: Count of elements that have been interacted with at this app place in recent journey runs
+              format: int64
+            assertion_count:
+              type: integer
+              description: Count of assertions that have executed at this app place in recent journey runs
+              format: int64
+          description: Description of coverage for this app place based on recent journey runs
+        importance_measures:
+          type: object
+          properties:
+            latest_observation_time:
+              type: integer
+              description: The most recent time at which this app place was observed in a journey run used in calculating coverage measures
+              format: int64
+            earliest_observation_time:
+              type: integer
+              description: The earliest time at which this app place was observed in a journey run used in calculating coverage measures
+              format: int64
+            incoming_links_count:
+              type: integer
+              description: Maximum count of links to this place observed from recent link crawler runs
+              format: int64
+            depth_from_root_page:
+              type: integer
+              description: Minimum (link) depth from root/starting page observed from recent link crawler runs
+              format: int64
+            dom_interactive_elements_count:
+              type: integer
+              description: Maximum count of likely-interactive elements in the page based on analysis of the DOM from recent runs
+              format: int64
+            usage_unique_users:
+              type: integer
+              description: Average number of unique users visiting the page over a rolling 24 hour window
+              format: int64
+            usage_total_visits:
+              type: integer
+              description: Average number of total user events relating to the page over a rolling 24 hour window
+              format: int64
+            speed_index:
+              type: integer
+              description: Average speed index in milliseconds to load this app place in recent journey runs
+              format: int64
+          description: Description of importance/complexity for this app place based on link crawler runs or external data
+        distinct_url_count:
+          type: integer
+          description: The number of distinct URLs that have been observed and correspond this app place (i.e., match the host and path patterns defining it)
+          format: int64
+        latest_screenshot:
+          $ref: '#/components/schemas/ImageUrls'
+        latest_screenshot_unsigned_uri:
+          type: string
+          description: Unsigned GCS URI for latest screenshot of this app place, if any
+        latest_runs_by_journey:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoverageDetailLatestRunsByTest'
+        page_first_seen_time:
+          type: integer
+          description: The time page was first detected [epoch milliseconds]
+          format: int64
+    ImageUrls:
+      type: object
+      properties:
+        fullImageUrl:
+          type: string
+          description: signed url to the full image
+        thumbnailImageUrl:
+          type: string
+          description: signed url to the thumbnail image
+      description: Signed image urls for a given base image
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

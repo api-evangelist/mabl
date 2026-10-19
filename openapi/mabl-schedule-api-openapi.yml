@@ -1,0 +1,1747 @@
+openapi: 3.2.0
+info:
+  title: mabl Schedule API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Schedule
+paths:
+  /schedule/runPolicy:
+    get:
+      tags:
+      - Schedule
+      summary: Retrieve a set of run policies by query
+      description: Used to query run policies
+      operationId: queryRunPolicies
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: deployment_id
+        in: query
+        description: The deployment id to query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_id
+        in: query
+        description: The test id to filter by; returns only plans that include this test. When supplied, organization_id is required (returns 400 otherwise) - tests are workspace-scoped so the workspace context is needed to use the indexed lookup.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: Return only plans whose name equals this value, ignoring case and surrounding whitespace. Applied in memory after a full workspace scan, so the response contains every match up to `limit` and the returned cursor is empty; `truncated` is true when `limit` cut the match set short. Cannot be combined with cursor (returns 400) - the scan has to start at the beginning to see every match.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 500
+          type: string
+      - name: include_labels
+        in: query
+        description: Return only plans carrying at least one of these labels, matched ignoring case and surrounding whitespace. All plans are considered when it is absent. Applied in memory after a full workspace scan on the same terms as `name`, so the returned cursor is empty, `truncated` is true when `limit` cut the match set short, and it cannot be combined with cursor (returns 400).
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+          default: []
+      responses:
+        '200':
+          description: Array of run policies matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanQueryResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Plan
+    post:
+      tags:
+      - Schedule
+      summary: Create a Run Policy
+      description: Creates a Run Policy that describes how and when to run a set of tests
+      operationId: createRunPolicy
+      requestBody:
+        description: The run policy to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Plan'
+        required: true
+      responses:
+        '201':
+          description: The complete run policy that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '400':
+          description: Invalid run policy was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Plan
+  /schedule/runPolicy/default:
+    post:
+      tags:
+      - Schedule
+      summary: Create default Run Policies
+      description: Creates default Run Policies
+      operationId: createDefaultRunPolicies
+      requestBody:
+        description: A template for the default run policies
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DefaultPlan'
+        required: true
+      responses:
+        '201':
+          description: The complete run policy that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunPoliciesResult'
+        '400':
+          description: Invalid run policy was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Plan
+  /schedule/runPolicy/{id}/migrate/maybeOnlyEncryptOnce:
+    get:
+      tags:
+      - Schedule
+      summary: Migrate Double Encrypted policy
+      description: Migrate DataTable associations from plan journey configs to journeys
+      operationId: maybeOnlyEncryptOnce
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the policy to migrate
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The operation was successful
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Plan
+  /schedule/runPolicy/{id}:
+    get:
+      tags:
+      - Schedule
+      summary: Retrieve Run Policy
+      description: Used to retrieve an existing run policy
+      operationId: getRunPolicy
+      parameters:
+      - name: id
+        in: path
+        description: The run policy ID to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: include_tcm_bindings
+        in: query
+        description: When true, include the plan's external TCM bindings in the response
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: The run policy that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '404':
+          description: Run Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Plan
+    delete:
+      tags:
+      - Schedule
+      summary: Remove Run Policy
+      description: Used to remove existing run policies
+      operationId: removeRunPolicy
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the run policy to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The run policy that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '404':
+          description: Run Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Plan
+    patch:
+      tags:
+      - Schedule
+      summary: Update Run Policy
+      description: Used to update existing run Policies
+      operationId: updateRunPolicy
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the Run Policy to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The Run Policy fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Plan'
+        required: true
+      responses:
+        '200':
+          description: The updated run policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '404':
+          description: Run Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Plan
+  /recover/runPolicy/{run_policy_id}:
+    post:
+      tags:
+      - Schedule
+      summary: Recover a deleted run policy. Admin only
+      description: Recovers a deleted run policy if it has not been fully scrubbed yet.
+      operationId: recoverRunPolicy
+      parameters:
+      - name: run_policy_id
+        in: path
+        description: The id of the policy to recover
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '201':
+          description: The complete run policy that was recovered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '404':
+          description: Run policy not found.  It was either hard deleted or never existed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Recover::Plan
+  /schedule/report:
+    get:
+      tags:
+      - Schedule
+      summary: Retrieve a set of reports by query
+      description: Used to query reports
+      operationId: queryReports
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_id
+        in: query
+        description: The plan id to query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: journey_id
+        in: query
+        description: The journey id to query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: report_type
+        in: query
+        description: The type of report summary (plan or workspace). Default is plan_summary
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of reports matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportQueryResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ScheduledReport
+    post:
+      tags:
+      - Schedule
+      summary: Create a Report
+      description: Creates a Report that describes how and when to run a set of tests
+      operationId: createReport
+      requestBody:
+        description: The report to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Report'
+        required: true
+      responses:
+        '201':
+          description: The complete report that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '400':
+          description: Invalid report was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::ScheduledReport
+  /schedule/report/own:
+    get:
+      tags:
+      - Schedule
+      summary: Retrieve a set of reports created by the user
+      description: Used to query user's own reports
+      operationId: queryOwnReports
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: report_type
+        in: query
+        description: The type of report summary (plan or workspace). Default is plan_summary
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of reports matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportQueryResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ScheduledReport
+  /schedule/report/{id}:
+    get:
+      tags:
+      - Schedule
+      summary: Retrieve Report
+      description: Used to retrieve an existing report
+      operationId: getReport
+      parameters:
+      - name: id
+        in: path
+        description: The report ID to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The report that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ScheduledReport
+    delete:
+      tags:
+      - Schedule
+      summary: Remove Report
+      description: Used to remove existing report
+      operationId: removeReport
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the report to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The report that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::ScheduledReport
+    patch:
+      tags:
+      - Schedule
+      summary: Update Report
+      description: Used to update existing report
+      operationId: updateReport
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the report to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The report fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Report'
+        required: true
+      responses:
+        '200':
+          description: The updated report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::ScheduledReport
+  /cron/scheduledPolicies/{shard}:
+    get:
+      tags:
+      - Schedule
+      summary: Run scheduled policies
+      description: Used to retrieve an existing run policy
+      operationId: runScheduledPolicies
+      parameters:
+      - name: shard
+        in: path
+        description: The run policy shard to run scheduled tests over.  Defines a subset of all run policies
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Succesful scheduling
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::Plan
+  /cron/testRun/sweeper:
+    get:
+      tags:
+      - Schedule
+      summary: Run scheduled policies
+      description: Used to look for queued tests that were never executed and reschedule them
+      operationId: rescheduleUnstartedTests
+      responses:
+        '204':
+          description: Successful run
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::Plan
+  /schedule/runPolicy/labels:
+    get:
+      tags:
+      - Schedule
+      summary: Retrieve the set of run policy labels
+      description: Used to query run policy labels
+      operationId: queryRunPolicyLabels
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of labels matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanLabelQueryResult'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Plan
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    Label:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: name
+          x-mabl-scope: public
+        color:
+          type: string
+          description: color
+    ExecutionParameter:
+      required:
+      - type
+      - value
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of this parameter
+          enum:
+          - basic_auth
+          - credentials
+          - ignore_variables
+          - value
+          - variable_row
+          - variables
+        name:
+          type: string
+          description: The name of this parameter
+        value:
+          type: string
+          description: The value of this parameter
+        argument:
+          type: string
+          description: Additional text data for this parameter.
+        argumentObject:
+          description: Additional data for this parameter.
+          oneOf:
+          - $ref: '#/components/schemas/DynamicScenarioSelection'
+          - $ref: '#/components/schemas/StaticScenarioSelection'
+      description: A parameter that is passed during execution of a Plan
+    PlanLabelQueryResult:
+      type: object
+      properties:
+        labels:
+          type: array
+          description: All run labels that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Label'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for run policy label query results
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    Plan:
+      type: object
+      properties:
+        id:
+          maxLength: 50
+          type: string
+          description: Plan id. Set by system.
+          x-mabl-public: true
+        cloud_safe_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP/email/Kubernetes safe)
+        organization_id:
+          type: string
+          description: DEPRECATED - use workspace_id instead
+        workspace_id:
+          type: string
+          description: The workspace id this plan belongs to
+          x-mabl-public: true
+        plan_type:
+          type: string
+          description: The type of plan
+          enum:
+          - functional
+          - performance
+          x-mabl-public: true
+        plan_source:
+          $ref: '#/components/schemas/TestSource'
+        ref_id:
+          type: string
+          description: Reference id to this plan in another system
+          x-mabl-scope: public
+        deployment_id:
+          type: string
+          description: DEPRECATED - use deployment_ids - The deployment ID associated with this run policy
+        deployment_ids:
+          type: array
+          description: The deployment IDs associated with this run policy
+          items:
+            type: string
+        uri:
+          type: string
+          description: DEPRECATED - Alias for web_url
+        web_url:
+          type: string
+          description: Optional URL override for web deployments
+        api_url:
+          type: string
+          description: Optional URL override for API deployments
+        link_agent_label:
+          type: string
+          description: DEPRECATED - use link_agent_labels
+          deprecated: true
+        link_agent_labels:
+          type: array
+          description: Optional Link Agent Labels override for the deployment
+          items:
+            type: string
+        link_bypass_mabl_proxy:
+          type: boolean
+          description: Optional link_bypass_mabl_proxy override for the deployment (mabl link only)
+        use_personal_link_agent:
+          type: boolean
+          description: 'Route this run''s test traffic through the triggering user''s own personal Link 3.0 tunnels instead of the environment''s configured Link tunnels: when any personal tunnel is used, it is the run''s only Link path. Overrides the deployment''s use_personal_link_agent for this run. The owner is the user who triggers the run, resolved server-side — there is no id to pass. By default the run stripes across every live personal tunnel the user has (e.g. one per machine); set personal_link_tunnel_label to pin it to one. When no personal tunnel can be used, the run proceeds over its normal network path rather than failing.
+
+            '
+        personal_link_tunnel_label:
+          type: string
+          description: 'Restrict use_personal_link_agent to a single personal tunnel by its (server-derived) Link label, instead of striping across all of the user''s live personal tunnels. Ignored when use_personal_link_agent is not set.
+
+            '
+        tcm_bindings:
+          type: array
+          description: The plan's external TCM bindings. Populated at read time on single plan reads when include_tcm_bindings is true; empty if the plan has no bindings; not persisted.
+          items:
+            $ref: '#/components/schemas/XrayEntityBinding'
+          x-dao-derived: true
+        credentials_id:
+          type: string
+          description: Optional ID of the credentials object to use with this run policy
+        credentials_required:
+          type: boolean
+          description: Flag indicating whether or not credentials are required for this run policy
+        http_auth_credentials_id:
+          type: string
+          description: Optional ID of credentials to pass in the HTTP request (as opposed to interactive login credentials)
+        http_auth_credentials_required:
+          type: boolean
+          description: Flag indicating whether or not HTTP auth credentials are required for this run policy
+        http_headers:
+          type: array
+          description: Custom HTTP headers to send with all requests
+          items:
+            $ref: '#/components/schemas/HttpHeader'
+        http_headers_required:
+          type: boolean
+          description: Flag indicating whether or not custom HTTP headers are required for this run policy
+        enabled:
+          type: boolean
+          description: Whether this run policy is currently enabled
+        generated:
+          type: boolean
+          description: Whether this run policy was automatically generated by the platform as opposed to being entered by a user
+        default:
+          type: boolean
+          description: Whether this is the default run policy
+        ephemeral:
+          type: boolean
+          description: Whether this is an ephemeral run policy created for an ad hoc plan run
+        created_time:
+          type: integer
+          description: time the run policy was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this run policy
+        last_updated_time:
+          type: integer
+          description: time the run policy object was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this run policy
+        name:
+          type: string
+          description: The display name of the run policy
+        description:
+          type: string
+          description: Detailed description of this run policy
+        journeys:
+          type: array
+          description: DEPRECATED - use execution_stages
+          items:
+            $ref: '#/components/schemas/TestConfiguration'
+        test_invariant_ids:
+          type: array
+          description: Server-maintained denormalized list of invariant ids of every test referenced anywhere in this plan's execution_stages. Used to index plan-by-test lookups in Datastore (which cannot index doubly-nested array paths). Do not set from clients - any value provided will be overwritten on save.
+          items:
+            type: string
+        page_load_wait:
+          type: string
+          description: The amount of time to wait after page loads, if supported by the runtime.
+          enum:
+          - FAST
+          - NORMAL
+          - SLOW
+          - SLOWER
+          - INHERIT
+          x-force-uppercase: true
+        flow_variants:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+          description: Any specific flow variants that should be used when running the plan.  Any flow variants set here will be used instead of the head version when the given flow is encountered for this plan
+        journeys_ddt_migration_backup:
+          type: array
+          description: Backup of journeys list to prevent data loss in case of failed migration
+          items:
+            $ref: '#/components/schemas/TestConfiguration'
+        parameters:
+          type: array
+          description: Execution parameters that are shared across all Tests in the Plan
+          items:
+            $ref: '#/components/schemas/ExecutionParameter'
+        triggers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trigger'
+        browser_type:
+          type: string
+          description: DEPRECATED - The browser that should be used when executing journeys, use browser_types
+          deprecated: true
+          enum:
+          - chrome
+          - edge
+          - firefox
+          - internet_explorer
+          - safari
+          - webkit
+        browser_types:
+          type: array
+          description: The browser that should be used when executing journeys
+          items:
+            type: string
+        mobile_device_ids:
+          type: array
+          description: Devices to use for mobile testing
+          items:
+            type: string
+        emulation_mode:
+          type: string
+          description: Desktop (default) or mobile device emulation. When mobile is specified, browser_types is ignored in favor of web_emulation_types.
+          enum:
+          - desktop
+          - mobile_web
+          default: desktop
+        web_emulation_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebEmulationConfiguration'
+        execution_runner_type:
+          type: string
+          description: '[Deprecated] Test execution runner to use, optional'
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+        browser_runner_types:
+          $ref: '#/components/schemas/PlanBrowserRunnerTypes'
+        nodejs_runtime_variant:
+          type: string
+          description: Override the Node.js execution runtime variant, if v2 runtime in use
+          enum:
+          - playwright
+          - puppeteer
+        tags:
+          type: array
+          description: Tag objects associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        labels:
+          type: array
+          description: User provided labels
+          items:
+            $ref: '#/components/schemas/Label'
+        run_multiplier:
+          minimum: 1
+          type: integer
+          description: if > 1, will start multiple copies of each journey run when this plan runs
+          format: int32
+        debug_level:
+          type: integer
+          description: The debugging level to use for the test run.  Higher debug levels include more debug information in the run. Default is zero and runs with standard debugging.
+        excluded_action_attributes:
+          type: array
+          description: Exclude action attributes during execution
+          items:
+            $ref: '#/components/schemas/ActionAttributeType'
+        excluded_observers:
+          type: array
+          description: Exclude specific observers during execution
+          items:
+            type: string
+        execution_stages:
+          type: array
+          description: Describes how journey should be executed
+          items:
+            $ref: '#/components/schemas/ExecutionStage'
+        retry_on_failure:
+          type: boolean
+          description: If true, runs of this plan will automatically be retried if any journey run fails
+        retry_failed_journeys_only:
+          type: boolean
+          description: If true, will only retry journeys that had failed journey runs
+        refresh_and_retry_failed_step_mode:
+          description: Runtime Recovery Refresh mode for runs of this plan; off when omitted.
+          allOf:
+          - $ref: '#/components/schemas/RefreshAndRetryFailedStepModeEnum'
+        visual_change_baseline_overwrite:
+          type: object
+          properties:
+            environment_id:
+              type: string
+              description: The ID of the environment that will serve as baseline for visual comparison
+            plan_id:
+              type: string
+              description: The ID of the plan that will serve as baseline for visual comparison
+          description: values used to substitute when looking for the baseline to do visual comparison
+        use_visual_models:
+          type: boolean
+          description: If true, use and maintain models for visual change detection
+        send_mabl_header:
+          type: boolean
+          description: Controls whether or not the x-mabl-agent header is sent on requests (can be overridden by test)
+        execution_runner_size:
+          $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+        test_recovery_agent_mode:
+          description: Test Recovery Agent mode for this plan. An explicit value (off/fail_at_end/pass) overrides the workspace-level default for all runs of this plan. Use `inherit` to clear the override and fall back to the workspace default. Omitting the field on update leaves the stored value unchanged.
+          allOf:
+          - $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+        trace_fidelity:
+          description: How much Chrome trace data to capture for runs of this plan. Use `inherit` to fall back to the runtime default; it is also how you clear a previously stored value, since an update merges into what is persisted and a null therefore leaves the stored value alone. Omitting the field on update also leaves it unchanged. A rerun request can override it for one run.
+          allOf:
+          - $ref: '#/components/schemas/TraceFidelityEnum'
+        trace_retention:
+          description: Whether runs of this plan keep the Chrome trace file. Use `inherit` to fall back to the default, `discard`; it is also how you clear a previously stored value, since an update merges into what is persisted and a null therefore leaves the stored value alone. Omitting the field on update also leaves it unchanged. A rerun request can override it for one run.
+          allOf:
+          - $ref: '#/components/schemas/TraceRetentionEnum'
+        localization_options:
+          type: array
+          description: The localization options to use when executing this plan. It's an array to support potential multi-locale testing within one plan, but for now only the first element is used.
+          items:
+            $ref: '#/components/schemas/LocalizationOptions'
+        mobile_app_file_ids:
+          type: object
+          additionalProperties:
+            type: string
+          description: Optional map of mobile platform => mobile app file ID override
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasName
+    RefreshAndRetryFailedStepModeEnum:
+      type: string
+      description: How a plan uses Runtime Recovery Refresh, which reloads the page and re-runs a failed browser step once. `pass` lets the test pass when the re-run passes. `fail_at_end` keeps running from the refreshed page but the step keeps its failure, so the test still fails. `off` never reloads.
+      enum:
+      - 'off'
+      - fail_at_end
+      - pass
+    DeviceScreenDimensions:
+      required:
+      - height
+      - width
+      type: object
+      properties:
+        height:
+          type: integer
+          description: Height (pixels)
+          format: int32
+          x-mabl-scope: public
+        width:
+          type: integer
+          description: Width (pixels)
+          format: int32
+          x-mabl-scope: public
+    RunPoliciesResult:
+      type: object
+      properties:
+        run_policies:
+          type: array
+          description: List of run policies
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Plan'
+      description: result envelope for run policy query results
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    TraceRetentionEnum:
+      type: string
+      description: Whether the Chrome trace file is kept after a run. `keep` makes it available as the `Download step trace` artifact. `discard` publishes the same performance measures when the analysis succeeds; with no file kept there is no fallback, so a failed analysis loses the measure for that step. A run's `inherit` defers to its plan's setting; a plan's `inherit`, like no setting at all, means `discard`.
+      enum:
+      - keep
+      - discard
+      - inherit
+    TestConfiguration:
+      required:
+      - journey_id
+      type: object
+      properties:
+        journey_id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutionParameter'
+      description: Specifies a Test that should be executed as part of a Plan
+    StaticScenarioSelection:
+      required:
+      - count
+      - scenario_ids
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - static
+        scenario_ids:
+          type: array
+          description: The selection scenario IDs
+          items:
+            type: string
+        count:
+          type: integer
+          description: The estimated count of scenarios
+      description: Static scenario selection parameter argument
+    XrayEntityBinding:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/ExternalTcmBinding'
+      - type: object
+        properties:
+          external_entity_key:
+            type: string
+            description: 'Unique key for the associated entity in Xray. NOTE: This is not persisted to the DB. It is a convenience method for the UI.'
+      x-discriminator-existing-property: true
+    TestRecoveryAgentModeEnum:
+      type: string
+      description: Test Recovery Agent mode. Use `inherit` (plan-level only) to defer to the workspace-level default.
+      enum:
+      - 'off'
+      - fail_at_end
+      - pass
+      - inherit
+    DynamicScenarioSelection:
+      required:
+      - count
+      - query
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - dynamic
+        query:
+          type: string
+          description: The user query prompt
+        count:
+          type: integer
+          description: The estimated count of scenarios
+      description: Dynamic scenario selection parameter argument
+    DefaultPlan:
+      required:
+      - application_id
+      - environment_id
+      type: object
+      properties:
+        environment_id:
+          type: string
+          description: The environment ID associated with the run policy
+        application_id:
+          type: string
+          description: The environment ID associated with the run policy
+        credentials_id:
+          type: string
+          description: Optional ID of the credentials object to use with the run policy
+        uri:
+          type: string
+          description: The URI to use for automated tests
+      description: Container for fields required to create default deployment, run policy, and test scripts
+    ExternalTcmBinding:
+      type: object
+      properties:
+        external_tcm_binding_id:
+          type: string
+          description: Unique identifier for the binding
+        workspace_id:
+          type: string
+          description: Unique identifier for the associated Workspace
+        workspace_integration_id:
+          type: string
+          description: Unique identifier for the associated WorkspaceIntegration
+        external_tcm_platform:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        external_entity_id:
+          type: string
+          description: Unique identifier for the associated entity in the external test case management solution
+        mabl_entity_type:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+        mabl_entity_id:
+          type: string
+          description: Unique identifier for the associated mabl entity
+        created_time:
+          type: integer
+          description: Time at which the binding was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this binding
+        auto_sync_enabled:
+          type: boolean
+          description: Per-binding automatic result synchronization setting
+          default: false
+      description: Represents an association between an entity in an external test-case management solution, and a mabl entity
+      discriminator:
+        propertyName: external_tcm_platform
+        mapping:
+          xray: '#/components/schemas/XrayEntityBinding'
+      x-discriminator-existing-property: true
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    ActionAttributeType:
+      type: string
+      description: Action Attribute Types
+      enum:
+      - FINDS_BBOX
+      - IS_MUTATING
+      - NEEDS_BBOX
+      - OBSERVABLE
+    TestSource:
+      type: string
+      description: Where the test lives
+      enum:
+      - mabl_cloud
+      - external
+      - mabl_local
+      - mabl_agent
+      x-mabl-scope: public
+    Trigger:
+      type: object
+      properties:
+        trigger_type:
+          type: string
+          description: The type of trigger
+          enum:
+          - timer
+          - event
+          - schedule
+          - insight
+          - plan_execution
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Properties that are specific to the trigger type
+      description: The various triggers that should kick off an execution of a run policy or report
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of this report
+          readOnly: true
+        created_time:
+          type: integer
+          description: time the report was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this report
+        last_updated_time:
+          type: integer
+          description: time the run policy object was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this report
+        name:
+          type: string
+          description: The display name of the report
+        description:
+          type: string
+          description: Detailed description of this report
+        report_type:
+          type: string
+          description: The type of report
+          enum:
+          - plan_summary
+          - workspace_summary
+        medium:
+          type: string
+          description: The medium we should deliver this report over
+          enum:
+          - email
+        organization_id:
+          type: string
+          description: DEPRECATED - use workspace_id instead
+        workspace_id:
+          type: string
+          description: The workspace id this report relates to
+        plan_id:
+          type: string
+          description: The plan id this report relates to
+        journey_id:
+          type: string
+          description: The journey id this report relates to
+        triggers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trigger'
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        emails:
+          type: array
+          description: Set of emails to receive the plan report
+          items:
+            type: string
+      description: A report specification
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+      - HasOrganizationId
+      - HasWorkspaceId
+    PlanBrowserRunnerTypes:
+      type: object
+      properties:
+        chrome:
+          type: string
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+        firefox:
+          type: string
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+        safari:
+          type: string
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    DeviceEmulation:
+      required:
+      - device_config
+      - orientation
+      type: object
+      properties:
+        device_config:
+          $ref: '#/components/schemas/DeviceEmulationConfiguration'
+        orientation:
+          type: string
+          description: Fixed device orientation
+          enum:
+          - portrait_primary
+          - portrait_secondary
+          - landscape_primary
+          - landscape_secondary
+          x-mabl-scope: public
+      description: Emulation configuration
+    LocalizationOptions:
+      type: object
+      properties:
+        locale:
+          type: string
+          description: The language locale identifier to run the test with, e.g. en-US, jp, etc.
+        timezone_identifier:
+          type: string
+          description: The timezone identifier to run the test with, e.g. America/Los_Angeles, etc.
+      description: Localization-related settings to apply on the browser in browser tests, e.g. timezone, locale. When not specified, cloud tests run with UTC timezone and default locale for the region of the cloud runs. Local runs use the timezone and locale of the machine running the test.
+    MablEntityTypeEnum:
+      type: string
+      description: Types of mabl entities that can be bound to external TCM.
+      enum:
+      - test
+      - test_case
+      - plan
+      - plan_run
+      x-enum-descriptions:
+      - Binds to a mabl Test using its invariant ID.
+      - DEPRECATED. Binds to a TestCase entity. Use 'test' instead.
+      - Binds to a Plan entity.
+      - Binds to a PlanRun entity.
+    WebEmulationConfiguration:
+      required:
+      - browser_type
+      - device_emulation
+      type: object
+      properties:
+        browser_type:
+          type: string
+          description: Browser engine to be used in this emulation
+          enum:
+          - chrome
+          - firefox
+          - webkit
+        device_emulation:
+          $ref: '#/components/schemas/DeviceEmulation'
+      description: Mobile web device emulation configuration
+    ExternalTcmPlatformTypeEnum:
+      type: string
+      description: Supported external test case management platforms
+      enum:
+      - xray
+      - testrail
+      - zephyr
+    ExecutionStage:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of this stage
+        concurrency:
+          type: string
+          description: How journeys should be executed
+          enum:
+          - sequential
+          - parallel
+        concurrency_limit:
+          type: integer
+          description: The maximum number of concurrent test runs for this stage. Only used with parallel execution
+          format: int32
+        always_run_stage:
+          type: boolean
+          description: if true this stage will always run regardless of whether previous stages have passed
+        always_run_journeys:
+          type: boolean
+          description: if true all journeys within this stage will be run even if a preceding journey has failed
+        journeys:
+          type: array
+          description: The journeys included in this stage; if concurrency is sequential they will be executed in this order
+          items:
+            $ref: '#/components/schemas/TestConfiguration'
+        browser_types_override:
+          type: array
+          items:
+            type: string
+        use_browser_types_override:
+          type: boolean
+          description: If true, the browser types in this stage will be used instead of the browser types from the plan
+        run_multiplier_override:
+          minimum: 1
+          type: integer
+          format: int32
+        use_run_multiplier_override:
+          type: boolean
+          description: If true, the run multiplier in this stage will be used instead of the run multiplier from the plan
+        ignore_datatables:
+          type: boolean
+          description: If true, the data tables specified in the journeys in this stage will be ignored
+      description: Describes a stage of plan execution
+    PlanQueryResult:
+      type: object
+      properties:
+        run_policies:
+          type: array
+          description: All run policies that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Plan'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+        truncated:
+          type: boolean
+          description: True when an in-memory filter - `name` or `include_labels` - matched more plans than `limit` allowed. The response carries no cursor, so the remaining matches are only reachable by raising `limit`.
+          readOnly: true
+      description: result envelope for run policy query results
+    ReportQueryResult:
+      type: object
+      properties:
+        reports:
+          type: array
+          description: All reports that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Report'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for report query results
+    DeviceEmulationConfiguration:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: Emulation configuration display name
+          x-mabl-scope: public
+        preset_type:
+          type: string
+          description: Preset device configuration (optional)
+          enum:
+          - blackberry_playbook
+          - blackberry_z30
+          - galaxy_fold
+          - galaxy_note_3
+          - galaxy_note_ii
+          - galaxy_s5
+          - galaxy_s6
+          - galaxy_s8
+          - galaxy_s21
+          - galaxy_s22
+          - galaxy_s23
+          - galaxy_s_iii
+          - galaxy_tab_s7
+          - ipad
+          - ipad_air_2020
+          - ipad_mini
+          - ipad_mini_4
+          - ipad_pro
+          - ipad_ten_point_two
+          - iphone_11_pro_max
+          - iphone_11
+          - iphone_12
+          - iphone_12_pro_max
+          - iphone_13_mini
+          - iphone_13
+          - iphone_13_pro
+          - iphone_13_pro_max
+          - iphone_14
+          - iphone_14_pro
+          - iphone_14_plus
+          - iphone_14_pro_max
+          - iphone_15
+          - iphone_15_plus
+          - iphone_15_pro
+          - iphone_15_pro_max
+          - iphone_4
+          - iphone_5_se
+          - iphone_6_7_8
+          - iphone_6_7_8_plus
+          - iphone_x
+          - jiophone_2
+          - kindle_fire_hdx
+          - laptop_with_hidpi_screen
+          - laptop_with_mdpi_screen
+          - laptop_with_touch
+          - lg_optimus_l70
+          - microsoft_lumia_550
+          - microsoft_lumia_950
+          - moto_g4
+          - nexus_4
+          - nexus_5
+          - nexus_5x
+          - nexus_6
+          - nexus_6p
+          - nexus_7
+          - nexus_10
+          - nokia_lumia_520
+          - nokia_n9
+          - pixel_2
+          - pixel_2_xl
+          - pixel_6
+          - surface_duo
+          x-mabl-scope: public
+        user_agent:
+          type: string
+          description: Client User Agent string
+          x-mabl-scope: public
+        type:
+          type: string
+          description: General device type
+          enum:
+          - phone
+          - tablet
+          - notebook
+          x-mabl-scope: public
+        capabilities:
+          type: array
+          description: Optional device capabilities
+          items:
+            type: string
+            enum:
+            - touch
+            - mobile
+          x-mabl-scope: public
+        screen:
+          type: object
+          properties:
+            device_pixel_ratio:
+              type: number
+              description: Device pixel ratio (may be decimal)
+              format: double
+              x-mabl-scope: public
+            horizontal:
+              $ref: '#/components/schemas/DeviceScreenDimensions'
+            vertical:
+              $ref: '#/components/schemas/DeviceScreenDimensions'
+          description: Screen configuration
+          x-mabl-scope: public
+      description: Emulation configuration
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    HttpHeader:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the header
+          x-mabl-scope: public
+        value:
+          type: string
+          description: The value of the header
+          x-mabl-scope: public
+        log_header_value:
+          type: boolean
+          description: Log the header value in the execution log, if not true only the header name is logged.
+          x-mabl-scope: public
+      description: An HTTP header
+    ExecutionRunnerSizeEnum:
+      type: string
+      description: available runner sizes
+      enum:
+      - x1
+      - x2
+      - x3
+      - x4
+      - x5
+      - x6
+      - small
+      - medium
+      - large
+      - inherit
+    TraceFidelityEnum:
+      type: string
+      description: How much Chrome trace data to capture. `full` records the complete category set, and is what the "Download step trace" artifact contains. `metrics` records only the categories the published performance measures are computed from, so a trace downloaded from a `metrics` run carries the film strip and timeline but not the full set of Chrome records. `inherit` defers to the next level down.
+      enum:
+      - full
+      - metrics
+      - inherit
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

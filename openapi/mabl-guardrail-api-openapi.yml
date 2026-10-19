@@ -1,0 +1,919 @@
+openapi: 3.2.0
+info:
+  title: mabl Guardrail API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Guardrail
+paths:
+  /workspaces/{workspace_id}/guardrails:
+    get:
+      tags:
+      - Guardrail
+      summary: Get a workspace's agent guardrails
+      description: 'Returns the workspace''s guardrail rules with everything needed to render and edit them: the catalog of actions and groups a rule may target, the guardrails mabl applies to each agent type (read-only), and whether the workspace enforces guardrails. The response carries the rules'' revision in its body and in the ETag and x-mabl-entity-version headers; send it back as If-Match when replacing the rules. Readable by any member of the workspace and by mabl global admins.'
+      operationId: getWorkspaceGuardrails
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace whose guardrails are returned.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The workspace's guardrail rules, the catalog, the agent type ceilings and the enforcement state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceGuardrails'
+        '401':
+          description: The request carries no valid credential.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: The caller is not a member of the workspace or a mabl global admin. API keys and agents are always refused.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: private
+      x-mabl-action: Read::Guardrail
+  /workspaces/{workspace_id}/guardrails/rules:
+    put:
+      tags:
+      - Guardrail
+      summary: Replace a workspace's guardrail rules
+      description: 'Replaces the workspace''s guardrail rules with the given list, which becomes the whole list, and sets their mode when the body names one. If-Match must carry the revision last read; a stale revision is refused with 412 so concurrent edits are not lost. Workspace rules only restrict agents: an ALLOW never overrides a block mabl or the workspace''s account applies, so leaving an action without a rule is how it is allowed. Only a workspace owner or a mabl global admin may change guardrails; API keys and agents never may.'
+      operationId: replaceWorkspaceGuardrailRules
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace whose guardrail rules are replaced.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: The revision of the rules this update was made from, as returned by the GET. Always send it; it is optional in the schema only so that its absence is answered with 428 rather than 400.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardrailRulesUpdate'
+        required: true
+      responses:
+        '200':
+          description: The workspace's guardrails after the update, carrying the new revision.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceGuardrails'
+        '400':
+          description: 'A rule is invalid. The message names the rule by its index, e.g. rules[0]: no action Delete::Nothing in the guardrail catalog.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: The request carries no valid credential.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: The caller is not the workspace's owner or a mabl global admin. API keys and agents are always refused.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '412':
+          description: If-Match does not name the current revision of the rules; read them again and reapply the edit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '428':
+          description: If-Match was not sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: private
+      x-mabl-action: Edit::Guardrail
+  /workspaces/{workspace_id}/guardrails/approvals:
+    get:
+      tags:
+      - Guardrail
+      summary: 'List a workspace''s guardrail approvals: the API-key approvals its approvers…'
+      description: Lists the workspace's approvals of one kind, newest first. WORKSPACE approvals are asks from agents acting for an API key, which a workspace owner or editor decides. SELF approvals are asks from agents acting for a person, and only that person's own are listed. Readable by any member of the workspace; API keys and agents are refused.
+      operationId: listWorkspaceGuardrailApprovals
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace the approval belongs to.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: kind
+        in: query
+        description: WORKSPACE for the API-key approvals the workspace's owners and editors decide, SELF for your own; WORKSPACE when absent.
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/GuardrailApprovalKind'
+      - name: state
+        in: query
+        description: Only approvals in this state; every state when absent.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - PENDING
+          - APPROVED
+          - DENIED
+          - EXPIRED
+          - CANCELLED
+      - name: limit
+        in: query
+        description: The most approvals to return, at most 200; 50 when absent.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: The workspace's approvals of that kind, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuardrailApprovalList'
+        '401':
+          description: The request carries no valid credential.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: The caller is not a member of the workspace, or is an API key or agent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: private
+      x-mabl-action: Read::GuardrailApproval
+  /workspaces/{workspace_id}/guardrails/approvals/{approval_id}:
+    get:
+      tags:
+      - Guardrail
+      summary: Get a guardrail approval
+      description: Returns one approval. A SELF approval is readable by the person the agent acts for, while they are a member of its workspace; a WORKSPACE approval by any member of the workspace. The agent the approval is bound to may also read it, to learn when it is decided.
+      operationId: getGuardrailApproval
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace the approval belongs to.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: approval_id
+        in: path
+        description: The id of the approval.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuardrailApproval'
+        '401':
+          description: The request carries no valid credential.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: The caller may not read the approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: The workspace has no approval with this id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: private
+      x-mabl-action: Read::GuardrailApproval
+  /workspaces/{workspace_id}/guardrails/approvals/{approval_id}/decision:
+    post:
+      tags:
+      - Guardrail
+      summary: Approve or deny a guardrail approval
+      description: 'Approves or denies a pending approval. A SELF approval is decided only by the person the agent acts for; a WORKSPACE approval by a workspace owner or editor. Agents and API keys never decide. A support admin decides their own SELF approvals, but never a WORKSPACE approval or anyone else''s. An approval may be used only while the policy still asks for it: one the policy now blocks is refused with 409. Once approved, the agent repeats the identical request with the X-Mabl-Approval header naming the approval. An approval is bound to the operation, action, path and query parameters and any body fields the operation binds, such as a merge''s from and to; other body content is not bound. The identical request is let through as often as it is repeated until use_expires_time.'
+      operationId: decideGuardrailApproval
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace the approval belongs to.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: approval_id
+        in: path
+        description: The id of the approval.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardrailApprovalDecisionInput'
+        required: true
+      responses:
+        '200':
+          description: The approval as decided.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuardrailApproval'
+        '401':
+          description: The request carries no valid credential.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: The caller may not decide the approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: The workspace has no approval with this id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: The approval is no longer pending (decided, cancelled or expired), or the workspace's guardrails now block the request it asks for.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: private
+      x-mabl-action: Approve::GuardrailApproval
+  /workspaces/{workspace_id}/guardrails/approvals/{approval_id}/cancel:
+    post:
+      tags:
+      - Guardrail
+      summary: Cancel or revoke a guardrail approval
+      description: Cancels a pending approval, or revokes an approved one, so it can no longer be decided or used. A revoked approval keeps who approved it and when. Allowed to whoever may decide it; agents and API keys are refused.
+      operationId: cancelGuardrailApproval
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace the approval belongs to.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: approval_id
+        in: path
+        description: The id of the approval.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The cancelled approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuardrailApproval'
+        '401':
+          description: The request carries no valid credential.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: The caller may not cancel the approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: The workspace has no approval with this id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: The approval is neither pending nor approved and unused.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: private
+      x-mabl-action: Edit::GuardrailApproval
+components:
+  schemas:
+    AgentType:
+      type: string
+      enum:
+      - test_authoring
+      - flow_authoring
+      - test_creation_planning
+      - test_planning
+      - agent_review
+      - app_summary
+      - test_run_analysis
+      - test_recovery
+      - runtime_recovery_summary_agent
+      - plan_run_analysis
+      - deployment_analysis
+      - workspace_results_analysis
+      - results_auto_analysis
+      - workspace_assistant
+      - app_modeling
+      - app_modeling_run
+      - file_assertion
+      - test_impact
+      - test_impact_shadow
+      - repair_notes
+      - external_agent
+      - exploratory_qa
+    GuardrailApprovalDecisionInput:
+      required:
+      - decision
+      type: object
+      properties:
+        decision:
+          description: Whether the request is approved or denied.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalDecision'
+        note:
+          maxLength: 500
+          type: string
+          description: Why, at most 500 characters; shown with the approval.
+      description: A person's decision on a pending approval.
+    GuardrailApproval:
+      required:
+      - id
+      - kind
+      - state
+      - workspace_id
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id, which the agent sends back in the X-Mabl-Approval header.
+        workspace_id:
+          type: string
+          description: The id of the workspace the request was made in.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        action:
+          type: string
+          description: The action the request asks for, e.g. Delete::Branch.
+        operation_id:
+          type: string
+          description: The API operation the request called.
+        resource_type:
+          type: string
+          description: The kind of entity the action acts on, e.g. Branch.
+        resource_id:
+          type: string
+          description: The id of the entity the request names, when it names one.
+        branch:
+          type: string
+          description: The branch the request names, when it names one.
+        request_fields:
+          type: object
+          additionalProperties: true
+          description: The fields of the request body shown to the approver, as the agent sent them, keyed by property, e.g. name. Some, such as a merge's from and to, also bind the approval. Absent when the operation names none or the body has none. Each value is a string; a long one is shown cut short but bound in full.
+          readOnly: true
+        agent_type:
+          type: string
+          description: The type of agent that made the request.
+        agent_session_id:
+          type: string
+          description: The agent session that made the request; absent for an external agent, which has none.
+        root_session_id:
+          type: string
+          description: The root of that agent session's tree, when there is a session.
+        root_user_id:
+          type: string
+          description: For a SELF approval, the person the agent acts for, who alone decides it.
+        root_api_key_id:
+          type: string
+          description: For a WORKSPACE approval, the API key the agent acts for.
+        client_kind:
+          type: string
+          description: For an external agent, the kind of client it connected through, e.g. mcp.
+        policy_ids:
+          type: array
+          description: The ids of the policies that asked for approval.
+          items:
+            type: string
+        reason:
+          type: string
+          description: Why the deciding policy asks for approval, as its author wrote it.
+        summary:
+          type: string
+          description: What the agent asked to do, written by mabl from the request.
+        decision_id:
+          type: string
+          description: The id of the guardrail decision that asked for approval, in the decision log.
+        created_by_id:
+          type: string
+          description: The id of the person or API key the agent acts for.
+        created_time:
+          type: integer
+          description: When the agent asked.
+          format: int64
+        request_expires_time:
+          type: integer
+          description: When a pending approval expires undecided.
+          format: int64
+        decided_by_id:
+          type: string
+          description: The id of the person who approved or denied it.
+        decided_time:
+          type: integer
+          description: When it was approved, denied or cancelled.
+          format: int64
+        decision_note:
+          type: string
+          description: The note the deciding person left.
+        use_expires_time:
+          type: integer
+          description: Until when the agent may repeat the approved request, as often as it does.
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The id of whoever last changed the approval.
+        last_updated_time:
+          type: integer
+          description: When the approval last changed.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where the approval is reviewed.
+      description: A request an agent made that a guardrail policy asks a person to approve, bound to that agent and to the request's operation, action, path and query parameters and the operation's declared key fields; other body content is not bound. Timestamps are epoch milliseconds.
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+      - HasCreatedActivity
+      - HasUpdatedActivity
+    GuardrailRulesUpdate:
+      required:
+      - rules
+      type: object
+      properties:
+        mode:
+          description: Whether the workspace's rules are enforced or only previewed; the current mode is kept when absent.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRuleSetMode'
+        rules:
+          maxItems: 200
+          type: array
+          description: Every rule the workspace keeps, at most 200; a stored rule left out is deleted, and an empty list removes them all.
+          items:
+            $ref: '#/components/schemas/GuardrailRuleInput'
+      description: The complete list of rules a workspace's guardrails are replaced with, and optionally their mode.
+    GuardrailCatalogGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The group's id, which a rule targets, e.g. destructive.
+        name:
+          type: string
+          description: The group's display name, e.g. Destructive.
+        description:
+          type: string
+          description: A sentence describing which actions the group holds.
+      description: A named group of actions a rule can target as one.
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailCatalog:
+      type: object
+      properties:
+        actions:
+          type: array
+          description: The actions a rule can target.
+          items:
+            $ref: '#/components/schemas/GuardrailCatalogAction'
+        groups:
+          type: array
+          description: The groups of actions a rule can target.
+          items:
+            $ref: '#/components/schemas/GuardrailCatalogGroup'
+      description: Everything a workspace rule can target.
+    GuardrailRuleSetMode:
+      type: string
+      description: Whether a rule set's effects reach agents. ENFORCE applies every rule in the set wherever the workspace enforces guardrails; PREVIEW evaluates and logs every rule without ever changing what the agent gets.
+      enum:
+      - ENFORCE
+      - PREVIEW
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    GuardrailRuleTarget:
+      required:
+      - id
+      - type
+      type: object
+      properties:
+        type:
+          description: Whether id names an action, a group or a scope.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRuleTargetType'
+        id:
+          type: string
+          description: The id of the action (e.g. Delete::Flow), group (e.g. destructive) or scope (e.g. write:flows), as the catalog lists it.
+      description: The action, group of actions or scope a rule applies to.
+    AgentTypeGuardrailCeiling:
+      type: object
+      properties:
+        agent_type:
+          description: The agent type this ceiling applies to.
+          allOf:
+          - $ref: '#/components/schemas/AgentType'
+        may:
+          type: array
+          description: What the agent type may do, one line per verb listing its resources, e.g. Edit, flow, test.
+          items:
+            type: string
+        never:
+          type: array
+          description: What mabl never lets the agent type do, one sentence each.
+          items:
+            type: string
+      description: What mabl lets one agent type do, whatever the workspace's rules.
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailRiskGroup:
+      type: string
+      description: How much an action can change. READ only reads, CHANGE creates or edits, COSTLY runs work that consumes credits or capacity, DESTRUCTIVE deletes, merges or restores.
+      enum:
+      - READ
+      - CHANGE
+      - COSTLY
+      - DESTRUCTIVE
+    GuardrailCondition:
+      type: object
+      properties:
+        attribute:
+          type: string
+          description: 'The request attribute a test checks: action.id, action.verb, action.resource, action.scope, principal.root, agent.caller, context.branch or resource.id. agent.caller is external for a coding agent connected over MCP or the CLI and mabl for mabl''s own agents.'
+        op:
+          description: How a test checks its attribute.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailConditionOp'
+        values:
+          type: array
+          description: What a test compares the attribute with; absent for exists, exactly one for eq and neq.
+          items:
+            type: string
+        all:
+          type: array
+          description: A combination that holds when every one of its conditions holds; never empty.
+          items:
+            $ref: '#/components/schemas/GuardrailCondition'
+        any:
+          type: array
+          description: A combination that holds when at least one of its conditions holds; never empty.
+          items:
+            $ref: '#/components/schemas/GuardrailCondition'
+      description: 'When a rule applies. Either a test, which sets attribute, op and values and nothing else, or a combination, which sets exactly one of all or any and nothing else. Combinations nest at most four deep. Example: {attribute: context.branch, op: eq, values: [master]}.'
+    WorkspaceGuardrails:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The id of the workspace the guardrails belong to.
+        revision:
+          type: integer
+          description: The revision of the workspace's rules, 0 before they were first saved; send it as If-Match to replace them.
+          format: int64
+        mode:
+          description: Whether the workspace's rules are enforced or only previewed; applies to every rule in the list, and is ENFORCE before the rules were first saved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRuleSetMode'
+        enforcement_enabled:
+          type: boolean
+          description: Whether this workspace enforces guardrails. When false, a refusal is only logged and the agent request goes on.
+        rules:
+          type: array
+          description: The workspace's rules, oldest first by created_time and then by id.
+          items:
+            $ref: '#/components/schemas/GuardrailRule'
+        catalog:
+          description: The actions and groups a rule can target.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailCatalog'
+        agent_type_ceilings:
+          type: array
+          description: For each agent type, what mabl lets it do and never lets it do; read-only.
+          items:
+            $ref: '#/components/schemas/AgentTypeGuardrailCeiling'
+      description: A workspace's guardrail rules with what is needed to render and edit them.
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailCatalogAction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The action's id, which a rule targets, e.g. Delete::Flow.
+        name:
+          type: string
+          description: The action's display name, e.g. Delete flow.
+        description:
+          type: string
+          description: A sentence describing what the action does, e.g. Delete a flow.
+        verb:
+          type: string
+          description: What the action does to its resource, e.g. Delete.
+        resource:
+          type: string
+          description: The kind of entity the action acts on, e.g. Flow.
+        scope:
+          type: string
+          description: The permission scope the action sits under, e.g. write:flows.
+        groups:
+          type: array
+          description: The ids of the catalog groups the action belongs to, e.g. all, delete, destructive.
+          items:
+            type: string
+        risk_group:
+          description: How much the action can change, for grouping the action's row.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRiskGroup'
+      description: An action a rule can target.
+    GuardrailRuleTargetType:
+      type: string
+      description: The kind of thing a rule applies to. ACTION is one action such as Delete::Flow, GROUP a catalog group of actions such as destructive, SCOPE every action under a permission scope such as write:flows.
+      enum:
+      - ACTION
+      - GROUP
+      - SCOPE
+    GuardrailRuleKind:
+      type: string
+      description: How the rule is decided. RULE matches on the action and the request's attributes; it is the only kind a rule can have.
+      enum:
+      - RULE
+    GuardrailRuleEffect:
+      type: string
+      description: 'What happens when the rule matches: ALLOW lets the action run, ASK requires a person''s approval, BLOCK refuses it with the rule''s reason, or with a mabl-written one naming the rule''s target when the rule has none. The strictest matching rule wins, so an ALLOW never overrides another rule''s or mabl''s refusal.'
+      enum:
+      - ALLOW
+      - ASK
+      - BLOCK
+    GuardrailConditionOp:
+      type: string
+      description: How a condition tests its attribute against its values. eq and neq compare with the one value, in and not_in with any of the values, prefix checks whether the attribute starts with any of the values, and exists checks whether the request carries the attribute at all and takes no values.
+      enum:
+      - eq
+      - neq
+      - in
+      - not_in
+      - prefix
+      - exists
+    GuardrailApprovalList:
+      type: object
+      properties:
+        approvals:
+          type: array
+          description: The approvals.
+          items:
+            $ref: '#/components/schemas/GuardrailApproval'
+      description: Guardrail approvals, newest first.
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalDecision:
+      type: string
+      description: APPROVE lets the agent repeat the request, as often as it does, for 20 minutes; DENY refuses the same request for 20 minutes.
+      enum:
+      - APPROVE
+      - DENY
+    GuardrailRule:
+      required:
+      - effect
+      - id
+      - kind
+      - target
+      type: object
+      properties:
+        id:
+          type: string
+          description: The rule's id, stable across edits.
+        kind:
+          description: How the rule is decided.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRuleKind'
+        target:
+          description: What the rule applies to.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRuleTarget'
+        effect:
+          description: What happens to an agent request the rule matches.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRuleEffect'
+        condition:
+          description: Narrows the rule to the requests it matches; absent when the rule always applies.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailCondition'
+        reason:
+          type: string
+          description: Why the rule exists, shown to the agent and person it refuses; absent when none was written.
+        created_by_id:
+          type: string
+          description: The id of the user who created the rule.
+        created_time:
+          type: integer
+          description: When the rule was created, in epoch milliseconds.
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The id of the user who last changed the rule.
+        last_updated_time:
+          type: integer
+          description: When the rule was last changed, in epoch milliseconds.
+          format: int64
+      description: A stored guardrail rule of a workspace.
+    GuardrailRuleInput:
+      required:
+      - effect
+      - target
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the existing rule this entry keeps, preserving its creation; absent for a new rule.
+        target:
+          description: What the rule applies to; must be in the catalog.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRuleTarget'
+        effect:
+          description: What happens to an agent request the rule matches.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRuleEffect'
+        condition:
+          description: Narrows the rule to the requests it matches; absent when the rule always applies.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailCondition'
+        reason:
+          maxLength: 500
+          type: string
+          description: Why the rule exists, shown to the agent and person it refuses, at most 500 characters. When absent, a refusal says the workspace's guardrails block the rule's target.
+      description: A guardrail rule as a workspace owner writes it.
+  responses:
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

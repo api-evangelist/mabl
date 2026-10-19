@@ -1,0 +1,1574 @@
+openapi: 3.2.0
+info:
+  title: mabl Workspace Integration API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: WorkspaceIntegration
+paths:
+  /workspaces/{workspace_id}/integrations/claim:
+    post:
+      tags:
+      - WorkspaceIntegration
+      summary: Claim Workspace Integration
+      description: Claim a claimable Workspace Integration (e.g. GitHub)
+      operationId: claimIntegration
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace Integrations object
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Workspace Integrations object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceIntegrationClaimRequest'
+        required: true
+      responses:
+        '201':
+          description: Claimed Workspace Integration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceIntegration'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '409':
+          description: Conflict on attempt to reclaim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Integration
+  /integrations:
+    get:
+      tags:
+      - WorkspaceIntegration
+      summary: Get Workspace Integrations for predicate
+      description: Get Workspace Integration by predicate
+      operationId: queryWorkspaceIntegrations
+      parameters:
+      - name: integration_type
+        in: query
+        description: GitHub installation identifier filter predicate
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/IntegrationTypeEnum'
+      - name: installation_id
+        in: query
+        description: Installation identifier filter predicate
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: github_installation_id
+        in: query
+        description: deprecated GitHub installation identifier filter predicate
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: workspace_id
+        in: query
+        description: The workspace to get integrations for
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Workspace Integrations, if any
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceIntegrationQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: WorkspaceIntegration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+    post:
+      tags:
+      - WorkspaceIntegration
+      summary: Create Workspace Integration
+      operationId: createWorkspaceIntegration
+      requestBody:
+        description: Workspace Integrations object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceIntegration'
+        required: true
+      responses:
+        '201':
+          description: Created Workspace Integration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceIntegration'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Integration
+  /integrations/{id}:
+    get:
+      tags:
+      - WorkspaceIntegration
+      summary: Get Workspace Integrations
+      description: Get Workspace Integration
+      operationId: getWorkspaceIntegration
+      parameters:
+      - name: id
+        in: path
+        description: workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: with_secrets
+        in: query
+        description: Whether to include secrets in the response. Honored only for a principal holding read_secret:integrations in the integration's workspace; otherwise the request is served as if it were false, with the secret fields empty, rather than refused.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: renew_secrets
+        in: query
+        description: Renew time sensitive secrets, if relevant to the given integration, and IFF with_secrets is true. Honored only for a principal holding read_secret:integrations in the integration's workspace; otherwise the request is served as if it were false, and no secret is renewed or persisted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Workspace Integration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceIntegration'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: WorkspaceIntegration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+    put:
+      tags:
+      - WorkspaceIntegration
+      summary: Update Workspace Integration
+      operationId: updateWorkspaceIntegration
+      parameters:
+      - name: id
+        in: path
+        description: Workspace Integrations identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Workspace Integrations object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceIntegration'
+        required: true
+      responses:
+        '200':
+          description: Updated Workspace Integration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceIntegration'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Integration
+    delete:
+      tags:
+      - WorkspaceIntegration
+      summary: Remove Workspace Integration
+      operationId: removeWorkspaceIntegration
+      parameters:
+      - name: id
+        in: path
+        description: workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Workspace Integration Removed
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Integration
+  /integrations/{id}/issueTracker/schemas:
+    put:
+      tags:
+      - WorkspaceIntegration
+      summary: Upsert issue tracker schemas
+      description: Creates/updates one or more schemas associated with this issue tracker integration
+      operationId: upsertIssueTrackerSchemas
+      parameters:
+      - name: id
+        in: path
+        description: Workspace Integrations identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: List of schemas to upsert
+        content:
+          application/json:
+            schema:
+              maxItems: 25
+              type: array
+              items:
+                $ref: '#/components/schemas/IssueSchema'
+        required: true
+      responses:
+        '204':
+          description: Schemas upserted
+        '400':
+          description: Required field missing, or specified integration is not an issue tracker type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Integration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Integration
+  /integrations/{id}/azureBoards/events:
+    post:
+      tags:
+      - WorkspaceIntegration
+      summary: Receive an Azure DevOps service-hook event
+      description: Called by the Azure DevOps service-hook subscription mabl creates for an Azure Boards integration, not by mabl clients. Authenticated with HTTP Basic carrying the integration's webhook secret as the password; any failure to verify answers 401 without saying whether the integration exists. workitem.updated, workitem.deleted and workitem.restored each mirror the work item's current open state, or its absence, onto mabl's issue. Answers 503 when Azure DevOps cannot be read, so the event is redelivered.
+      operationId: receiveAzureBoardsEvent
+      parameters:
+      - name: id
+        in: path
+        description: Workspace Integrations identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The service-hook payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AzureBoardsServiceHookEvent'
+        required: true
+      responses:
+        '200':
+          description: The event was verified; it was applied or deliberately ignored
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Integration
+  /integrations/{id}/issueTracker/schemaKeyFields:
+    get:
+      tags:
+      - WorkspaceIntegration
+      summary: Gets all schema metadata for this integration
+      description: Schema metadata includes only information about schema key fields. For the full schema use getIssueTrackerSchema.
+      operationId: getIssueTrackerSchemaKeyFields
+      parameters:
+      - name: id
+        in: path
+        description: Workspace Integrations identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The metadata for each schema associated with this issue tracker integration
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IssueSchema'
+        '400':
+          description: Required field missing, or specified integration is not an issue tracker type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Integration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+  /integrations/{integration_id}/issueTracker/schemas/{schema_id}:
+    get:
+      tags:
+      - WorkspaceIntegration
+      summary: Get issue tracker schema
+      description: Creates/updates one or more schemas associated with this issue tracker integration
+      operationId: getIssueTrackerSchema
+      parameters:
+      - name: integration_id
+        in: path
+        description: Workspace Integrations identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: schema_id
+        in: path
+        description: Schema ID within the integration
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Issue schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueSchema'
+        '400':
+          description: Required field missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Integration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+  /integrations/{id}/issueTracker/schemaIds:
+    put:
+      tags:
+      - WorkspaceIntegration
+      summary: Sets the schema IDs that are valid for this integration.
+      description: Sets the list of valid schema IDs for this integration, and removes all schemas not referenced by this list.
+      operationId: setIssueTrackerSchemaIds
+      parameters:
+      - name: id
+        in: path
+        description: Workspace Integrations identifier
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: List of schema IDs to set
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        required: true
+      responses:
+        '204':
+          description: Schema IDs set
+        '400':
+          description: Required field missing, or specified integration is not an issue tracker type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Integration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Integration
+  /workspaces/{workspace_id}/integrations:
+    get:
+      tags:
+      - WorkspaceIntegration
+      summary: Query Workspace Integrations
+      description: Query matching Integration Configurations for Workspace
+      operationId: queryByWorkspaceId
+      parameters:
+      - name: workspace_id
+        in: path
+        description: workspace id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: integration_type
+        in: query
+        description: integration type filter
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/IntegrationTypeEnum'
+      - name: oauth_token_id
+        in: query
+        description: Return only if has a matching OAuth token id
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        description: Return only if has a matching user id
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: enabled
+        in: query
+        description: Return only enabled or disabled integrations
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: integration_types
+        in: query
+        description: Multiple integration types filter. Will be used only `integration_type` is not provided
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntegrationTypeEnum'
+      - name: with_secrets
+        in: query
+        description: Return decrypted secrets if true. Honored only for a principal holding read_secret:integrations in the requested workspace; otherwise the query is served as if it were false, with the secret fields empty, rather than refused.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: renew_secrets
+        in: query
+        description: Renew time sensitive secrets, if relevant to the given integration, and IFF with_secrets is true. Honored only for a principal holding read_secret:integrations in the requested workspace; otherwise the query is served as if it were false, and no secret is renewed or persisted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Workspace Integrations, if any
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceIntegrationQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: WorkspaceIntegration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    SlackUser:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: Slack user ID that will be used in slack API calls
+        user_name:
+          type: string
+          description: Name of the user
+      description: Slack user ID and name
+    ZephyrRegionEnum:
+      type: string
+      description: The Zephyr Cloud region hosting the instance; selects the API host.
+      enum:
+      - us
+      - eu
+      - au
+      - de
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    ZephyrCycleModeEnum:
+      type: string
+      description: 'per_plan_run: each plan run''s results go to a test cycle mabl creates for it. fixed: results go to the configured cycle of each project.'
+      enum:
+      - per_plan_run
+      - fixed
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    AzureBoardsWorkItemTypeSettings:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: The work item type's name, e.g. Bug
+        hidden_fields:
+          type: array
+          description: Reference names removed from the create form. A required field stays shown unless it has a usable default.
+          items:
+            type: string
+        field_defaults:
+          type: array
+          description: Values applied at create to fields the submission leaves out.
+          items:
+            $ref: '#/components/schemas/AzureBoardsFieldDefault'
+      description: How mabl's create-issue form treats one Azure Boards work item type.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    IssueSchemaField:
+      required:
+      - id
+      - is_required
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: Field identifier
+        name:
+          type: string
+          description: Human-friendly field descriptor
+        type:
+          type: string
+          description: Field type
+          enum:
+          - project
+          - issuetype
+          - user
+          - priority
+          - text
+          - textarea
+          - labels
+          - number
+          - date
+          - datetime
+          - checkboxes
+          - radiobuttons
+        allowed_values:
+          type: array
+          description: Allowed values for the field if applicable
+          items: {}
+        is_required:
+          type: boolean
+          description: Whether the field is required
+        default_value:
+          type: string
+          description: A value to pre-fill the field with, as the tracker takes it. Set by Azure Boards integrations whose admin configured a default; absent otherwise.
+      description: Issue schema field
+      example:
+        id: affected_platform
+        name: Affected Platform
+        type: labels
+        allowed_values:
+        - value: Chrome
+        - value: Edge
+        - value: Firefox
+        - value: IE11
+        - value: Safari
+        is_required: true
+    XrayFunctionalMobileTestEvidenceArtifactTypeEnum:
+      type: string
+      enum:
+      - screenshots
+    XrayFunctionalApiTestEvidenceArtifactTypeEnum:
+      type: string
+      enum:
+      - request_assertions
+    AzureBoardsFieldDefault:
+      required:
+      - field
+      - value
+      type: object
+      properties:
+        field:
+          type: string
+          description: The field's reference name, e.g. System.Tags
+        value:
+          type: string
+          description: The default as text; converted at create to the field's type (integer, double, boolean, string or html).
+    AzureBoardsServiceHookEvent:
+      type: object
+      properties:
+        eventType:
+          type: string
+          description: For example workitem.updated, workitem.deleted or workitem.restored
+        resource:
+          type: object
+          additionalProperties: true
+          description: The event's resource. For workitem.updated it is the update, whose workItemId names the work item; for workitem.deleted and workitem.restored it is the work item, whose id names it.
+      description: The fields mabl reads from an Azure DevOps service-hook payload; others are ignored.
+    WorkspaceIntegrationQueryResult:
+      required:
+      - integrations
+      type: object
+      properties:
+        integrations:
+          type: array
+          description: All insights that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/WorkspaceIntegration'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ZephyrEnvironmentMappingEnum:
+      type: string
+      description: 'by_name: send the mabl environment''s name when the Zephyr project has an environment of that name. none: never send an environment.'
+      enum:
+      - by_name
+      - none
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    WorkspaceIntegrationClaimRequest:
+      required:
+      - integration_type
+      type: object
+      properties:
+        integration_type:
+          type: string
+          description: Integration type
+          enum:
+          - slack
+          - github_app
+          - jira
+          - atlassian_connect
+          - atlassian_forge
+          - export_feed_google_bigquery
+          - export_feed_google_cloud_storage
+          - export_feed_google_pubsub
+          - segment
+        installation_id:
+          type: string
+          description: installation id for this specific app installation
+        github_installation_id:
+          type: integer
+          description: deprecated GitHub identifier for this specific app installation
+          format: int64
+    ZephyrStatusNames:
+      type: object
+      properties:
+        passed:
+          type: string
+        failed:
+          type: string
+        skipped:
+          type: string
+          description: When unset or empty, a case whose mabl runs were all skipped gets no execution. On update, an empty string clears a saved value; omitting it keeps the saved value.
+      description: Zephyr test execution status names, by mabl outcome.
+    SlackGroup:
+      type: object
+      properties:
+        group_id:
+          type: string
+          description: Slack group ID that will be used in slack API calls
+        group_name:
+          type: string
+          description: Name of the group
+      description: Slack group ID and name
+    IssueSchemaKey:
+      required:
+      - field_id
+      - field_value
+      type: object
+      properties:
+        field_id:
+          type: string
+        field_value:
+          description: The value of the field
+      example:
+      - field_id: project
+        field_value:
+        - id: '10000'
+          key: MABL
+          name: mabl
+      - field_id: issuetype
+        field_value:
+        - id: '10000'
+          name: Task
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GithubRepository:
+      required:
+      - full_name
+      - id
+      - is_public
+      - name
+      type: object
+      properties:
+        id:
+          type: integer
+          description: GitHub invariant repo number
+          format: int64
+        name:
+          type: string
+          description: GitHub repo name
+        html_url:
+          type: string
+          description: URL to GitHub repo HTML page
+        description:
+          type: string
+          description: Repo description
+        full_name:
+          type: string
+          description: GitHub repo full name
+        is_public:
+          type: boolean
+          description: Is this repository public
+      description: GitHub repository
+    IssueSchema:
+      required:
+      - fields
+      - id
+      - key
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID for this schema; guaranteed to be unique within the associated integration
+        key:
+          type: array
+          description: Composite key for the schema, expressed as a list of field ids and values (must be a subset of fields)
+          items:
+            $ref: '#/components/schemas/IssueSchemaKey'
+        fields:
+          type: array
+          description: All fields in the schema
+          items:
+            $ref: '#/components/schemas/IssueSchemaField'
+      description: Schema for reporting an issue
+    IntegrationTypeEnum:
+      type: string
+      enum:
+      - atlassian_connect
+      - atlassian_forge
+      - atlassian_rovo
+      - azure_boards
+      - export_feed_google_bigquery
+      - export_feed_google_cloud_storage
+      - export_feed_google_pubsub
+      - github_app
+      - jira
+      - jira_server_plugin
+      - microsoft_teams_webhook
+      - segment
+      - slack
+      - testrail
+      - xray
+      - xray_sync
+      - zephyr
+    WorkspaceIntegration:
+      type: object
+      properties:
+        id:
+          type: string
+          description: unique identifier
+        name:
+          type: string
+          description: Human-friendly integration descriptor
+        integration_type:
+          $ref: '#/components/schemas/IntegrationTypeEnum'
+        integration_categories:
+          type: array
+          items:
+            type: string
+            enum:
+            - issue_tracker
+            - source_control_management
+        installation_id:
+          type: string
+          description: a unique id that identifies this integration in the third party service, if applicable
+        claim_expiration_seconds:
+          type: integer
+          description: length of time until this integration expires, if left unclaimed.  Leaving this empty means there is no expiry.
+        workspace_id:
+          type: string
+          description: Associated workspace
+        enabled:
+          type: boolean
+          description: Disable to stop running integration
+          default: true
+        authentication:
+          type: object
+          properties:
+            oauth_token_id:
+              type: string
+              description: Optional OAuth token id, if used by integration
+            user_id:
+              type: string
+              description: Optional associated mabl user identifier
+            username:
+              type: string
+              description: Optional username in the 3rd party integration
+            api_key:
+              type: string
+              description: 'Optional API key to use for auth in the integration. Write-only for TestRail and Zephyr integrations: it is encrypted at rest and omitted from create, update, get and query responses, including with_secrets=true, except for a principal holding read_secret:integrations in the integration''s workspace.'
+            client_id:
+              type: string
+              description: Optional client id to use for auth in the integration
+              x-dao-derived: true
+            client_secret:
+              type: string
+              description: Optional client secret to use for auth in the integration
+              x-dao-derived: true
+            jwt:
+              type: string
+              description: Optional JWT token to use for auth in the integration
+              x-dao-derived: true
+          description: Optional integration authentication information
+        encrypted_store:
+          type: string
+          description: Encryption store to use for sensitive data
+        status:
+          type: string
+          description: Last known integration state
+          enum:
+          - success
+          - error
+          - pending
+        status_reason:
+          type:
+          - string
+          - 'null'
+          description: Why status is error, when mabl knows. reconnect_required means the stored connection no longer works and the integration must be reconnected. Set by mabl; ignored on writes.
+          enum:
+          - reconnect_required
+        statistics:
+          type: object
+          properties:
+            last_write_operation_time:
+              type: integer
+              description: UTC epoch millisecond time of last write
+              format: int64
+              default: 0
+            last_read_operation_time:
+              type: integer
+              description: UTC epoch millisecond time of last read
+              format: int64
+              default: 0
+            write_operation_count:
+              type: integer
+              description: Approximate number of write operations
+              format: int64
+              default: 0
+            read_operation_count:
+              type: integer
+              description: Approximate number of read operations
+              format: int64
+              default: 0
+          description: Optional integration operational statistics
+        config:
+          type: object
+          properties:
+            slack:
+              required:
+              - channel_name
+              type: object
+              properties:
+                bot_user_id:
+                  type: string
+                  description: bot user id (Slack scoped bot unique id) of bot added by integration
+                channel_id:
+                  type: string
+                  description: channel id (Slack scoped unique id)
+                channel_name:
+                  type: string
+                  description: channel name
+                team_id:
+                  type: string
+                  description: team id (Slack scoped unique id)
+                team_name:
+                  type: string
+                  description: team name
+                user_id:
+                  type: string
+                  description: user id (Slack scoped user unique id) of user that added integration
+                mention_users:
+                  type: array
+                  description: List of users to mention in the slack message
+                  items:
+                    $ref: '#/components/schemas/SlackUser'
+                mention_groups:
+                  type: array
+                  description: List of groups to mention in the slack message
+                  items:
+                    $ref: '#/components/schemas/SlackGroup'
+              description: Slack resource configuration
+            github:
+              required:
+              - github_app_id
+              - github_organization_id
+              - github_organization_name
+              type: object
+              properties:
+                github_app_id:
+                  type: integer
+                  description: GitHub app unique identifier (can be different if customer installs/hosts their own webhook)
+                  format: int64
+                github_organization_name:
+                  type: string
+                  description: GitHub organization name (variant)
+                github_organization_id:
+                  type: integer
+                  description: GitHub organization invariant identifier
+                  format: int64
+                github_installation_id:
+                  type: integer
+                  description: GitHub identifier for this specific app installation
+                  format: int64
+                create_repository_dispatch_event_for_insight:
+                  type: boolean
+                  description: Creates a GitHub RepositoryDispatch event from an insight
+                create_issues_for_insights:
+                  type: boolean
+                  description: Create a new github issue when an insight is received
+                create_checks_on_deployment:
+                  type: boolean
+                  description: Create new github check runs on mabl deployment
+                allow_manual_check_rerun:
+                  type: boolean
+                  description: Allow github check runs to be manually re-run
+                installation_status:
+                  type: string
+                  description: Current app installation status
+                  enum:
+                  - created
+                  - deleted
+                  - new_permissions_accepted
+                installation_payload:
+                  type: string
+                  description: JSON serialized payload of original installion notification (future migrations)
+                repositories:
+                  type: array
+                  description: Repository list
+                  items:
+                    $ref: '#/components/schemas/GithubRepository'
+                default_repository_id:
+                  type: integer
+                  description: The default github repository id
+                  format: int64
+                hook_id:
+                  type: string
+                  description: GitHub app installation specific webhook id
+              description: GitHub resource configuration
+            exclusion_categories:
+              type: array
+              description: List of insight categories to exclude
+              items:
+                type: string
+            exclusion_buckets:
+              type: array
+              description: (slack) Broad buckets of insights excluded.  Currently only used in the UI
+              items:
+                type: string
+            inclusion_plan_labels:
+              type: array
+              description: A list of plan labels this integration applies to
+              items:
+                type: string
+            exclusion_statuses:
+              type: array
+              description: A list of insight status types to exclude
+              items:
+                type: string
+                enum:
+                - alert
+                - warning
+                - ok
+                - improvement
+                - info
+            include_notes:
+              type: boolean
+              description: set to true to send notes to this integration (if supported)
+            plan_run_events:
+              type: object
+              properties:
+                plan_run_started:
+                  type: boolean
+                  description: Send notification when plan run starts
+                plan_run_passed:
+                  type: boolean
+                  description: Send notification when plan run completes with passing status
+                plan_run_failed:
+                  type: boolean
+                  description: Send notification when plan run completes with failed, cancelled or terminated status
+                plan_run_status_changed:
+                  type: boolean
+                  description: Send notification when status of plan run changes (e.g. failed to succeeded)
+              description: Send notifications for the following plan run events
+            deployment_events:
+              type: object
+              properties:
+                deployment_failed:
+                  type: boolean
+                  description: Send notification when a deployment completes with a failure analysis
+              description: Send notifications for the following deployment events
+            agent_session_events:
+              type: object
+              properties:
+                agent_session_ready_for_review:
+                  type: boolean
+                  description: Send notification when a cloud agent session completes and its result is ready for review
+                agent_session_needs_input:
+                  type: boolean
+                  description: Send notification when a cloud agent session pauses awaiting user input
+                agent_session_failed:
+                  type: boolean
+                  description: Send notification when a cloud agent session ends in failure
+              description: Send notifications for the following cloud agent (test authoring) session outcomes
+            export:
+              type: object
+              properties:
+                gcp_project_name:
+                  type: string
+                  description: (export_feed_google_bigquery) GCP project name for Big Query delivery
+                gcp_bigquery_dataset_name:
+                  type: string
+                  description: (export_feed_google_bigquery) GCP data set for Big Query delivery
+                gcp_bigquery_table_prefix:
+                  type: string
+                  description: (export_feed_google_bigquery) GCP table prefix for Big Query delivery
+                  default: mabl_export
+                enable_personal_information_redaction:
+                  type: boolean
+                  description: If enabled, replace email addresses with "PII_REDACTED"
+                  default: false
+              description: Configurations for GCP Big Query delivery resource
+            issue_tracker:
+              type: object
+              properties:
+                base_url:
+                  type: string
+                  description: Base URL for issue links
+                  example: https://jira.example.com/jira
+                schema_ids:
+                  type: array
+                  description: List of issue schema IDs within this integration
+                  items:
+                    type: string
+                project_ids:
+                  type: array
+                  description: List of project ids associated with this integration
+                  items:
+                    type: string
+                schemas:
+                  type: array
+                  description: DEPRECATED - List of issue schemas
+                  items:
+                    $ref: '#/components/schemas/IssueSchema'
+              description: Configuration for an issue tracker integration
+            atlassian_connect:
+              required:
+              - installation_payload
+              type: object
+              properties:
+                product_type:
+                  type: string
+                  description: The Atlassian product type for this integration
+                  enum:
+                  - jira
+                  - confluence
+                installation_payload:
+                  type: string
+                  description: JSON serialized payload of original installion notification (future migrations)
+              description: configuration settings for atlassian connect app
+            jira:
+              required:
+              - name
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: CloudID Resource identifier
+                name:
+                  type: string
+                  description: Resource name
+                avatarUrl:
+                  type: string
+                  description: User avatar URL
+                scopes:
+                  type: array
+                  items:
+                    type: string
+              description: Configurations for a JIRA resource
+            segment:
+              required:
+              - destination_name
+              - source_name
+              type: object
+              properties:
+                destination_name:
+                  type: string
+                  description: name of destination to connect to
+                source_name:
+                  type: string
+                  description: name of source to connect
+              description: Configurations for a segment resource
+            microsoft_teams_webhook:
+              required:
+              - webhook_url
+              type: object
+              properties:
+                webhook_url:
+                  type: string
+                  description: The webhook url to publish messages to
+                card_actions_enabled:
+                  type: boolean
+                  description: Indicates if actions (like re-run plan) should be part of the published cards
+              description: Configurations for a Microsoft Teams Webhook
+            xray:
+              required:
+              - project_key
+              - test_type
+              type: object
+              properties:
+                project_key:
+                  type: string
+                  description: The Jira project key where Xray test issues will be created.
+                test_type:
+                  type: string
+                  description: The test type for Xray test issues that will be created.
+              description: Configuration for an Xray export integration
+            xray_sync:
+              type: object
+              properties:
+                project_key:
+                  type: string
+                  description: The project key in Jira for the associated Xray instance
+                project_url:
+                  type: string
+                  description: The base URL for the Jira project associated with this Xray instance
+                result_synchronization:
+                  type: object
+                  properties:
+                    auto_sync_enabled:
+                      type: boolean
+                      description: Whether automatic synchronization is enabled
+                    auto_create_entities:
+                      type: boolean
+                      description: Whether to automatically create entities
+                    failed_steps_only:
+                      type: boolean
+                      description: Whether to synchronize only failed steps
+                    construct_xray_steps:
+                      type: boolean
+                      description: Whether to construct Xray Steps for synchronization. If false, Evidence will be attached as global Evidence and Xray Steps will not be constructed in the upload.
+                    functional_browser_artifact_types:
+                      type: array
+                      description: Types of functional browser artifacts to synchronize
+                      items:
+                        $ref: '#/components/schemas/XrayFunctionalBrowserTestEvidenceArtifactTypeEnum'
+                    functional_api_artifact_types:
+                      type: array
+                      description: Types of functional api artifacts to synchronize
+                      items:
+                        $ref: '#/components/schemas/XrayFunctionalApiTestEvidenceArtifactTypeEnum'
+                    functional_mobile_artifact_types:
+                      type: array
+                      description: Types of functional mobile artifacts to synchronize
+                      items:
+                        $ref: '#/components/schemas/XrayFunctionalMobileTestEvidenceArtifactTypeEnum'
+                  description: Configuration for result synchronization
+              description: Configuration for an Xray Synchronization integration
+            testrail:
+              required:
+              - host_url
+              type: object
+              properties:
+                host_url:
+                  type: string
+                  description: Base URL of the TestRail instance, e.g. https://example.testrail.io
+                project_id:
+                  type: integer
+                  description: ID of the TestRail project this integration is bound to
+                  format: int64
+                project_name:
+                  type: string
+                  description: Display name of the TestRail project, captured when the project is selected. A display convenience only - project_id remains the source of truth, and this value may be stale if the project is renamed in TestRail.
+                suite_id:
+                  type: integer
+                  description: ID of the TestRail suite within the project (for multi-suite projects)
+                  format: int64
+                auto_sync_enabled:
+                  type: boolean
+                  description: When true, mabl records each completed plan run's results in TestRail without a manual sync request. Ad hoc runs and plan runs whose tests carry no TestRail case IDs are skipped. Unset reads as false; an update that omits it keeps the saved value.
+              description: Configuration for a TestRail integration
+            zephyr:
+              type: object
+              properties:
+                region:
+                  $ref: '#/components/schemas/ZephyrRegionEnum'
+                project_url:
+                  type: string
+                  description: The https URL of the Jira site Zephyr runs on, e.g. https://example.atlassian.net, used to link to test cycles. Required. Saved as the scheme and host only.
+                project_keys:
+                  maxItems: 20
+                  minItems: 1
+                  type: array
+                  description: Jira project keys this integration may write results to.
+                  items:
+                    pattern: ^[A-Z][A-Z_0-9]+$
+                    type: string
+                cycle_mode:
+                  description: Where results are recorded. Saved as per_plan_run when unset at create.
+                  allOf:
+                  - $ref: '#/components/schemas/ZephyrCycleModeEnum'
+                fixed_cycle_keys:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: For cycle_mode fixed, the test cycle key to record into, by project key, e.g. PROJ to PROJ-R12. Every configured project needs one.
+                folder_id:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                    format: int64
+                  description: For cycle_mode per_plan_run, the Zephyr folder to create cycles in, by project key.
+                status_names:
+                  description: Zephyr test execution status names mabl records outcomes as. Each must exist, and not be archived, in every configured project. passed and failed are saved as Pass and Fail when unset at create.
+                  allOf:
+                  - $ref: '#/components/schemas/ZephyrStatusNames'
+                environment_mapping:
+                  description: How mabl environments map to Zephyr environments. Saved as by_name when unset at create.
+                  allOf:
+                  - $ref: '#/components/schemas/ZephyrEnvironmentMappingEnum'
+                attach_screenshots:
+                  type: boolean
+                  description: Attach the failure screenshot to failed executions. Saved as true when unset at create.
+                auto_sync_enabled:
+                  type: boolean
+                  description: When true, mabl records each completed plan run's results in Zephyr without a manual sync request. Ad hoc runs and plan runs whose tests carry no Zephyr case keys are skipped. Unset reads as false; an update that omits it keeps the saved value.
+                token_expires_at:
+                  type: integer
+                  description: UTC epoch milliseconds at which the saved API token expires, read from the token when it is saved, for display only. Absent when the token carries no expiry. Set by mabl; ignored on writes.
+                  format: int64
+                  x-dao-apply-nulls: true
+              description: Configuration for a Zephyr Cloud integration. The API token goes in authentication.api_key. On update, omitted fields keep their saved values and the saved token is reused when api_key is omitted; the resulting integration is revalidated against Zephyr.
+            azure_boards:
+              required:
+              - organization_url
+              type: object
+              properties:
+                organization_url:
+                  type: string
+                  description: Base URL of the Azure DevOps organization, e.g. https://dev.azure.com/contoso. Validated as an exact dev.azure.com authority with an organization path segment; request URLs are built from the validated components rather than by concatenating this string.
+                project_id:
+                  type: string
+                  description: GUID of the Azure DevOps project this integration is bound to. Source of truth for the project; project_name is display only.
+                project_name:
+                  type: string
+                  description: Display name of the Azure DevOps project, captured when the project is selected. A display convenience only - project_id remains the source of truth, and this value may be stale if the project is renamed in Azure DevOps.
+                default_work_item_type:
+                  type: string
+                  description: Name of the work item type created by default, e.g. Bug -- the name Azure's endpoints address types by, not the reference name. Users may still pick another type the project defines. Validated against the project's types when supplied.
+                work_item_types:
+                  type: array
+                  description: 'Per work item type settings for mabl''s create-issue form. Written wholesale: an update that omits this keeps the stored list, an empty list clears it, and any other list replaces it. Cleared when the organization or project changes unless supplied in the same update.'
+                  items:
+                    $ref: '#/components/schemas/AzureBoardsWorkItemTypeSettings'
+                subscription_ids:
+                  type: array
+                  description: Service hook subscription IDs mabl provisioned for this integration, retained so they can be removed when the integration is disabled, deleted, or re-pointed at a different organization or project.
+                  items:
+                    type: string
+                mark_linked_test_cases_automated:
+                  type: boolean
+                  description: When true, mabl marks the Azure Test Cases its tests link (AB#123 or a work item URL) as Automated by writing their associated automation fields, and clears its own marker once no test links the case. Automation another tool set is never changed. Unset reads as false; an update that omits it keeps the saved value.
+              description: Configuration for an Azure Boards integration
+          description: Extensible integration specific configurations
+        created_time:
+          type: integer
+          description: Time at which the insight was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this insight
+        last_updated_time:
+          type: integer
+          description: time the insight was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this insight
+        tags:
+          type: array
+          description: Tags to bind an integration and child entities (e.g. Plan/Test), if appropriate
+          items:
+            $ref: '#/components/schemas/Tag'
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+      - HasName
+    XrayFunctionalBrowserTestEvidenceArtifactTypeEnum:
+      type: string
+      enum:
+      - screenshots
+      - console_log
+      - har_file
+      - dom_snapshot
+      - chrome_trace
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

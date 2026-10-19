@@ -1,0 +1,1206 @@
+openapi: 3.2.0
+info:
+  title: mabl Data Table API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: DataTable
+paths:
+  /dataTables:
+    get:
+      tags:
+      - DataTable
+      summary: Get DataTables
+      description: Query for DataTables in a workspace
+      operationId: queryDataTables
+      parameters:
+      - name: workspace_id
+        in: query
+        description: Restricts the query to DataTables associated with the given workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataTableQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+      x-mabl-scope: public
+    post:
+      tags:
+      - DataTable
+      summary: Create DataTable
+      description: Create a DataTable in a workspace. The maximum number of scenarios for a DataTable is 1000.
+      operationId: createDataTable
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableCreateRequest'
+      responses:
+        '201':
+          description: The DataTable that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataTable'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::DataTable
+      x-mabl-scope: public
+  /dataTables/{data_table_id}:
+    get:
+      tags:
+      - DataTable
+      summary: Get DataTable
+      description: Retrieve metadata about a specific DataTable. To get scenarios for a specific DataTable, use the get scenarios endpoint.
+      operationId: getDataTable
+      parameters:
+      - name: data_table_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: DataTable result object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataTable'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+      x-mabl-scope: public
+    put:
+      tags:
+      - DataTable
+      summary: Update DataTable
+      description: Update the DataTable name and/or description. Use the update variables and update scenario endpoints to update the contents of a DataTable.
+      operationId: putDataTable
+      parameters:
+      - name: data_table_id
+        in: path
+        description: The ID of the DataTable scenarios to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTable'
+      responses:
+        '200':
+          description: The updated DataTable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataTable'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: DataTable not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::DataTable
+      x-mabl-scope: public
+    delete:
+      tags:
+      - DataTable
+      summary: Remove DataTable
+      description: Remove a DataTable and its associated scenarios
+      operationId: removeDataTable
+      parameters:
+      - name: data_table_id
+        in: path
+        description: The ID of the DataTable to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: DataTable successfully removed
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: DataTable not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::DataTable
+  /dataTables/{data_table_id}/variableNames:
+    get:
+      tags:
+      - DataTable
+      summary: Get variable names
+      description: Get the current variable names for a DataTable
+      operationId: getVariableNames
+      parameters:
+      - name: data_table_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: A list of variable names for the DataTable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableNamesResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: DataTable not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+      x-mabl-scope: public
+    post:
+      tags:
+      - DataTable
+      summary: Create variable name
+      description: Add a new variable to an existing DataTable. The variable is appended to all scenarios with an empty string as the default value. Use the update scenario endpoint to assign specific values per scenario.
+      operationId: createVariableName
+      parameters:
+      - name: data_table_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariableNamesCreateRequest'
+        required: true
+      responses:
+        '200':
+          description: The current variable names
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableNamesResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::DataTable
+      x-mabl-scope: public
+    patch:
+      tags:
+      - DataTable
+      summary: Update variable name
+      description: Update an existing variable's name and apply it to all scenarios in the DataTable
+      operationId: updateVariableName
+      parameters:
+      - name: data_table_id
+        in: path
+        description: The ID of the DataTable scenarios to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The variable name to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariableNamesUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: The current variable names
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableNamesResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::DataTable
+      x-mabl-scope: public
+  /dataTables/{data_table_id}/variableNames/removeVariableName:
+    post:
+      tags:
+      - DataTable
+      summary: Delete variable name
+      description: Remove an existing variable name and its associated values from all scenarios in the DataTable
+      operationId: removeVariableName
+      parameters:
+      - name: data_table_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The variable name to delete
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariableNamesRemoveRequest'
+        required: true
+      responses:
+        '200':
+          description: The current variable names after removal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableNamesResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: DataTable not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::DataTable
+      x-mabl-scope: public
+  /dataTables/scenarios:
+    get:
+      tags:
+      - DataTable
+      summary: Get Scenarios
+      description: Retrieve scenarios, variable values, and scenario IDs associated with a DataTable
+      operationId: queryScenarios
+      parameters:
+      - name: data_table_id
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+      x-mabl-scope: public
+  /dataTables/{data_table_id}/scenarios:
+    put:
+      tags:
+      - DataTable
+      summary: Replace Scenarios
+      description: Reconcile the scenarios of a DataTable to exactly the provided set (a bulk replace). Scenarios whose id matches an existing row are updated, scenarios without a matching id are created, and existing rows absent from the request are removed. Prefer this over issuing many per-scenario create, update, and delete calls when replacing a DataTable's rows.
+      operationId: reconcileScenarios
+      parameters:
+      - name: data_table_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioReconcileRequest'
+        required: true
+      responses:
+        '200':
+          description: The reconciled scenarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '409':
+          description: The DataTable was modified concurrently; retry with the latest state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::DataTable
+      x-mabl-scope: public
+    post:
+      tags:
+      - DataTable
+      summary: Create Scenario
+      description: Create and add a new scenario to a DataTable
+      operationId: createScenario
+      parameters:
+      - name: data_table_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Scenario'
+        required: true
+      responses:
+        '201':
+          description: The scenario that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::DataTable
+      x-mabl-scope: public
+  /dataTables/scenarios/{scenario_id}:
+    get:
+      tags:
+      - DataTable
+      summary: Get Scenario
+      description: Retrieve the variable values for a specific DataTable scenario
+      operationId: getScenario
+      parameters:
+      - name: scenario_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Scenario result object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+      x-mabl-scope: public
+    put:
+      tags:
+      - DataTable
+      summary: Update Scenario
+      description: Update a scenario and/or its variable values
+      operationId: putScenario
+      parameters:
+      - name: scenario_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Scenario'
+        required: true
+      responses:
+        '200':
+          description: The updated Scenario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: DataTable not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::DataTable
+      x-mabl-scope: public
+    delete:
+      tags:
+      - DataTable
+      summary: Remove Scenario
+      description: Delete a specific scenario from a DataTable using its scenario ID
+      operationId: removeScenario
+      parameters:
+      - name: scenario_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: DataTable scenario successfully removed
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: DataTable not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::DataTable
+      x-mabl-scope: public
+  /dataTables/{data_table_id}/usedBy:
+    get:
+      tags:
+      - DataTable
+      summary: Retrieve tests that use this data table
+      description: Used to retrieve tests that use a specific data table
+      operationId: getDataTableUsedBy
+      parameters:
+      - name: data_table_id
+        in: path
+        description: The data table ID to find used-by entities for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated results of tests that use the data table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataTableUsedByQueryResult'
+        '404':
+          description: DataTable not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+  /dataTables/usedBy/batch:
+    post:
+      tags:
+      - DataTable
+      summary: Retrieve tests that use any of the provided data tables
+      description: Used to retrieve tests that use any of the provided data tables in a single request
+      operationId: getDataTableUsedByBatch
+      parameters:
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: The data table IDs to find used-by entities for
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableUsedByBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: Paginated results of tests that use any of the provided data tables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataTableUsedByBatchQueryResult'
+        '400':
+          description: Invalid request - too many data table IDs or invalid IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+  /dataTables/usedBy/count/batch:
+    post:
+      tags:
+      - DataTable
+      summary: Retrieve counts of tests that use any of the provided data tables
+      description: Used to retrieve the count of tests that use each of the provided data tables in a single request
+      operationId: getDataTableUsedByCountBatch
+      requestBody:
+        description: The data table IDs to find used-by counts for
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataTableUsedByCountBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: Map of data table IDs to their usage counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataTableUsedByCountBatchResult'
+        '400':
+          description: Invalid request - too many data table IDs or invalid IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+components:
+  schemas:
+    DataTableUsedByCountBatchResult:
+      type: object
+      properties:
+        counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+          description: Map of data table IDs to the count of tests using each data table
+          readOnly: true
+      description: Result containing counts of tests using each data table
+    DataTableUsedByBatchQueryResult:
+      type: object
+      properties:
+        entities:
+          type: array
+          description: Combined list of tests that use any of the provided DataTables, ordered by DataTable ID and then entity invariant ID
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/UsedByEntity'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for batch DataTable used-by query results
+    ScenarioQueryResult:
+      type: object
+      properties:
+        scenarios:
+          type: array
+          description: All Scenarios matching the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Scenario'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+      description: Results wrapper for Scenario queries
+      x-mabl-scope: public
+    Scenario:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          x-mabl-scope: public
+        table_id:
+          type: string
+          description: The ID of the DataTable parent table
+          readOnly: true
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this DataTable
+          readOnly: true
+          x-mabl-scope: public
+        name:
+          type: string
+          description: The display name for the scenario
+          x-mabl-scope: public
+        variables:
+          type: array
+          description: The variable names and values for this scenario. All scenarios must have the same set of variable names to maintain consistency.
+          items:
+            $ref: '#/components/schemas/Variable'
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the entity was created
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this entity
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time at which the entity was last updated
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this entity
+          readOnly: true
+          x-mabl-scope: public
+      x-mabl-scope: public
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+      - HasWorkspaceId
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    VariableNamesUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Current variable name
+          x-mabl-scope: public
+        new_name:
+          type: string
+          description: The updated variable name
+          x-mabl-scope: public
+      x-mabl-scope: public
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    UsedByEntity:
+      type: object
+      properties:
+        resource_id:
+          type: string
+          description: The ID of the resource used by this entity
+        entity_invariant_id:
+          type: string
+          description: The invariant ID of the entity
+        entity_type:
+          type: string
+          description: The type of entity (test or flow)
+          enum:
+          - test
+          - flow
+        entity_name:
+          type: string
+          description: The name of the entity
+        workspace_id:
+          type: string
+          description: The workspace ID of the entity
+        created_time:
+          type: integer
+          description: When the entity was created
+          format: int64
+        last_updated_time:
+          type: integer
+          description: When the entity was last updated
+          format: int64
+        branches:
+          type: array
+          description: Branches of the test or flow that use this resource
+          items:
+            type: string
+          default: []
+      description: A description of an entity (test or flow) that uses a resource (file upload, etc.)
+    DataTableUsedByBatchRequest:
+      required:
+      - data_table_ids
+      type: object
+      properties:
+        data_table_ids:
+          maxItems: 100
+          minItems: 1
+          type: array
+          description: Array of DataTable IDs to find used-by entities for
+          items:
+            type: string
+      description: Request body for batch DataTable used-by query
+    DataTableUsedByQueryResult:
+      type: object
+      properties:
+        entities:
+          type: array
+          description: Combined list of tests that use the DataTable, ordered by entity invariant ID
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/UsedByEntity'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for DataTable used-by query results
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    ResourceGroupParentNamespace:
+      type: string
+      description: Namespace of the parent to which this ResourceGroup belongs
+      enum:
+      - workspaces
+    DataTableQueryResult:
+      type: object
+      properties:
+        dataTables:
+          type: array
+          description: All DataTables matching the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/DataTable'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+      description: Results wrapper for DataTable queries
+      x-mabl-scope: public
+    DataTable:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this DataTable
+          readOnly: true
+          x-mabl-scope: public
+        name:
+          type: string
+          description: The display name for the DataTable
+          x-mabl-scope: public
+        description:
+          maxLength: 255
+          type:
+          - string
+          - 'null'
+          description: The Description for the DataTable
+          x-mabl-scope: public
+        scenario_ids:
+          type: array
+          description: The row (scenario) IDs contained in DataTable
+          readOnly: true
+          items:
+            type: string
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the entity was created
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this entity
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time at which the entity was last updated
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this entity
+          readOnly: true
+          x-mabl-scope: public
+        resource_groups:
+          type: array
+          description: Resource groups this resource belongs to
+          items:
+            $ref: '#/components/schemas/DerivedResourceGroup'
+          x-dao-derived: true
+        used_by_test_count:
+          type: integer
+          description: Count of tests using this DataTable. Populated in query responses.
+          format: int32
+          readOnly: true
+          x-dao-derived: true
+      x-mabl-scope: public
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+      - HasWorkspaceId
+    VariableNamesResult:
+      type: array
+      items:
+        type: string
+      x-fake: this-is-to-compile
+      x-mabl-scope: public
+    DataTableUsedByCountBatchRequest:
+      required:
+      - data_table_ids
+      type: object
+      properties:
+        data_table_ids:
+          minItems: 1
+          type: array
+          description: Array of DataTable IDs to find used-by counts for
+          items:
+            type: string
+      description: Request body for batch DataTable used-by count query
+    DerivedResourceGroup:
+      type: object
+      properties:
+        resource_group_id:
+          type: string
+          description: ID of the resource group
+        short_name:
+          type: string
+          description: Name of the resource group
+        parent_id:
+          type: string
+          description: ID of the parent to which this ResourceGroup belongs
+        parent_namespace:
+          $ref: '#/components/schemas/ResourceGroupParentNamespace'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    VariableNamesRemoveRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Variable name to remove
+          x-mabl-scope: public
+      x-mabl-scope: public
+    DataTableCreateRequest:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Workspace the DataTable and Scenarios will be created in
+          x-mabl-scope: public
+        data_table:
+          $ref: '#/components/schemas/DataTable'
+        scenarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/Scenario'
+          x-mabl-scope: public
+      x-mabl-scope: public
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    Variable:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The variable name
+          x-mabl-scope: public
+        value:
+          type: string
+          description: The value associated with the variable defined in the "name" field
+          x-mabl-scope: public
+      x-mabl-scope: public
+      x-implements-interface:
+      - HasName
+    VariableNamesCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Variable names must be unique
+          x-mabl-scope: public
+        default_value:
+          type: string
+          description: Default value to use for value in updated scenarios, default is empty string
+          default: ''
+          x-mabl-scope: public
+      x-mabl-scope: public
+    ScenarioReconcileRequest:
+      required:
+      - scenarios
+      type: object
+      properties:
+        scenarios:
+          type: array
+          description: The full set of scenarios the DataTable should contain after the request. Include an id to update an existing scenario; omit it to create a new one. Existing scenarios not present here are removed.
+          items:
+            $ref: '#/components/schemas/Scenario'
+          x-mabl-scope: public
+      description: The complete desired set of scenarios for a DataTable bulk replace
+      x-mabl-scope: public
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

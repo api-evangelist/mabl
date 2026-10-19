@@ -1,0 +1,2027 @@
+openapi: 3.2.0
+info:
+  title: mabl Knowledge Graph API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: KnowledgeGraph
+paths:
+  /knowledgeGraph/nodes:
+    get:
+      tags:
+      - KnowledgeGraph
+      summary: List knowledge graph nodes
+      description: Lists nodes in a knowledge graph with optional filters
+      operationId: listKnowledgeGraphNodes
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Filter by application ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        description: Filter by node label
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/KnowledgeGraphNodeLabel'
+      - name: name
+        in: query
+        description: Filter by exact node name
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: 'Filter by node status. If omitted, defaults to ACTIVE (matches the schema default and is the most common case). Pass `ARCHIVED` to list archived nodes only. There is no built-in "ALL" sentinel; to list both ACTIVE and ARCHIVED nodes, issue two requests with explicit `status` values and merge client-side.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - ARCHIVED
+          default: ACTIVE
+      - name: limit
+        in: query
+        description: Maximum number of results to return
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Pagination cursor from a previous query result
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The list of nodes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphNodeListResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+    post:
+      tags:
+      - KnowledgeGraph
+      summary: Create a knowledge graph node
+      description: Creates a new node in the knowledge graph for a workspace. Server generates the node_id with suffix -kgn.
+      operationId: createKnowledgeGraphNode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKnowledgeGraphNodeRequest'
+        required: true
+      responses:
+        '201':
+          description: The created node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphNode'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '422':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::KnowledgeGraph
+  /knowledgeGraph/nodes/{node_id}:
+    get:
+      tags:
+      - KnowledgeGraph
+      summary: Get a knowledge graph node
+      description: Retrieves a specific knowledge graph node by ID
+      operationId: getKnowledgeGraphNode
+      parameters:
+      - name: node_id
+        in: path
+        description: The ID of the node
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphNode'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+    delete:
+      tags:
+      - KnowledgeGraph
+      summary: Delete a knowledge graph node
+      description: Deletes a knowledge graph node. soft_delete=true (default) sets status=ARCHIVED. soft_delete=false hard-deletes the row and cascades to all incoming and outgoing edges and external refs in the same Spanner transaction.
+      operationId: deleteKnowledgeGraphNode
+      parameters:
+      - name: node_id
+        in: path
+        description: The ID of the node to delete
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: soft_delete
+        in: query
+        description: If true (default), archives the node. If false, hard-deletes with cascade.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: Successfully archived (soft_delete=true)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphNode'
+        '204':
+          description: Successfully hard-deleted (soft_delete=false)
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::KnowledgeGraph
+    patch:
+      tags:
+      - KnowledgeGraph
+      summary: Update a knowledge graph node
+      description: Updates an existing knowledge graph node. Mandatory If-Match header for optimistic locking. Re-embeds atomically when name, summary, or content changes. On Vertex 5xx, returns 503 with Retry-After.
+      operationId: updateKnowledgeGraphNode
+      parameters:
+      - name: node_id
+        in: path
+        description: The ID of the node to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: 'ETag for optimistic locking. Functionally required: omitting it surfaces a typed 428 (Precondition Required) response with code "etag_required" so an agent can recover deterministically. Declared as required=false at the schema level so the request reaches the service rather than being rejected by the OpenAPI validator with a generic 400.
+
+          '
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKnowledgeGraphNodeRequest'
+        required: true
+      responses:
+        '200':
+          description: The updated node
+          headers:
+            ETag:
+              description: ETag for the updated node, for use with subsequent If-Match requests
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphNode'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '412':
+          $ref: '#/components/responses/ErrorResponse'
+        '428':
+          $ref: '#/components/responses/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::KnowledgeGraph
+  /knowledgeGraph/nodes/search:
+    post:
+      tags:
+      - KnowledgeGraph
+      summary: Search knowledge graph nodes
+      description: Hybrid search across knowledge graph nodes using semantic (vector), fulltext, and substring modes. Supports Reciprocal Rank Fusion (RRF) when multiple input types are provided. At least one of query_text, literal_phrases, or name_substring must be supplied. When mode=auto (default), the server selects the active modes based on which inputs are present; modes_used reflects the actual modes that ran.
+      operationId: searchKnowledgeGraphNodes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchKnowledgeGraphNodesRequest'
+        required: true
+      responses:
+        '200':
+          description: Search results with RRF-fused ranking and per-mode ranks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchKnowledgeGraphNodesResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+  /knowledgeGraph/nodes/resolve:
+    post:
+      tags:
+      - KnowledgeGraph
+      summary: Resolve a concept name to a knowledge graph node
+      description: 'Name-based resolution of a concept name to a knowledge graph node: (1) exact lowercased name + label match, (2) substring match via SEARCH_SUBSTRING on name_substring_tokens. Returns null when neither produces a match. The two are NOT equivalent: an exact match is a deterministic identity, while a substring match is a lexical name-overlap SIGNAL (match_kind name_substring) that the caller surfaces to its agent as a candidate to weigh, not an identity verdict. Semantic similarity is not performed here; use the similarityNeighbors endpoint for embedding-based neighborhood lookup. Writer-only endpoint (AMA uses this; not for general-purpose search). concept_type is restricted to Page, Workflow, Feature (AMA''s writable concept labels).'
+      operationId: resolveKnowledgeGraphNode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveKnowledgeGraphNodeRequest'
+        required: true
+      responses:
+        '200':
+          description: 'A node matched by exact name+label (a deterministic identity) or by name substring (a lexical name-overlap signal for the caller''s agent to weigh).
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolveKnowledgeGraphNodeResponse'
+        '204':
+          description: 'No node matched either resolution tier. Generated clients should treat this as a "no match" outcome (no response body).
+
+            '
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::KnowledgeGraph
+  /knowledgeGraph/nodes/similarityNeighbors:
+    post:
+      tags:
+      - KnowledgeGraph
+      summary: Find nearest-neighbor concepts to a candidate
+      description: 'Returns the top-K active concept nodes most similar to a candidate concept by symmetric cosine similarity over the node embedding column. The App Modeling Agent uses this to see the nearest existing concepts when resolving a candidate, and judges whether the candidate is the same concept, a variant, or genuinely new. No score threshold is applied — every returned neighbor is ranked, none filtered out.
+
+        The candidate is embedded server-side using the same symmetric document format as the stored embeddings (`title: : | text: `) with `RETRIEVAL_DOCUMENT` task type, so candidate-vs-stored cosine distance is meaningful. When `candidate_text` is omitted, the candidate name alone is used as the embedding text.
+
+        Writer-only endpoint (consumes embedding API quota); `concept_type` is restricted to the agent''s writable labels (Page, Workflow, Feature). Returns 503 when the embedding service is unavailable, so the caller treats it as a transient failure rather than reading an empty neighborhood as "this candidate is unique".'
+      operationId: similarityNeighborsKnowledgeGraphNodes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimilarityNeighborsKnowledgeGraphNodesRequest'
+        required: true
+      responses:
+        '200':
+          description: Top-K similar nodes (may be empty when no concepts of the given label exist).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimilarityNeighborsKnowledgeGraphNodesResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+  /knowledgeGraph/appModelIndex:
+    get:
+      tags:
+      - KnowledgeGraph
+      summary: Get a condensed app model index for an application's Knowledge Graph
+      description: 'Internal read-only aggregate for agent context injection (not part of the public API): the active Page/Workflow/Feature concepts for one application, each with its linked-test counts by role, plus graph-wide edge counts. Assembled from three Spanner reads so a caller does not need to compose nodes + edges + external refs itself. Node summaries and names are agent-authored from customer test content — the same trust class as every other Knowledge Graph read.'
+      operationId: getKnowledgeGraphAppModelIndex
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application to build the index for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The application's app model index
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppModelIndexResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+  /knowledgeGraph/edges:
+    get:
+      tags:
+      - KnowledgeGraph
+      summary: List knowledge graph edges
+      description: 'Lists edges in a knowledge graph with optional filters. Note: application_id is used for auth scope but does not filter result rows (knowledge_graph_edge has no application_id column).'
+      operationId: listKnowledgeGraphEdges
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Application ID (required for auth scope; does not filter rows)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: source_node_id
+        in: query
+        description: Filter by source node ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: destination_node_id
+        in: query
+        description: Filter by destination node ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        description: Filter by edge label
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/KnowledgeGraphEdgeLabel'
+      - name: limit
+        in: query
+        description: Maximum number of results to return
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Pagination cursor from a previous query result
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The list of edges
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphEdgeListResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+    post:
+      tags:
+      - KnowledgeGraph
+      summary: Create a knowledge graph edge
+      description: Creates a new directed edge between two nodes in the knowledge graph. Server generates the edge_id with suffix -kge. Validates that source and destination nodes exist in the same workspace. On duplicate (source, label, destination) returns 409 with the existing edge.
+      operationId: createKnowledgeGraphEdge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKnowledgeGraphEdgeRequest'
+        required: true
+      responses:
+        '201':
+          description: The created edge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphEdge'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '422':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::KnowledgeGraph
+  /knowledgeGraph/edges/{edge_id}:
+    get:
+      tags:
+      - KnowledgeGraph
+      summary: Get a knowledge graph edge
+      description: Retrieves a specific knowledge graph edge by ID. source_node_id is required for PK-aligned lookup.
+      operationId: getKnowledgeGraphEdge
+      parameters:
+      - name: edge_id
+        in: path
+        description: The ID of the edge
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: source_node_id
+        in: query
+        description: The source node ID (required for PK-prefix-aligned lookup)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The edge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphEdge'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+    delete:
+      tags:
+      - KnowledgeGraph
+      summary: Delete a knowledge graph edge
+      description: Hard-deletes the edge. Returns 404 if the edge does not exist.
+      operationId: deleteKnowledgeGraphEdge
+      parameters:
+      - name: edge_id
+        in: path
+        description: The ID of the edge to delete
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: source_node_id
+        in: query
+        description: The source node ID (required for PK-prefix-aligned delete)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Successfully deleted
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::KnowledgeGraph
+    patch:
+      tags:
+      - KnowledgeGraph
+      summary: Update a knowledge graph edge
+      description: Updates mutable fields of a knowledge graph edge (ordinal, weight, description, properties). Immutable fields (source_node_id, destination_node_id, label, created_at) are rejected with 400. Mandatory If-Match header. source_node_id is required for PK-aligned lookup.
+      operationId: updateKnowledgeGraphEdge
+      parameters:
+      - name: edge_id
+        in: path
+        description: The ID of the edge to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: source_node_id
+        in: query
+        description: The source node ID (required for PK-prefix-aligned lookup)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: 'ETag for optimistic locking. Functionally required: omitting it surfaces a typed 428 (Precondition Required) response with code "etag_required" so an agent can recover deterministically. Declared as required=false at the schema level so the request reaches the service rather than being rejected by the OpenAPI validator with a generic 400.
+
+          '
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKnowledgeGraphEdgeRequest'
+        required: true
+      responses:
+        '200':
+          description: The updated edge
+          headers:
+            ETag:
+              description: ETag for the updated edge, for use with subsequent If-Match requests
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphEdge'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '412':
+          $ref: '#/components/responses/ErrorResponse'
+        '428':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::KnowledgeGraph
+  /knowledgeGraph/nodes/{node_id}/externalRefs:
+    get:
+      tags:
+      - KnowledgeGraph
+      summary: List knowledge graph external references for a node
+      description: Lists external references attached to the node identified in the path with optional filters. Test-typed references whose referenced test has been deleted are omitted from list results; get and delete by key are unaffected.
+      operationId: listKnowledgeGraphExternalRefsForNode
+      parameters:
+      - name: node_id
+        in: path
+        description: The knowledge graph node whose external references should be listed
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_type
+        in: query
+        description: Filter by entity type
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_id
+        in: query
+        description: Filter by entity ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: relationship
+        in: query
+        description: Filter by relationship
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Maximum number of results to return
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Pagination cursor from a previous query result
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The list of external references
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphExternalRefListResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+    post:
+      tags:
+      - KnowledgeGraph
+      summary: Create a knowledge graph external reference
+      description: Creates a new external reference attached to the node identified in the path. The composite PK is (workspace_id, node_id, entity_type, entity_id, relationship). On duplicate PK returns 409 with the existing row so the agent can decide to no-op or PATCH.
+      operationId: createKnowledgeGraphExternalRef
+      parameters:
+      - name: node_id
+        in: path
+        description: The knowledge graph node to attach this reference to
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKnowledgeGraphExternalRefRequest'
+        required: true
+      responses:
+        '201':
+          description: The created external reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphExternalRef'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '422':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::KnowledgeGraph
+  /knowledgeGraph/nodes/{node_id}/externalRefs/{entity_type}/{entity_id}/{relationship}:
+    get:
+      tags:
+      - KnowledgeGraph
+      summary: Get a knowledge graph external reference by composite key
+      description: Retrieves a knowledge graph external reference by its composite primary key
+      operationId: getKnowledgeGraphExternalRef
+      parameters:
+      - name: node_id
+        in: path
+        description: The node ID component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: entity_type
+        in: path
+        description: The entity type component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: entity_id
+        in: path
+        description: The entity ID component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: relationship
+        in: path
+        description: The relationship component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The external reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphExternalRef'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::KnowledgeGraph
+    delete:
+      tags:
+      - KnowledgeGraph
+      summary: Delete a knowledge graph external reference
+      description: Hard-deletes the external reference. Returns 404 if the external reference does not exist.
+      operationId: deleteKnowledgeGraphExternalRef
+      parameters:
+      - name: node_id
+        in: path
+        description: The node ID component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: entity_type
+        in: path
+        description: The entity type component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: entity_id
+        in: path
+        description: The entity ID component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: relationship
+        in: path
+        description: The relationship component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Successfully deleted
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::KnowledgeGraph
+    patch:
+      tags:
+      - KnowledgeGraph
+      summary: Update a knowledge graph external reference
+      description: Updates mutable fields of an external reference (entity_variant_id, referenced_entity_version, description, properties). Composite PK fields are immutable (400 if supplied). Mandatory If-Match header.
+      operationId: updateKnowledgeGraphExternalRef
+      parameters:
+      - name: node_id
+        in: path
+        description: The node ID component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: entity_type
+        in: path
+        description: The entity type component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: entity_id
+        in: path
+        description: The entity ID component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: relationship
+        in: path
+        description: The relationship component of the composite PK
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: The workspace ID (required for auth scope)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application ID (required for auth scope)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: 'ETag for optimistic locking. Functionally required: omitting it surfaces a typed 428 (Precondition Required) response with code "etag_required" so an agent can recover deterministically. Declared as required=false at the schema level so the request reaches the service rather than being rejected by the OpenAPI validator with a generic 400.
+
+          '
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKnowledgeGraphExternalRefRequest'
+        required: true
+      responses:
+        '200':
+          description: The updated external reference
+          headers:
+            ETag:
+              description: ETag for the updated external reference, for use with subsequent If-Match requests
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeGraphExternalRef'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '412':
+          $ref: '#/components/responses/ErrorResponse'
+        '428':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::KnowledgeGraph
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    SimilarityNeighborsKnowledgeGraphNodesResponse:
+      required:
+      - neighbors
+      type: object
+      properties:
+        neighbors:
+          type: array
+          description: 'Ranked neighbors ordered by similarity descending (closest first). Empty when no active concepts of the requested label exist in the workspace.
+
+            '
+          items:
+            $ref: '#/components/schemas/KnowledgeGraphSimilarityNeighbor'
+      description: Response from the App Modeling Agent's concept-neighborhood lookup
+    KnowledgeGraphSimilarityNeighbor:
+      required:
+      - label
+      - name
+      - node_id
+      - similarity
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Unique identifier of the neighbor node
+        label:
+          $ref: '#/components/schemas/KnowledgeGraphNodeLabel'
+        name:
+          type: string
+          description: The neighbor concept's name
+        summary:
+          type: string
+          description: The neighbor concept's short summary (may be absent)
+        similarity:
+          maximum: 1.0
+          minimum: 0.0
+          type: number
+          description: Cosine similarity in [0.0, 1.0]; equals 1.0 - cosine_distance
+          format: double
+      description: A single nearest-neighbor result from the similarity search
+    UpdateKnowledgeGraphEdgeRequest:
+      type: object
+      properties:
+        ordinal:
+          type: integer
+          description: Updated ordering hint (preserves existing value if absent or null)
+          format: int64
+        weight:
+          type: number
+          description: Updated edge weight (preserves existing value if absent or null)
+          format: double
+        description:
+          type: string
+          description: Updated relationship description (preserves existing value if absent or null)
+        properties:
+          type: object
+          description: Updated additional structured properties (preserves existing value if absent or null)
+        agent_type:
+          type: string
+          description: Agent type performing the update (preserves existing value if absent or null)
+        agent_version:
+          type: string
+          description: Agent version performing the update (preserves existing value if absent or null)
+      description: 'Request body for updating a knowledge graph edge (ordinal, weight, description, properties, agent metadata only). PATCH uses merge semantics: only fields present in the request body with a non-null value are updated; fields that are absent or explicitly null are preserved at their existing stored value. Immutable identity fields (workspace_id, edge_id, source_node_id, destination_node_id, label) cannot be changed via PATCH.
+
+        '
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    KnowledgeGraphEdgeLabel:
+      type: string
+      description: Label for a knowledge graph edge indicating its relationship type
+      enum:
+      - CONTAINS
+      - HAS_KNOWLEDGE
+      - DEPENDS_ON
+      - RELATED_TO
+      - COVERS
+    UpdateKnowledgeGraphExternalRefRequest:
+      type: object
+      properties:
+        entity_variant_id:
+          type: string
+          description: Updated variant/version ID of the external entity (preserves existing value if absent or null)
+        referenced_entity_version:
+          type: string
+          description: Updated version of the externally referenced entity (preserves existing value if absent or null)
+        description:
+          type: string
+          description: Updated relationship description (preserves existing value if absent or null)
+        properties:
+          type: object
+          description: Updated additional structured properties (preserves existing value if absent or null)
+        agent_type:
+          type: string
+          description: Agent type performing the update (preserves existing value if absent or null)
+        agent_version:
+          type: string
+          description: Agent version performing the update (preserves existing value if absent or null)
+      description: 'Request body for updating a knowledge graph external reference (entity_variant_id, referenced_entity_version, description, properties, agent metadata only). PATCH uses merge semantics: only fields present in the request body with a non-null value are updated; fields that are absent or explicitly null are preserved at their existing stored value. Composite identity fields (workspace_id, node_id, entity_type, entity_id, relationship) cannot be changed via PATCH.
+
+        '
+    SearchKnowledgeGraphNodesResponse:
+      required:
+      - modes_used
+      - nodes
+      type: object
+      properties:
+        nodes:
+          type: array
+          description: Ranked search results
+          items:
+            $ref: '#/components/schemas/KnowledgeGraphSearchResult'
+        modes_used:
+          type: array
+          description: The actual search modes that contributed to the results
+          items:
+            type: string
+            enum:
+            - semantic
+            - fulltext
+            - substring
+      description: Response from hybrid knowledge graph node search
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    KnowledgeGraphNode:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Unique identifier for the node (server-generated, suffix -kgn)
+        workspace_id:
+          type: string
+          description: The workspace this node belongs to
+        application_id:
+          type: string
+          description: The application this node is associated with
+        label:
+          $ref: '#/components/schemas/KnowledgeGraphNodeLabel'
+        name:
+          type: string
+          description: The name of the concept
+        summary:
+          type: string
+          description: A short summary of the concept
+        content:
+          type: string
+          description: Detailed content for this node (max 20K chars before embedding fallback)
+        status:
+          $ref: '#/components/schemas/KnowledgeGraphNodeStatus'
+        confidence:
+          type: number
+          description: Confidence score (0.0-1.0) mapped from tier (high=1.0, medium=0.6, low=0.3)
+          format: double
+        provenance_summary:
+          type: string
+          description: Free-text provenance summary for this concept
+        properties:
+          type: object
+          description: Additional structured properties for this node
+        embedding_input_is_summary:
+          type: boolean
+          description: True if embedding was computed from summary rather than content (content exceeded 20K chars)
+        version:
+          type: integer
+          description: Monotonic edit counter (server-managed, readOnly)
+          format: int64
+        u_version_:
+          type: string
+          description: ETag for optimistic locking (server-managed, readOnly)
+        last_updated_by:
+          type: string
+          description: Principal who last updated this node (server-managed, readOnly)
+        agent_type:
+          type: string
+          description: Agent type that wrote this node (e.g. AMA-Bootstrap, RAA-Enrichment)
+        agent_version:
+          type: string
+          description: Agent version that wrote this node
+        created_by:
+          type: string
+          description: Principal who created this node (server-managed, readOnly)
+        created_at:
+          type: string
+          description: Creation timestamp
+          format: date-time
+        updated_at:
+          type: string
+          description: Last update timestamp
+          format: date-time
+      description: A node in the knowledge graph representing a concept (Page, Workflow, Feature, KnowledgeDoc, Pattern)
+    AppModelIndexNode:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: The node's identifier
+        label:
+          $ref: '#/components/schemas/KnowledgeGraphNodeLabel'
+        name:
+          type: string
+          description: The name of the concept
+        summary:
+          type: string
+          description: A short summary of the concept
+        ref_counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+          description: Linked-test counts by relationship (e.g. validates, uses)
+      description: A trimmed ACTIVE concept node projected for the app model index
+    KnowledgeGraphExternalRef:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace this reference belongs to
+        node_id:
+          type: string
+          description: The knowledge graph node this reference is attached to
+        entity_type:
+          type: string
+          description: The type of external entity (e.g. test, flow, plan, step_execution)
+        entity_id:
+          type: string
+          description: The ID of the external entity
+        relationship:
+          type: string
+          description: The relationship between the node and the external entity
+        entity_variant_id:
+          type: string
+          description: The variant/version ID of the external entity at time of linking
+        referenced_entity_version:
+          type: string
+          description: The version of the externally referenced entity (not the ETag)
+        description:
+          type: string
+          description: Human-readable description of this reference
+        properties:
+          type: object
+          description: Additional structured properties for this reference
+        version:
+          type: integer
+          description: Monotonic edit counter (server-managed, readOnly)
+          format: int64
+        u_version_:
+          type: string
+          description: ETag for optimistic locking (server-managed, readOnly)
+        last_updated_by:
+          type: string
+          description: Principal who last updated this reference (server-managed, readOnly)
+        created_by:
+          type: string
+          description: Principal who created this reference (server-managed, readOnly)
+        agent_type:
+          type: string
+          description: Agent type that wrote this reference
+        agent_version:
+          type: string
+          description: Agent version that wrote this reference
+        created_at:
+          type: string
+          description: Creation timestamp
+          format: date-time
+        updated_at:
+          type: string
+          description: Last update timestamp
+          format: date-time
+      description: 'An external reference linking a knowledge graph node to an external entity. Composite primary key: (workspace_id, node_id, entity_type, entity_id, relationship).
+
+        '
+    KnowledgeGraphNodeListResult:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/KnowledgeGraphNode'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results (absent when no more pages)
+      description: Paginated list result for knowledge graph nodes
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    KnowledgeGraphNodeStatus:
+      type: string
+      description: Status of a knowledge graph node
+      enum:
+      - ACTIVE
+      - ARCHIVED
+    SearchKnowledgeGraphNodesRequest:
+      required:
+      - application_id
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        application_id:
+          type: string
+          description: The application ID
+        query_text:
+          type: string
+          description: Semantic query text for vector similarity search
+        literal_phrases:
+          type: array
+          description: 'Exact phrase(s) for FULLTEXT search. Phrases are OR-joined — a node matches when any one phrase matches, and ranking rewards nodes that match several.
+
+            '
+          items:
+            type: string
+        name_substring:
+          type: string
+          description: Substring match on node name
+        label_filter:
+          type: array
+          description: Optional filter to restrict results to specific node labels
+          items:
+            $ref: '#/components/schemas/KnowledgeGraphNodeLabel'
+        mode:
+          type: string
+          description: 'Search mode. auto (default) selects active modes based on provided inputs. Explicit values force a specific mode. modes_used in the response reflects the actual mode(s) that ran.
+
+            '
+          enum:
+          - auto
+          - semantic
+          - fulltext
+          - substring
+          - rrf
+          default: auto
+        limit:
+          maximum: 50
+          minimum: 1
+          type: integer
+          description: 'Maximum number of results to return. Capped at 50 to keep the agent-facing response within a manageable LLM context budget.
+
+            '
+          format: int32
+          default: 10
+      description: 'Request body for hybrid knowledge graph node search. At least one of query_text, literal_phrases, or name_substring must be supplied.
+
+        '
+    CreateKnowledgeGraphExternalRefRequest:
+      required:
+      - entity_id
+      - entity_type
+      - relationship
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace to create the reference in
+        application_id:
+          type: string
+          description: The application ID (used for auth scope)
+        entity_type:
+          type: string
+          description: The type of external entity
+        entity_id:
+          type: string
+          description: The ID of the external entity
+        relationship:
+          type: string
+          description: The relationship between the node and the entity
+        entity_variant_id:
+          type: string
+          description: The variant/version ID of the external entity
+        referenced_entity_version:
+          type: string
+          description: The version of the externally referenced entity
+        description:
+          type: string
+          description: Human-readable description of this reference
+        properties:
+          type: object
+          description: Additional structured properties
+        agent_type:
+          type: string
+          description: Agent type creating this reference
+        agent_version:
+          type: string
+          description: Agent version creating this reference
+      description: 'Request body for creating a new knowledge graph external reference. The parent node_id is taken from the path, not the body.
+
+        '
+    CreateKnowledgeGraphEdgeRequest:
+      required:
+      - destination_node_id
+      - label
+      - source_node_id
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace to create the edge in
+        application_id:
+          type: string
+          description: The application this edge is associated with (used for auth scope)
+        source_node_id:
+          type: string
+          description: The source node ID (must exist in same workspace)
+        destination_node_id:
+          type: string
+          description: The destination node ID (must exist in same workspace)
+        label:
+          $ref: '#/components/schemas/KnowledgeGraphEdgeLabel'
+        ordinal:
+          type: integer
+          description: Ordering hint for sibling edges
+          format: int64
+        weight:
+          type: number
+          description: Edge weight (0.0-1.0)
+          format: double
+        description:
+          type: string
+          description: Human-readable description of this relationship
+        properties:
+          type: object
+          description: Additional structured properties
+        agent_type:
+          type: string
+          description: Agent type creating this edge
+        agent_version:
+          type: string
+          description: Agent version creating this edge
+      description: Request body for creating a new knowledge graph edge
+    ResolveKnowledgeGraphNodeRequest:
+      required:
+      - application_id
+      - candidate_name
+      - concept_type
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        application_id:
+          type: string
+          description: The application ID
+        concept_type:
+          type: string
+          description: The concept type to resolve against (writer-only labels only)
+          enum:
+          - Page
+          - Workflow
+          - Feature
+        candidate_name:
+          maxLength: 500
+          minLength: 1
+          type: string
+          description: The candidate name to resolve
+      description: 'Request body for resolving a concept name to a knowledge graph node. Restricted to AMA writer-only concept labels (Page, Workflow, Feature).
+
+        '
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    KnowledgeGraphEdge:
+      type: object
+      properties:
+        edge_id:
+          type: string
+          description: Unique identifier for the edge (server-generated, suffix -kge)
+        workspace_id:
+          type: string
+          description: The workspace this edge belongs to
+        source_node_id:
+          type: string
+          description: The source node ID
+        destination_node_id:
+          type: string
+          description: The destination node ID
+        label:
+          $ref: '#/components/schemas/KnowledgeGraphEdgeLabel'
+        ordinal:
+          type: integer
+          description: Ordering hint for sibling edges
+          format: int64
+        weight:
+          type: number
+          description: Edge weight (0.0-1.0)
+          format: double
+        description:
+          type: string
+          description: Human-readable description of this relationship
+        properties:
+          type: object
+          description: Additional structured properties for this edge
+        version:
+          type: integer
+          description: Monotonic edit counter (server-managed, readOnly)
+          format: int64
+        u_version_:
+          type: string
+          description: ETag for optimistic locking (server-managed, readOnly)
+        last_updated_by:
+          type: string
+          description: Principal who last updated this edge (server-managed, readOnly)
+        created_by:
+          type: string
+          description: Principal who created this edge (server-managed, readOnly)
+        agent_type:
+          type: string
+          description: Agent type that wrote this edge
+        agent_version:
+          type: string
+          description: Agent version that wrote this edge
+        created_at:
+          type: string
+          description: Creation timestamp
+          format: date-time
+        updated_at:
+          type: string
+          description: Last update timestamp
+          format: date-time
+      description: A directed edge in the knowledge graph connecting two nodes
+    SimilarityNeighborsKnowledgeGraphNodesRequest:
+      required:
+      - application_id
+      - candidate_name
+      - concept_type
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        application_id:
+          type: string
+          description: The application ID
+        concept_type:
+          type: string
+          description: The concept type to look up neighbors against (writer-only labels only)
+          enum:
+          - Page
+          - Workflow
+          - Feature
+        candidate_name:
+          maxLength: 500
+          minLength: 1
+          type: string
+          description: The candidate concept name; used both as the title prefix and as the embedding text fallback when candidate_text is absent
+        candidate_text:
+          maxLength: 20000
+          type: string
+          description: 'Optional candidate prose to embed (mirrors the stored concept''s `content` column). When supplied, the embedding input is `title: <concept_type>: <candidate_name> | text: <candidate_text>`. When absent, the candidate name alone is reused as the embedding text. Capped at 20000 characters to mirror the concept-content cap.
+
+            '
+        limit:
+          maximum: 50
+          minimum: 1
+          type: integer
+          description: 'Maximum number of neighbors to return (a result-count cap, not a similarity cutoff). Defaults to a small set the agent can inspect; the cap of 50 keeps responses within the agent context budget.
+
+            '
+          format: int32
+          default: 5
+      description: 'Request body for the App Modeling Agent''s concept-neighborhood lookup. Restricted to the agent''s writer concept labels (Page, Workflow, Feature).
+
+        '
+    KnowledgeGraphSearchResult:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Unique identifier of the matching node
+        label:
+          $ref: '#/components/schemas/KnowledgeGraphNodeLabel'
+        name:
+          type: string
+          description: The name of the concept
+        summary:
+          type: string
+          description: A short summary of the concept
+        rrf_score:
+          type: number
+          description: Fused RRF score; present when mode=rrf or auto-degraded with multiple branches
+          format: double
+        semantic_rank:
+          type: integer
+          description: '1-based rank in the semantic branch from the RRF fusion. Absent when semantic mode did not contribute, and absent for single-branch results (when only one mode ran, no fusion occurs and result order is determined by the underlying relevance signal via `ORDER BY` directly — see `modes_used` to detect single-branch responses).
+
+            '
+          format: int32
+        fulltext_rank:
+          type: integer
+          description: '1-based rank in the fulltext branch from the RRF fusion. Absent when fulltext mode did not contribute, and absent for single-branch results (when only one mode ran, no fusion occurs and result order is determined by the underlying relevance signal via `ORDER BY` directly — see `modes_used` to detect single-branch responses).
+
+            '
+          format: int32
+        substring_rank:
+          type: integer
+          description: '1-based rank in the substring branch from the RRF fusion. Absent when substring mode did not contribute, and absent for single-branch results (when only one mode ran, no fusion occurs and result order is determined by the underlying relevance signal via `ORDER BY` directly — see `modes_used` to detect single-branch responses).
+
+            '
+          format: int32
+        snippet:
+          type: string
+          description: 'Best-effort highlighted excerpt sourced from the node''s `summary` when the FULLTEXT branch contributed a match. May be absent when fulltext did not contribute, when no highlightable terms were found, or when the match was on `content` only (the fulltext index does not store `content`, so content-only matches still return the row but cannot be snippeted). Treat as advisory rendering, not as proof of why the row matched.
+
+            '
+      description: A single result from knowledge graph node search with per-mode ranking information
+    CreateKnowledgeGraphNodeRequest:
+      required:
+      - label
+      - name
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace to create the node in
+        application_id:
+          type: string
+          description: The application this node is associated with
+        label:
+          $ref: '#/components/schemas/KnowledgeGraphNodeLabel'
+        name:
+          type: string
+          description: The name of the concept
+        summary:
+          type: string
+          description: A short summary of the concept
+        content:
+          type: string
+          description: Detailed content for this node (max 20K chars before embedding fallback)
+        confidence:
+          type: number
+          description: Confidence score (0.0-1.0)
+          format: double
+        provenance_summary:
+          type: string
+          description: Free-text provenance summary
+        properties:
+          type: object
+          description: Additional structured properties
+        agent_type:
+          type: string
+          description: Agent type creating this node
+        agent_version:
+          type: string
+          description: Agent version creating this node
+      description: Request body for creating a new knowledge graph node
+    UpdateKnowledgeGraphNodeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Updated name (preserves existing value if absent or null; triggers re-embedding when changed)
+        summary:
+          type: string
+          description: Updated summary (preserves existing value if absent or null; triggers re-embedding when changed)
+        content:
+          type: string
+          description: Updated content (preserves existing value if absent or null; triggers re-embedding when changed; max 20K chars before fallback)
+        status:
+          $ref: '#/components/schemas/KnowledgeGraphNodeStatus'
+        confidence:
+          type: number
+          description: Updated confidence score (preserves existing value if absent or null)
+          format: double
+        provenance_summary:
+          type: string
+          description: Updated provenance summary (preserves existing value if absent or null)
+        properties:
+          type: object
+          description: Updated additional structured properties (preserves existing value if absent or null)
+        agent_type:
+          type: string
+          description: Agent type performing the update (preserves existing value if absent or null)
+        agent_version:
+          type: string
+          description: Agent version performing the update (preserves existing value if absent or null)
+      description: 'Request body for updating a knowledge graph node. PATCH uses merge semantics: only fields present in the request body with a non-null value are updated; fields that are absent or explicitly null are preserved at their existing stored value. To clear a nullable field, the workflow is to update the node with a non-null replacement value. Immutable identity fields (workspace_id, node_id, application_id, label) cannot be changed via PATCH and any attempt to do so returns 400.
+
+        '
+    KnowledgeGraphEdgeListResult:
+      type: object
+      properties:
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/KnowledgeGraphEdge'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results (absent when no more pages)
+      description: Paginated list result for knowledge graph edges
+    ResolveKnowledgeGraphNodeResponse:
+      required:
+      - confidence
+      - match_kind
+      - node_id
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: The resolved node ID
+        match_kind:
+          type: string
+          description: 'How the node''s name relates to the candidate: exact (case-insensitive name equality — a deterministic identity) or name_substring (the candidate name is a substring of the node''s name — a lexical overlap signal, not an identity verdict).
+
+            '
+          enum:
+          - exact
+          - name_substring
+        confidence:
+          maximum: 1.0
+          minimum: 0.0
+          type: number
+          description: 'Fixed per match_kind (exact = 1.0, name_substring = 0.95). Retained for backward compatibility; it carries no information beyond match_kind and callers should key on match_kind instead.
+
+            '
+          format: double
+      description: 'Resolution result returned with HTTP 200 when a node was matched by exact name or name substring. When no match is found, the endpoint returns HTTP 204 No Content with no body — callers should treat 204 as "no name match". All listed properties are required when this body is returned. match_kind distinguishes the two: exact is a deterministic identity; name_substring is a lexical name-overlap signal the caller weighs, not an identity verdict.
+
+        '
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    AppModelIndexResponse:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppModelIndexNode'
+        edge_counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+          description: Edge counts by label across the application's node set
+        truncated:
+          type: boolean
+          description: True when the node list hit the server's row cap and may be incomplete
+        last_modeled_at:
+          type: string
+          description: Latest node updated_at in this application's graph; absent when the graph has no nodes
+          format: date-time
+      description: 'Condensed app model index for one application: its active Page/Workflow/Feature concepts with per-concept test-linkage counts, plus graph-wide edge counts.
+
+        '
+    KnowledgeGraphNodeLabel:
+      type: string
+      description: Label for a knowledge graph node indicating its concept type
+      enum:
+      - Page
+      - Workflow
+      - Feature
+      - KnowledgeDoc
+      - Pattern
+    KnowledgeGraphExternalRefListResult:
+      type: object
+      properties:
+        external_refs:
+          type: array
+          items:
+            $ref: '#/components/schemas/KnowledgeGraphExternalRef'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results (absent when no more pages)
+      description: Paginated list result for knowledge graph external references
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

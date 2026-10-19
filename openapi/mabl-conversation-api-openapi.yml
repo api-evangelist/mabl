@@ -1,0 +1,643 @@
+openapi: 3.2.0
+info:
+  title: mabl Conversation API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Conversation
+paths:
+  /conversations:
+    get:
+      tags:
+      - Conversation
+      summary: Query Conversations
+      description: Used to query conversations
+      operationId: queryConversations
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The id of the workspace that owns the conversation and branch
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: branch_name
+        in: query
+        description: The name of the branch to query the conversations for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Conversation
+    post:
+      tags:
+      - Conversation
+      summary: Create Conversation
+      description: Used to create a new Conversation
+      operationId: createConversation
+      requestBody:
+        description: The conversation to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: The conversation that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationCreateResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Conversation
+  /conversations/messages:
+    get:
+      tags:
+      - Conversation
+      summary: Query Conversation Messages
+      description: Used to query conversation messages
+      operationId: queryConversationMessages
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The id of the workspace that owns the conversation and branch
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: branch_name
+        in: query
+        description: The name of the branch to query the conversations for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_type
+        in: query
+        description: The type of entity associated with this conversation
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - branch
+          - test
+          - flow
+      - name: entity_id
+        in: query
+        description: The ID of the entity associated with this conversation (branchId, testInvariantId, flowInvarianId)
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationMessageQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Conversation
+  /conversations/{conversation_id}:
+    delete:
+      tags:
+      - Conversation
+      summary: Remove Conversation
+      description: Removes a conversation
+      operationId: removeConversation
+      parameters:
+      - name: conversation_id
+        in: path
+        description: The conversation id associated with the message
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The conversation was removed
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Conversation
+  /conversations/{conversation_id}/resolve:
+    post:
+      tags:
+      - Conversation
+      summary: Resolve Conversation
+      description: Used to resolve a Conversation
+      operationId: resolveConversation
+      parameters:
+      - name: conversation_id
+        in: path
+        description: The conversation id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '201':
+          description: The conversation that was resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Conversation
+  /conversations/{conversation_id}/unresolve:
+    post:
+      tags:
+      - Conversation
+      summary: Unresolve Conversation
+      description: Used to unresolve a Conversation
+      operationId: unresolveConversation
+      parameters:
+      - name: conversation_id
+        in: path
+        description: The conversation id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '201':
+          description: The conversation that was unresolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Conversation
+  /conversations/{conversation_id}/messages:
+    post:
+      tags:
+      - Conversation
+      summary: Create Conversation Message
+      description: Used to create a new message in a Conversation
+      operationId: createConversationMessage
+      parameters:
+      - name: conversation_id
+        in: path
+        description: The conversation id to associate the new message with
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The conversation message create request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationMessageUpdateRequest'
+        required: true
+      responses:
+        '201':
+          description: The conversation message that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationMessage'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Conversation
+  /conversations/messages/{conversation_message_id}:
+    delete:
+      tags:
+      - Conversation
+      summary: Remove Conversation Message
+      description: Removes a conversation message
+      operationId: removeConversationMessage
+      parameters:
+      - name: conversation_message_id
+        in: path
+        description: The conversation message id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The conversation message was removed
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Conversation
+    patch:
+      tags:
+      - Conversation
+      summary: Update Conversation Message
+      description: Used to update a message in a Conversation
+      operationId: updateConversationMessage
+      parameters:
+      - name: conversation_message_id
+        in: path
+        description: The conversation message id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The conversation message update request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationMessageUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Conversation message updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationMessage'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Conversation
+components:
+  schemas:
+    ConversationCreateResponse:
+      type: object
+      properties:
+        conversation:
+          $ref: '#/components/schemas/Conversation'
+        conversation_message:
+          $ref: '#/components/schemas/ConversationMessage'
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID for this conversation
+        branch_name:
+          type: string
+          description: The name of the branch associated with this conversation
+        branch_id:
+          type: string
+          description: The ID of the branch associated with this conversation
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this conversation
+        entity_type:
+          type: string
+          description: The type of entity associated with this conversation
+          enum:
+          - branch
+          - test
+          - flow
+        entity_id:
+          type: string
+          description: The ID of the entity associated with this conversation (branchId, testInvariantId, flowInvarianId)
+        resolved:
+          type: boolean
+          description: Indicates if the conversation is resolved
+        resolved_time:
+          type: integer
+          description: Time at which the conversation was resolved
+          format: int64
+        created_time:
+          type: integer
+          description: Time at which the conversation was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this conversation
+        last_updated_time:
+          type: integer
+          description: Time at which the conversation was created
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who updated this conversation
+      description: A conversation
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+      - HasCreatedActivity
+      - HasUpdatedActivity
+    ConversationCreateRequest:
+      type: object
+      properties:
+        conversation:
+          $ref: '#/components/schemas/Conversation'
+        message_content:
+          type: string
+          description: The content of the message
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    ConversationMessageUpdateRequest:
+      type: object
+      properties:
+        message_content:
+          type: string
+          description: The content of the message
+    ConversationMessageQueryResult:
+      type: object
+      properties:
+        conversation_messages:
+          type: array
+          description: All conversation messages that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ConversationMessage'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ConversationMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID for this conversation message
+        conversation_id:
+          type: string
+          description: The ID of the conversation associated with this message
+        branch_name:
+          type: string
+          description: The name of the branch associated with this conversation
+        branch_id:
+          type: string
+          description: The ID of the branch associated with this conversation
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this conversation
+        entity_type:
+          type: string
+          description: The type of entity associated with this conversation
+          enum:
+          - branch
+          - test
+          - flow
+        entity_id:
+          type: string
+          description: The ID of the entity associated with this conversation (branchId, testInvariantId, flowInvarianId)
+        content:
+          type: string
+          description: The content of the conversation message
+        created_time:
+          type: integer
+          description: Time at which the conversation was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this conversation
+        last_updated_time:
+          type: integer
+          description: Time at which the conversation was created
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who updated this conversation
+      description: A conversation message
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+      - HasCreatedActivity
+      - HasUpdatedActivity
+    ConversationQueryResult:
+      type: object
+      properties:
+        conversations:
+          type: array
+          description: All conversations that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Conversation'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

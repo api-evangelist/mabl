@@ -1,0 +1,546 @@
+openapi: 3.2.0
+info:
+  title: mabl Metadata Generation API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: MetadataGeneration
+paths:
+  /generate/metadata/apiFlow:
+    post:
+      tags:
+      - MetadataGeneration
+      summary: Generate a suggested name or description for an API flow
+      description: Generate a suggested name for an API flow based on the steps list
+      operationId: generateApiFlowMetadata
+      parameters:
+      - name: workspaceId
+        in: query
+        description: The ID for the workspace
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiFlowMetadataGenerationRequest'
+        required: true
+      responses:
+        '200':
+          description: The generated metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiFlowMetadataGenerationResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::AiGeneration
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    ApiFlowMetadataGenerationRequest:
+      type: object
+      properties:
+        stepsList:
+          type: array
+          description: The list of steps in the API flow
+          items:
+            $ref: '#/components/schemas/ApiTestStep'
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value object containing the variables available for use in the API flow at the time of generation
+      description: Request to generate metadata for a reusable API flow
+    ApiKeyAuthentication:
+      type: object
+      properties:
+        location:
+          type: string
+          description: The location of the API key
+          enum:
+          - header
+          - query
+        key:
+          type: string
+          description: The key to use for authentication
+        value:
+          type: string
+          description: The value to use for authentication
+      description: Configuration for API key authentication
+    ApiFlowMetadataGenerationResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The generated name
+      description: Response to a generation request for an API flow
+    ApiTestStepRequestBodyDefinition:
+      type: object
+      properties:
+        mode:
+          type: string
+          description: The mode of the request body
+          enum:
+          - file
+          - formdata
+          - graphql
+          - none
+          - raw
+          - urlencoded
+        raw:
+          type: string
+          description: The raw body content
+        file:
+          $ref: '#/components/schemas/ApiTestFile'
+        formdata:
+          type: array
+          description: Form data parameters for the request body
+          items:
+            $ref: '#/components/schemas/ApiTestFormParamWithType'
+        urlencoded:
+          type: array
+          description: URL-encoded parameters for the request body
+          items:
+            $ref: '#/components/schemas/ApiTestFormParam'
+        graphql:
+          type: object
+          properties:
+            query:
+              type: string
+              description: The GraphQL query
+            variables:
+              type: string
+              description: The GraphQL variables
+          description: The GraphQL query
+      description: The body of the request
+    OAuth2Authentication:
+      required:
+      - access_token_url
+      - client_credentials_location
+      - client_id
+      - client_secret
+      - grant_type
+      - token_variable
+      type: object
+      properties:
+        access_token_url:
+          type: string
+        client_credentials_location:
+          type: string
+          enum:
+          - basic_auth_header
+          - body
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        grant_type:
+          type: string
+          enum:
+          - client_credentials
+        scope:
+          type: string
+        token_variable:
+          type: string
+          description: The OAuth token will be stored to this variable
+      description: Configuration for OAuth 2.0 authentication
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ApiTestVariable:
+      type: object
+      properties:
+        description:
+          type: string
+          description: The description of the variable
+        assertTarget:
+          type: string
+          description: What part of the response to extract the variable from
+          enum:
+          - Header
+          - JSONBody
+          - Size
+          - Status
+          - TextBody
+        bodyPath:
+          type: string
+          description: If extracting from the response body, the path to the value to extract
+        headerName:
+          type: string
+          description: If extracting from a header, the name of the header
+        variableName:
+          type: string
+          description: The name of the variable
+      description: Extracts a variable from a response to be used in later steps
+    ApiTestFormParam:
+      type: object
+      properties:
+        key:
+          type: string
+          description: The key of the form parameter
+        value:
+          type: string
+          description: The value of the form parameter. Always an empty string for file form parameters.
+        description:
+          type: string
+          description: The description of the form parameter
+        disabled:
+          type: boolean
+          description: Whether the form parameter is disabled
+      description: A form parameter for the request body
+    BearerAuthentication:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The token to use for authentication
+      description: Configuration for bearer authentication
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    ApiAuthentication:
+      required:
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          description: The authentication type to use
+          enum:
+          - apikey
+          - basic
+          - bearer
+          - noauth
+          - oauth1
+          - oauth2
+        api_key:
+          $ref: '#/components/schemas/ApiKeyAuthentication'
+        basic:
+          $ref: '#/components/schemas/BasicAuthentication'
+        bearer:
+          $ref: '#/components/schemas/BearerAuthentication'
+        oauth1:
+          $ref: '#/components/schemas/OAuth1Authentication'
+        oauth2:
+          $ref: '#/components/schemas/OAuth2Authentication'
+      description: Configuration for API authentication
+    OAuth1Authentication:
+      type: object
+      properties:
+        add_parameters_to_header:
+          type: boolean
+        add_empty_parameters_to_signature:
+          type: boolean
+        callback_url:
+          type: string
+        consumer_key:
+          type: string
+        consumer_secret:
+          type: string
+        include_body_hash:
+          type: boolean
+        nonce:
+          type: string
+        realm:
+          type: string
+        signature_method:
+          type: string
+          enum:
+          - HMAC-SHA1
+          - HMAC-SHA256
+          - HMAC-SHA512
+          - RSA-SHA1
+          - RSA-SHA256
+          - RSA-SHA512
+          - PLAINTEXT
+        timestamp:
+          type: string
+        token:
+          type: string
+        token_secret:
+          type: string
+        verifier:
+          type: string
+        version:
+          type: string
+      description: Configuration for OAuth 1.0 authentication
+    ApiTestFormParamWithType:
+      type: object
+      description: A form parameter for the request body, used for formdata input
+      discriminator:
+        propertyName: type
+        mapping:
+          file: '#/components/schemas/ApiTestFileFormParam'
+          text: '#/components/schemas/ApiTestTextFormParam'
+      allOf:
+      - $ref: '#/components/schemas/ApiTestFormParam'
+      - type: object
+        properties:
+          type:
+            type: string
+            description: The type of the form parameter
+            enum:
+            - file
+            - text
+    Step:
+      type: object
+      properties:
+        intent:
+          type: string
+          description: The intent of this test interaction
+        stepType:
+          type: string
+          description: The type of step
+          enum:
+          - step_group
+          - assert_step
+          - flow
+          - api_test_step
+      description: A single interaction in a test
+      discriminator:
+        propertyName: stepType
+        mapping:
+          step_group: '#/components/schemas/StepGroup'
+          assert_step: '#/components/schemas/AssertStep'
+          flow: '#/components/schemas/FlowStep'
+          api_test_step: '#/components/schemas/ApiTestStep'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    ApiTestAssertion:
+      type: object
+      properties:
+        description:
+          type: string
+          description: The description of the assertion
+        assertTarget:
+          type: string
+          description: The target of the assertion
+          enum:
+          - Header
+          - JSONBody
+          - Size
+          - Status
+          - TextBody
+        assertType:
+          type: string
+          description: The type of assertion
+          enum:
+          - Contains
+          - DoesNotContain
+          - EndsWith
+          - Equals
+          - GreaterThan
+          - GreaterThanOrEqualTo
+          - LessThan
+          - LessThanOrEqualTo
+          - MatchesRegExp
+          - NotEquals
+          - NotPresent
+          - Present
+          - StartsWith
+        bodyPath:
+          type: string
+          description: If asserting on the response body, the path to the value to assert against
+        headerName:
+          type: string
+          description: If asserting on a header, the name of the header
+        value:
+          type: string
+          description: The expected value for the assertion
+        caseSensitive:
+          type: boolean
+          description: Whether the assertion is case sensitive
+      description: An assertion for the API test step
+    ApiTestStep:
+      allOf:
+      - $ref: '#/components/schemas/Step'
+      - type: object
+        properties:
+          name:
+            type: string
+            description: The name of the test step
+          request:
+            $ref: '#/components/schemas/ApiTestStepRequestDefinition'
+          assertions:
+            type: array
+            description: A list of assertions for the API test step
+            items:
+              $ref: '#/components/schemas/ApiTestAssertion'
+          variables:
+            type: array
+            description: A list of variables to extract from the response for the API test step
+            items:
+              $ref: '#/components/schemas/ApiTestVariable'
+        description: A single API test step
+    ApiTestStepHeaderDefinition:
+      type: object
+      properties:
+        key:
+          type: string
+          description: The header key
+        value:
+          type: string
+          description: The header value
+      description: A header to be included in the request
+    ApiTestStepRequestDefinition:
+      type: object
+      properties:
+        url:
+          type: string
+          description: The URL to be called
+        method:
+          type: string
+          description: The HTTP method to be used
+        header:
+          type: array
+          description: The headers to be included in the request
+          items:
+            $ref: '#/components/schemas/ApiTestStepHeaderDefinition'
+        body:
+          $ref: '#/components/schemas/ApiTestStepRequestBodyDefinition'
+        auth:
+          $ref: '#/components/schemas/ApiAuthentication'
+      description: The request definition for an API test step
+    ApiTestFile:
+      type: object
+      properties:
+        src:
+          type: string
+          description: The src of the file (e.g., a file path or URL)
+        mablFile:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The ID of the file in mabl
+            type:
+              type: string
+              description: The type of the file
+            name:
+              type: string
+              description: The name of the file
+      description: File data for the request body
+    BasicAuthentication:
+      type: object
+      properties:
+        username:
+          type: string
+          description: The username to use for authentication
+        password:
+          type: string
+          description: The password to use for authentication
+      description: Configuration for basic authentication
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

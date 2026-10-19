@@ -1,0 +1,1082 @@
+openapi: 3.2.0
+info:
+  title: mabl Branch API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Branch
+paths:
+  /branch:
+    get:
+      tags:
+      - Branch
+      summary: Query Branches
+      description: Used to query branches
+      operationId: queryBranches
+      parameters:
+      - name: workspace_id
+        in: query
+        description: Restricts the query to branches associated with the given workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Restricts the query to branches with the given status
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: Restricts the query to the branch with this exact name. Returns 0 or 1 branch and takes precedence over status, limit, and cursor (those are ignored when name is set). Prefer this over the path-based get-branch-by-name route for names that may contain a slash, which does not round-trip as a path segment.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Branch
+    post:
+      tags:
+      - Branch
+      summary: Create Branch
+      description: 'Creates a branch. Idempotent on retry: if a branch with the same name already exists in the workspace, the existing branch is returned instead of an error, so a repeated or retried request for the same branch succeeds rather than failing. Note: the duplicate-name check is a best-effort query and does not guarantee a single branch under truly simultaneous creates.'
+      operationId: createBranch
+      requestBody:
+        description: The branch to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Branch'
+        required: true
+      responses:
+        '201':
+          description: The branch that was created, or the existing branch if one already had this name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Branch
+  /branch/{id}:
+    get:
+      tags:
+      - Branch
+      summary: Get branch
+      description: Used to retrieve a branch by ID
+      operationId: getBranch
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the branch to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The branch with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Branch
+    put:
+      tags:
+      - Branch
+      summary: Update branch
+      description: Used to update a branch
+      operationId: updateBranch
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the branch to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Branch'
+        required: true
+      responses:
+        '200':
+          description: The updated branch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Branch
+    delete:
+      tags:
+      - Branch
+      summary: Remove Branch
+      description: Used to remove a branch
+      operationId: removeBranch
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the branch to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The branch that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Branch
+  /branch/{workspace_id}/{name}:
+    get:
+      tags:
+      - Branch
+      summary: Get branch
+      description: Used to retrieve a branch by workspace and name
+      operationId: getBranchByName
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The ID of the workspace the branch is in
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: name
+        in: path
+        description: The name of the branch to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The branch with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Branch
+  /branch/{workspace_id}/{name}/entities:
+    put:
+      tags:
+      - Branch
+      summary: Add or remove entities on a branch
+      description: Perform batch operation (either add or remove) on a list of entities for a branch
+      operationId: updateEntities
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The ID of the workspace the branch is in
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: name
+        in: path
+        description: The name of the branch to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The entities to add or remove
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchedEntitiesUpdate'
+        required: true
+      responses:
+        '200':
+          description: The branch that was updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Branch
+  /branch/{workspace_id}/merge:
+    post:
+      tags:
+      - Branch
+      summary: merge branches
+      description: Used to merge a branch into another
+      operationId: mergeBranches
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The ID of the workspace the branch is in
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        description: The name of the branch to merge from
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: to
+        in: query
+        description: The name of the branch to merge to.  Defaults to master
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: The merge metadata
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchMergeRequest'
+        required: false
+      responses:
+        '200':
+          description: The merged branch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Merge::Branch
+  /branch/{workspace_id}/merge/status:
+    get:
+      tags:
+      - Branch
+      summary: Get branch merge status
+      description: Reports whether merging one branch into another would carry new versions, and whether the target branch has advanced past the branch point for any edited entity. Read-only; nothing is merged.
+      operationId: getBranchMergeStatus
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The ID of the workspace the branches are in
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        description: The name of the branch that would be merged from
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: to
+        in: query
+        description: The name of the branch that would be merged into.  Defaults to master
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Whether the branch can be merged, and what stands in the way
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchMergeStatus'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Branch
+  /branch/{workspace_id}/snapshot/{snapshot_branch_name}:
+    post:
+      tags:
+      - Branch
+      summary: refresh snapshot
+      description: Refresh a snapshot branch from its source
+      operationId: refreshSnapshot
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The ID of the workspace the branch is in
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: snapshot_branch_name
+        in: path
+        description: The name of the snapshot branch to refresh
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The updated snapshot branch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Branch
+  /recover/branch/{id}:
+    post:
+      tags:
+      - Branch
+      summary: Recover Branch
+      description: Used to undelete a branch
+      operationId: recoverBranch
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the branch to recover
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The recovered branch with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Recover::Branch
+components:
+  schemas:
+    BranchedEntity:
+      required:
+      - id
+      - type
+      - versions
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unversioned id
+        type:
+          type: string
+          description: The type of the branched entitiy
+          enum:
+          - test
+          - flow
+        versions:
+          type: array
+          description: The list of version ids saved to branch
+          items:
+            type: integer
+            format: int64
+        branched_from:
+          type: integer
+          description: DEPRECATED - The version id branched from
+          format: int64
+      description: A branched entity
+    SourceControl:
+      type: object
+      properties:
+        revision:
+          type: string
+          description: the primary source revision associated with this object
+          x-mabl-scope: public
+        revisions:
+          type: array
+          description: all source revision ids associated with this object
+          items:
+            type: string
+          x-mabl-scope: public
+        commit_username:
+          type: string
+          description: the username of the user who committed the revision associated with this object
+        branch_name:
+          type: string
+          description: the branch associated with this object
+        branches:
+          type: array
+          description: Related branches
+          items:
+            $ref: '#/components/schemas/SourceControlBranch'
+          x-mabl-scope: public
+        pull_request:
+          $ref: '#/components/schemas/SourceControlPullRequest'
+        pull_requests:
+          type: array
+          description: Related pull requests
+          items:
+            $ref: '#/components/schemas/SourceControlPullRequest'
+          x-mabl-scope: public
+        authors:
+          type: array
+          description: Related authors. Should be at least one
+          items:
+            $ref: '#/components/schemas/SourceControlAuthor'
+          x-mabl-scope: public
+        repository_url:
+          type: string
+          description: the url of the repository associated with this object
+        repository_name:
+          type: string
+          description: the name of the repository associated with this object
+        repository:
+          $ref: '#/components/schemas/SourceControlRepository'
+    BranchMergeStatus:
+      required:
+      - conflicted
+      - diverged_entities
+      - from
+      - has_new_versions
+      - to
+      type: object
+      properties:
+        from:
+          type: string
+          description: The name of the branch that would be merged from
+        to:
+          type: string
+          description: The name of the branch that would be merged into
+        has_new_versions:
+          type: boolean
+          description: 'True when the branch carries at least one entity edited past the version it was branched from, so a merge would move source-control tags rather than no-op. Already merged, snapshot, and unedited branches are all false.
+
+            '
+        conflicted:
+          type: boolean
+          description: 'True when at least one edited entity has diverged, so merging would supersede newer versions on the target branch instead of fast-forwarding. Equivalent to diverged_entities being non-empty.
+
+            '
+        diverged_entities:
+          type: array
+          description: The edited entities whose merge would NOT be a fast-forward
+          items:
+            $ref: '#/components/schemas/DivergedEntity'
+      description: Whether merging one branch into another would be clean, and what stands in the way
+    BranchMergeRequest:
+      type: object
+      properties:
+        diff_match:
+          type: string
+          description: A hash of the sorted list of [<target_branch_entity_id>, <source_branch_entity_id>] pairs for the entities being merged (all branched entities, or just entity_ids when that is set). This is sorted in ascending order by the second entity ID in the pair.
+        to:
+          type: string
+          description: The name of the branch to merge into. Defaults to master.
+        from:
+          type: string
+          description: The name of the branch to merge from
+        entity_ids:
+          type: array
+          description: 'Optional. Invariant IDs of specific branched entities to merge. When present and non-empty, only these entities are merged into the target branch and removed from the source branch, which stays open. When absent or empty, the entire branch is merged and the source branch is marked merged (the default behavior).
+
+            '
+          items:
+            type: string
+        fast_forward_only:
+          type: boolean
+          description: 'When true, an entity whose version on the target branch advanced past the branch point aborts the merge with a 409 rather than superseding that newer version. Defaults to false, which promotes the branch version as a new head on the target.
+
+            '
+      description: A request to merge a branch into another branch
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    DivergedEntity:
+      required:
+      - id
+      - name
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unversioned id
+        type:
+          $ref: '#/components/schemas/BranchEntityTypeEnum'
+        name:
+          type: string
+          description: 'Display name of the entity - a test''s name, or a flow''s description. Falls back to the id for an entity that carries no name of its own.
+
+            '
+      description: A branched entity whose target branch advanced past the branch point
+    BranchMergeInfo:
+      type: object
+      properties:
+        merged_time:
+          type: integer
+          description: Time at which the branch was merged
+          format: int64
+        merged_by_id:
+          type: string
+          description: The ID of the user who merged this branch
+        merged_to:
+          type: string
+          description: The branch this was merged into
+        entities:
+          type: array
+          description: List of merged entities and the versions merged
+          items:
+            $ref: '#/components/schemas/MergedEntity'
+          x-dao-unindexed: true
+      description: Information about a merged branch
+      x-dao-unindexed: true
+    BranchEntityTypeEnum:
+      type: string
+      description: The kind of entity carried on a branch
+      enum:
+      - test
+      - flow
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    SourceControlRepository:
+      required:
+      - html_url
+      - id
+      - name
+      - owner_name
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique repository id (immutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        full_name:
+          type: string
+          description: vendor unique name to identify this repo across all vendor's repos
+          x-mabl-scope: public
+        owner_name:
+          type: string
+          description: repository name unique within owner scope
+        owner:
+          $ref: '#/components/schemas/SourceControlRepositoryOwner'
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+        is_public:
+          type: boolean
+          description: true if repository publicly visible
+          x-mabl-scope: public
+        checkout_url:
+          type: string
+          description: SCM remote checkout path
+          x-mabl-scope: public
+      description: the SCM repository associated with this object
+    Branch:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID for this branch
+        branch_type:
+          type: string
+          description: The type of branch
+          enum:
+          - feature
+          - snapshot
+        name:
+          type: string
+          description: The name of the branch.  Must be unique within workspace.
+        status:
+          type: string
+          description: The current status of the branch
+          enum:
+          - merged
+          - open
+          - snapshot
+        application_id:
+          type: string
+          description: The ID of the application associated with this branch
+        environment_id:
+          type: string
+          description: Optional id of environment this branch is associated with, if any
+        source_control:
+          $ref: '#/components/schemas/SourceControl'
+        entities:
+          type: array
+          description: List of branched entities and the initial version they were branched off of
+          items:
+            $ref: '#/components/schemas/BranchedEntity'
+          x-dao-unindexed: true
+        journeys:
+          type: array
+          description: (deprecated use entities instead) List of branched journeys and the initial version they were branched off of
+          items:
+            $ref: '#/components/schemas/VersionedTestId'
+          x-dao-unindexed: true
+        flows:
+          type: array
+          description: (deprecated use entities instead) List of branched flows and the initial version they were branched off of
+          items:
+            $ref: '#/components/schemas/VersionedFlowId'
+          x-dao-unindexed: true
+        branched_from:
+          type: string
+          description: The branch this branch was created from
+        merge_info:
+          $ref: '#/components/schemas/BranchMergeInfo'
+        workspace_id:
+          type: string
+          description: Workspace this branch exists in
+        created_time:
+          type: integer
+          description: Time at which the deployment was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this deployment
+      description: A test branch
+      x-implements-interface:
+      - HasId
+      - HasCreatedActivity
+      - HasWorkspaceId
+      - HasName
+      x-dao-unindexed: true
+    VersionedTestId:
+      type: object
+      properties:
+        journey_id:
+          type: string
+          description: The unversioned test id
+        version:
+          type: integer
+          description: The test version
+          format: int64
+      description: A test id paired with an explicit version
+    MergedEntity:
+      required:
+      - id
+      - source_version
+      - type
+      - version
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unversioned id
+        type:
+          type: string
+          description: The type of the merged entity
+          enum:
+          - test
+          - flow
+        source_version:
+          type: integer
+          description: The entity version on the source branch prior to the merge
+          format: int64
+        target_version:
+          type: integer
+          description: The entity version on the target branch prior to the merge, if applicable
+          format: int64
+        version:
+          type: integer
+          description: The merged entity version on the target branch after the merge
+          format: int64
+      description: A merged entity
+    SourceControlRepositoryOwner:
+      required:
+      - html_url
+      - id
+      - name
+      - owner_type
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique repository id (immutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        owner_type:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+        avatar_url:
+          type: string
+          description: owner avatar image URL
+          x-mabl-scope: public
+      description: the SCM repository associated with this object
+    VersionedFlowId:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          description: The unversioned flow id
+        version:
+          type: integer
+          description: The flow version
+          format: int64
+      description: A flow id paired with an explicit version
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    SourceControlPullRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique pull request identifier (immutable)
+          x-mabl-scope: public
+        number:
+          type: integer
+          description: the number associated with the pull request (repository unique)
+          x-mabl-scope: public
+        title:
+          type: string
+          description: the title of the pull request
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view pull request object
+          x-mabl-scope: public
+      description: the pull request associated with this object
+    BranchQueryResult:
+      type: object
+      properties:
+        branches:
+          type: array
+          description: All branches that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Branch'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    SourceControlBranch:
+      required:
+      - html_url
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: repository unique branch name
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+      description: the SCM branch associated with this object
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    SourceControlAuthor:
+      required:
+      - avatar_url
+      - html_url
+      - id
+      - user_name
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique author id (invariant)
+          x-mabl-scope: public
+        user_name:
+          type: string
+          description: author username name (mutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: author full name (mutable)
+          x-mabl-scope: public
+        email:
+          type: string
+          description: author email
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view author
+          x-mabl-scope: public
+        avatar_url:
+          type: string
+          description: author avatar image URL
+          x-mabl-scope: public
+        user_type:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+      description: the SCM author associated with this object
+    BranchedEntitiesUpdate:
+      required:
+      - entities
+      - operation
+      type: object
+      properties:
+        operation:
+          type: string
+          description: The operation to apply to the entities
+          enum:
+          - add
+          - remove
+        entities:
+          type: array
+          description: A list of entities for a branch
+          items:
+            $ref: '#/components/schemas/BranchedEntity'
+      description: A container for a list of entities to add to or remove from branch
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

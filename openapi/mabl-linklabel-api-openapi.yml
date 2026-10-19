@@ -1,0 +1,701 @@
+openapi: 3.2.0
+info:
+  title: mabl Link Label API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: LinkLabel
+paths:
+  /link/labels:
+    get:
+      tags:
+      - LinkLabel
+      summary: Query Link Labels
+      description: Get all Link labels (Link Agent names) associated with a workspace.
+      operationId: queryLinkLabels
+      parameters:
+      - name: workspace_id
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The Link Labels that matched the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkLabelQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+      x-mabl-scope: public
+  /link/{workspace_id}/label/{label}:
+    get:
+      tags:
+      - LinkLabel
+      summary: Gets a link label
+      operationId: getLinkLabel
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: label
+        in: path
+        description: The label associated with the link stack to delete.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Link label
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkLabel'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+    delete:
+      tags:
+      - LinkLabel
+      summary: Delete Link Label
+      description: Delete all link assets associated with the provided label (Link Agent name). Use this to clean up Link Tunnels created for ephemeral test environments.
+      operationId: deleteLinkStack
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: label
+        in: path
+        description: The label associated with the link stack to delete.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Link resources deletion accepted
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::LinkAgent
+      x-mabl-scope: public
+    patch:
+      tags:
+      - LinkLabel
+      summary: Update operator-controlled fields on a Link Label
+      description: Update operator-managed fields on a Link Label. v1 surface is restricted to `operator_tunables_overrides` — the only writable field on this endpoint. The resolved `operator_tunables` view is recomputed on every read (defaults ⊕ label overrides); per-Agent overrides on individual `LinkAgent` records layer on top. See the operator-control-plane design doc for details. To clear every label-level override at once, use DELETE `/link/{workspace_id}/label/{label}/operator-tunables-overrides`.
+      operationId: updateLinkLabel
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: label
+        in: path
+        description: The label associated with the link stack to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: Conditional update — succeeds only if the label's current ETag matches.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: field_mask
+        in: query
+        description: 'Comma-separated list of fields to update. If provided, only fields in the mask are written; fields in the mask but absent from the body are cleared. Without a mask the entire sparse body is applied (fields with `x-dao-apply-nulls` honour null-clears).
+
+          '
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
+        description: Sparse Link Label update. Only `operator_tunables_overrides` is honoured.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkLabel'
+        required: true
+      responses:
+        '200':
+          description: The updated Link Label (with the resolved `operator_tunables` view recomputed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkLabel'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Label not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '412':
+          description: If-Match precondition failed (ETag mismatch).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+  /link/{workspace_id}/label/{label}/operator-tunables-overrides:
+    delete:
+      tags:
+      - LinkLabel
+      summary: Clear all operator-tunable overrides on a Link Label
+      description: Clear every label-level operator-tunable override in one call, restoring the label's resolved tunables to the static defaults (per-Agent overrides on individual `LinkAgent` records still layer on top). The resolved `operator_tunables` view is recomputed on the response. To clear a single override instead, PATCH that field to `null` via `PATCH /link/{workspace_id}/label/{label}`. Idempotent — clearing when no label-level overrides are set is a no-op success.
+      operationId: clearLinkLabelOperatorTunablesOverrides
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The id of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: label
+        in: path
+        description: The label whose operator-tunable overrides should be cleared
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: Conditional clear — succeeds only if the label's current ETag matches.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The updated Link Label (with the resolved `operator_tunables` view recomputed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkLabel'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Label not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '412':
+          description: If-Match precondition failed (ETag mismatch).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+      x-mabl-scope: public
+  /cron/link/labels/cleanup:
+    get:
+      tags:
+      - LinkLabel
+      summary: Clean up unused Link Labels
+      operationId: cleanupUnusedLinkLabels
+      responses:
+        '204':
+          description: Cleanup successful
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::LinkAgent
+components:
+  schemas:
+    LinkTunnelOwnerType:
+      type: string
+      description: 'The kind of entity a mablnet tunnel is scoped to — its "owner". `workspace` is the classic scope: one tunnel per workspace. `company` scopes a single tunnel to an entire company, so every workspace under that company shares one mablnet tenant (and one Link Agent fleet) instead of needing a tunnel each. `user` is a personal tunnel scoped to a single user, private to that user — its egress is the user''s own machine, used to route a cloud test run through it. All three are mablnet-only: legacy Link Tunnel is always workspace-scoped.
+
+        '
+      enum:
+      - workspace
+      - company
+      - user
+      x-mabl-scope: public
+    LinkAgentOperatorTunables:
+      type: object
+      properties:
+        mablnet_min_carriers:
+          maximum: 16
+          minimum: 1
+          type:
+          - integer
+          - 'null'
+          description: 'Steady-state target carrier count for the mablnet Host. PATCH `null` to clear an override and fall back to the next merge layer.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_max_carriers:
+          maximum: 32
+          minimum: 1
+          type:
+          - integer
+          - 'null'
+          description: 'Advisory ceiling — overlap budget for in-flight carrier churn.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_join_timeout:
+          type:
+          - string
+          - 'null'
+          description: 'Per-carrier-join timeout. Tighten only when investigating a misbehaving LB.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_telemetry_export_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Cadence at which the Agent-side SDK MeterProvider flushes to the mablnet-metrics-collector. Drop to ~`PT5S` during incidents.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_recycle_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Period between proactive carrier-recycle ticks: the worker retires its oldest carrier (make-before-break, so existing QUIC sessions migrate without disruption) and the LB redistributes the replacement across the Router fleet. Default `PT60M`. Set `PT0S` to disable proactive recycle (the worker still retires unhealthy carriers). PATCH `null` to clear an override.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_recycle_jitter:
+          type:
+          - string
+          - 'null'
+          description: 'Random offset added to the first carrier-recycle tick, to desync the fleet so recycles don''t bunch into a thundering-herd reconnect. Default `PT30M`. No effect when `mablnet_carrier_recycle_interval` is `PT0S`.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_allowed_protocols:
+          type:
+          - array
+          - 'null'
+          description: 'The set of mablnet carrier protocols this tunnel is allowed to use (default `[mablnet_quic, mablnet_wss]`). This is the mabl-controlled *policy* — which carriers are permitted — NOT a try-order: order here is not significant. Each host selects the best available protocol from this set (and the fallback order among them) using local signals the operator can''t know ahead of time — UDP socket-buffer clamp, an HTTP proxy in the path, live reachability. Set `[mablnet_wss]` to disable QUIC for a tunnel on a known UDP-blocked network, or `[mablnet_quic]` to require QUIC. Only `mablnet_*` values are valid; the worker rebuilds on change. PATCH `null` to clear an override.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentProtocolEnum'
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_connect_timeouts:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: integer
+            format: int32
+          description: 'Per-protocol carrier establishment deadline in milliseconds, keyed by `LinkAgentProtocolEnum` value (default `{mablnet_quic: 8000, mablnet_wss: 45000}`): how long the worker waits for a carrier on that protocol to JOIN before falling back to the next protocol the host tries (from `mablnet_allowed_protocols`). The deadline is intrinsic to the protocol — QUIC fast-fails to escape silently-blackholing networks; WSS is patient — and is independent of order. A protocol absent from the map uses the worker''s built-in default. PATCH `null` to clear the override.
+
+            '
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_client_pool_size:
+          type:
+          - integer
+          - 'null'
+          description: 'Multi-carrier peer-pool size for CLIENT legs connecting to this tunnel. Deliberately has NO server-side default: unset means each client auto-selects a fixed pool size from its own machine''s resources (total memory, capped by cores) — the api can''t know them. An explicit value pins the size for every client of the tunnel: `1` = pool off, N > 1 boots N mablnet Hosts per client — one slot identity each, each with its own carriers — and spreads connections across them, lifting the one-pinned-carrier-per-peer throughput cap for many-connection workloads (browser tests). Does not speed up a single bulk stream, and the Link Agent itself is unaffected — this rides to clients on the resolved tunnel (`client_pool_size`). Consumers treat explicit values < 1 as 1; keep N modest (2-4). PATCH `null` to restore client auto-selection.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        ready_heartbeat_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Heartbeat cadence once the Agent reaches `ready` status. While the Agent is still bringing up the legacy / mablnet stacks (status != `ready`) it heartbeats at the hard-coded 10 s tick — fast feedback is what ops + the UI need during startup, and the startup window is short. Once `ready` the cadence drops to this value (default `PT60S`); steady-state Agents mostly only need the heartbeat to guard against sudden death (laptop suspend, network drop) and that doesn''t repay 10 s × every Agent in the fleet of api-side load. The Agent reverts to 10 s if `status` ever leaves `ready`. Must stay below the api''s dead-agent cleanup threshold (10 min) — `PT300S` (5 min) is a safe upper bound.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        agent_log_level:
+          type:
+          - string
+          - 'null'
+          description: 'Root logger level. Applied in-place — no Host rebuild.
+
+            Deliberately has no server-side default, and should not be given one. The Agent applies this to its process-global root logger on the first announce, which happens *after* it has applied the level from its own config file / command line — so any value set here silently overrides what the customer configured locally. Left unset (the default) the local config stays authoritative; set explicitly, it means an operator chose this level for this tunnel and it wins.
+
+            '
+          enum:
+          - trace
+          - debug
+          - info
+          - warn
+          - error
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+      description: 'Operator-tunable parameters for a running Link Agent. Used in two contexts: as the read-only resolved view (`operator_tunables`) and as the sparse overrides (`operator_tunables_overrides`). In the overrides context absent fields fall through to the next merge layer; `null` explicitly clears the override (`x-dao-apply-nulls: true` per-field). In the resolved-view context the api populates every field by merging static defaults (in `LinkLabelServiceImpl`) with label-level overrides and (on `LinkAgent`) agent-level overrides.
+
+        '
+      x-mabl-scope: public
+    LinkLabel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID for this Link Label
+          readOnly: true
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the Link Label was created
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        label:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+          description: The link label
+          readOnly: true
+          x-mabl-scope: public
+        cloud_safe_canonical_name:
+          type: string
+          description: The globally unique name for this label that is safe to use in FQDNs (based on label and workspace ID).
+          readOnly: true
+          x-mabl-scope: public
+        client_certificate:
+          type: string
+          description: 'The serialized X.509 certificate Link Agents use as their client identity on the legacy Link Tunnel mTLS path. Not used by mablnet: mablnet''s `HostCredentials` are a separate JSON blob (workspace_id + label + host_id + issued_at + nonce); the mabl-deployment `HostAuthenticator` validates that blob via the `POST /link/mablnet/authorize/host` endpoint and maps it to `mablnet_tenant_id`. Also distinct from the per-Host peer QUIC certs mablnet''s `CertificateAuthority` issues at join time, which embed `(tenantId, hostId)` in SAN OtherName extensions.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        server_certificate:
+          type: string
+          description: The serialized certificate for Link Servers to use
+          readOnly: true
+        client_fingerprint:
+          type: string
+          description: The fingerprint of the client certificate
+          readOnly: true
+          x-mabl-scope: public
+        client_public_key:
+          type: string
+          description: The public key of the client certificate
+          readOnly: true
+          x-mabl-scope: public
+        server_fingerprint:
+          type: string
+          description: The fingerprint of the server certificate
+          readOnly: true
+          x-mabl-scope: public
+        server_public_key:
+          type: string
+          description: The public key of the server certificate
+          readOnly: true
+          x-mabl-scope: public
+        link_server_image_tag:
+          type: string
+          description: If specified, overrides the default Link Server image tag in this environment
+          readOnly: true
+        link_server_size:
+          $ref: '#/components/schemas/LinkServerSize'
+        termination_time:
+          type: integer
+          description: The time this was terminated at
+          format: int64
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        terminated_by_id:
+          type: string
+          description: The client id that terminated this link labe;l
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: 'The workspace that owns this label, for `workspace`-owned tunnels. Also the identity the legacy Link Tunnel path and the per-label mTLS certs are keyed by. Unset for `company`-owned tunnels (which are mablnet-only) — read `owner_type`/`owner_id` for the canonical scope.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        owner_type:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+        owner_id:
+          type: string
+          description: 'The id of the owning entity — equals `workspace_id` for `workspace` tunnels, the company id for `company` tunnels.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        link_infrastructure_key:
+          type: string
+          description: 'The link infrastructure cluster this tunnel lives on, recorded for personal (`user`-owned) tunnels only. Server-derived at announce from the owner''s workspace associations and folded into the label''s identity (the label is a hash of `machine_identity` and this key), so a placement change produces a new tunnel rather than mutating this one. Absent on workspace- and company-owned labels — their placement always derives live from the owning company''s `link_infrastructure_key` — and on personal labels announced before placement existed, which live on the shared cluster.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        mablnet_tenant_id:
+          type: integer
+          description: '32-bit mablnet tenant identifier assigned at LinkLabel creation. Derived deterministically from a stable hash of `<owner-key>:<label>` — where `<owner-key>` is the workspace id for `workspace` tunnels and `company:<company-id>` for `company` tunnels — truncated into the 32-bit unsigned range, with a defensive collision check against existing LinkLabels — on the unlikely event the hash collides with an already-allocated tenant id, the value is offset (by 1 or a small random delta) until it lands in an unused slot. The chosen value is immutable for the lifetime of the LinkLabel. Used as the `tenantId` in mablnet''s protocol. Populated lazily for legacy labels during the migration cutover; absent until the LinkLabel has been migrated or recreated.
+
+            The legacy mablnet documentation calls this the "tenant id"; mabl''s customer-facing name for the same concept is "Link label", and this field ties the two together.
+
+            '
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        mablnet_tenant_id_hex:
+          type: string
+          description: 'Zero-padded 8-character lowercase hex form of `mablnet_tenant_id`, e.g. `bee85e2b`. Provided for log/grep/observability ergonomics; the numeric and hex forms always agree (both written in the same pass).
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        operator_tunables:
+          $ref: '#/components/schemas/LinkAgentOperatorTunables'
+        operator_tunables_overrides:
+          $ref: '#/components/schemas/LinkAgentOperatorTunables'
+        worker_release_override:
+          $ref: '#/components/schemas/MablnetWorkerReleaseOverride'
+      description: Represents a label used by a Link Agent and Server
+      x-dao-apply-nulls: true
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    LinkAgentProtocolEnum:
+      type: string
+      description: "Protocol the Link Agent uses to reach the mabl side.\nLegacy values (pre-mablnet): - `wss`: WebSocket over TLS to a Link Server (the only one of the three that\n  shipped — `ssl` and `https` are historical placeholders).\n- `ssl`, `https`: never implemented; kept in the enum for backwards\n  compatibility with serialized records that captured them.\n\nNew values (mablnet): - `mablnet_wss`: WSS carrier to a mablnet Router, through the Application LB on\n  :443. The fallback substrate, and the only one that traverses an HTTP proxy.\n- `mablnet_quic`: UDP/QUIC carrier to a mablnet Router, on :443. The preferred\n  substrate where the network passes UDP; Agents fall back to `mablnet_wss`\n  where it does not.\n"
+      enum:
+      - ssl
+      - https
+      - wss
+      - mablnet_wss
+      - mablnet_quic
+      x-mabl-scope: public
+    MablnetWorkerReleaseOverride:
+      type: object
+      properties:
+        channel:
+          type: string
+          description: 'Channel this tenant follows instead of the one its Host requests (e.g. `latest`, `stable`, or a branch name as published). Unset = use the requested channel. The effective channel is alias-resolved, so a channel alias applies here too.
+
+            '
+          x-mabl-scope: public
+        version:
+          type: string
+          description: 'Exact worker version pinned for this tenant, bypassing the staged rollout. Unset = follow the (effective) channel''s rollout.
+
+            '
+          x-mabl-scope: public
+      description: 'Per-tenant override of the worker release a Link Label receives, set by a mabl operator (not customer-writable). Consulted by `GET /link/mablnet/artifacts/mablnet-host/manifest` before the channel''s staged rollout: `channel` (when set) replaces the channel the Host requested; `version` (when set) pins that exact version, bypassing the staged percentage. Either or both may be set; an absent override means the tenant follows the normal channel rollout. Used to give one customer an experimental or branch build to confirm a fix, then cleared once the version is promoted channel-wide via `PUT /link/mablnet/artifacts/mablnet-host/channels/{channel}/current`.
+
+        '
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    LinkServerSize:
+      type: string
+      description: The size of the Link Server, which determines its resource allocation
+      enum:
+      - small
+      - large
+    LinkLabelQueryResult:
+      type: array
+      description: Represents a list of Link label names
+      items:
+        type: string
+      x-mabl-scope: public
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

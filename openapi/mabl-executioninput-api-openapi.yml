@@ -1,0 +1,340 @@
+openapi: 3.2.0
+info:
+  title: mabl Execution Input API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: ExecutionInput
+paths:
+  /execution/inputs:
+    get:
+      tags:
+      - ExecutionInput
+      summary: Query execution inputs, sorted by received_time descending (most recent email…
+      operationId: queryExecutionInputs
+      parameters:
+      - name: context_id
+        in: query
+        description: The context ID whose inputs should be queried (test run ID or trainer session ID)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: email_address
+        in: query
+        description: When querying for emails, the email address which received the email
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: earliest_received_time
+        in: query
+        description: The earliest received time to query for in milliseconds since epoch; filter out all inputs received before this time
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: latest_received_time
+        in: query
+        description: The latest received time to query for in milliseconds since epoch; filter out all inputs received after this time
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: lookback_millis
+        in: query
+        description: The lookback time in milliseconds from the current time, only used if earliest_received_time is not provided
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: The query result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionInputQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ExecutionInput
+    post:
+      tags:
+      - ExecutionInput
+      summary: Create execution input
+      operationId: createExecutionInput
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionInput'
+        required: true
+      responses:
+        '201':
+          description: The execution input that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionInput'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::ExecutionInput
+  /execution/inputs/{execution_input_id}:
+    get:
+      tags:
+      - ExecutionInput
+      summary: Retrieves a specific execution input
+      operationId: getExecutionInput
+      parameters:
+      - name: execution_input_id
+        in: path
+        description: The ID of the execution input to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The execution input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionInput'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ExecutionInput
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    ExecutionInputQueryResult:
+      type: object
+      properties:
+        execution_inputs:
+          type: array
+          description: All execution inputs that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ExecutionInput'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    ExecutionInput:
+      required:
+      - workspace_id
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID for this input
+          readOnly: true
+        context_id:
+          type: string
+          description: The ID of the execution context, either a test run ID or a training session ID
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this event
+        created_time:
+          type: integer
+          description: Time at which the input was inserted via the API
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the client that created this execution input
+          readOnly: true
+        received_time:
+          type: integer
+          description: 'Time at which the input was received (email: arrival time at receiving mail server)'
+          format: int64
+        sent_time:
+          type: integer
+          description: 'Time at which the input was created by user (email: sent by sender)'
+          format: int64
+        input_type:
+          type: string
+          description: The type of input
+          enum:
+          - email
+        input_artifacts:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of input artifact type to artifact URI
+        input_properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs used to store additional properties relevant to this specific input type
+      description: Describes an external input to an execution, either a test run or a training/replay session
+      x-implements-interface:
+      - HasId
+      - HasCreatedActivity
+      - HasWorkspaceId
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

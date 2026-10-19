@@ -70,17 +70,6 @@ apis:
     url: https://help.mabl.com/
   - type: APIReference
     url: https://api.help.mabl.com/reference/intro-to-the-mabl-api
-- aid: mabl:mabl-applications-api
-  name: Mabl Applications API
-  description: The Applications API from Mabl — 2 operation(s) for applications.
-  humanURL: https://mabl.com
-  tags:
-  - Application
-  tags_raw:
-  - Applications
-  properties:
-  - type: OpenAPI
-    url: openapi/mabl-applications-api-openapi.yml
 - aid: mabl:mabl-credentials-api
   name: Mabl Credentials API
   description: The Credentials API from Mabl — 2 operation(s) for credentials.
@@ -90,84 +79,925 @@ apis:
   properties:
   - type: OpenAPI
     url: openapi/mabl-credentials-api-openapi.yml
-- aid: mabl:mabl-database-connections-api
-  name: Mabl Database Connections API
-  description: The Database Connections API from Mabl — 2 operation(s) for database connections.
+- aid: mabl:mabl-abtestconfig-api
+  name: Mabl Ab Test Config API
+  description: The AbTestConfig API from Mabl — 1 operation(s) for abtestconfig.
   humanURL: https://mabl.com
   tags:
-  - Database Connections
+  - AbTestConfig
   properties:
   - type: OpenAPI
-    url: openapi/mabl-database-connections-api-openapi.yml
-- aid: mabl:mabl-deployment-events-api
-  name: Mabl Deployment Events API
-  description: The Deployment Events API from Mabl — 2 operation(s) for deployment events.
+    url: openapi/mabl-abtestconfig-api-openapi.yml
+- aid: mabl:mabl-access-api
+  name: Mabl Access API
+  description: The Access API from Mabl — 1 operation(s) for access.
   humanURL: https://mabl.com
   tags:
-  - Deployment Events
+  - Access
   properties:
   - type: OpenAPI
-    url: openapi/mabl-deployment-events-api-openapi.yml
-- aid: mabl:mabl-environments-api
-  name: Mabl Environments API
-  description: The Environments API from Mabl — 2 operation(s) for environments.
+    url: openapi/mabl-access-api-openapi.yml
+- aid: mabl:mabl-account-api
+  name: Mabl Account API
+  description: The Account API from Mabl — 18 operation(s) for account.
+  humanURL: https://mabl.com
+  tags:
+  - Account
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-account-api-openapi.yml
+- aid: mabl:mabl-agentinstruction-api
+  name: Mabl Agent Instruction API
+  description: The AgentInstruction API from Mabl — 2 operation(s) for agentinstruction.
+  humanURL: https://mabl.com
+  tags:
+  - AgentInstruction
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-agentinstruction-api-openapi.yml
+- aid: mabl:mabl-agentsession-api
+  name: Mabl Agent Session API
+  description: The AgentSession API from Mabl — 22 operation(s) for agentsession.
+  humanURL: https://mabl.com
+  tags:
+  - AgentSession
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-agentsession-api-openapi.yml
+- aid: mabl:mabl-alert-api
+  name: Mabl Alert API
+  description: The Alert API from Mabl — 6 operation(s) for alert.
+  humanURL: https://mabl.com
+  tags:
+  - Alert
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-alert-api-openapi.yml
+- aid: mabl:mabl-analysis-api
+  name: Mabl Analysis API
+  description: The Analysis API from Mabl — 9 operation(s) for analysis.
+  humanURL: https://mabl.com
+  tags:
+  - Analysis
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-analysis-api-openapi.yml
+- aid: mabl:mabl-analysiscache-api
+  name: Mabl Analysis Cache API
+  description: The AnalysisCache API from Mabl — 2 operation(s) for analysiscache.
+  humanURL: https://mabl.com
+  tags:
+  - AnalysisCache
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-analysiscache-api-openapi.yml
+- aid: mabl:mabl-application-api
+  name: Mabl Application API
+  description: The Application API from Mabl — 5 operation(s) for application.
+  humanURL: https://mabl.com
+  tags:
+  - Application
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-application-api-openapi.yml
+- aid: mabl:mabl-appmodeling-api
+  name: Mabl App Modeling API
+  description: The AppModeling API from Mabl — 6 operation(s) for appmodeling.
+  humanURL: https://mabl.com
+  tags:
+  - AppModeling
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-appmodeling-api-openapi.yml
+- aid: mabl:mabl-asynchronousjob-api
+  name: Mabl Asynchronous Job API
+  description: The AsynchronousJob API from Mabl — 3 operation(s) for asynchronousjob.
+  humanURL: https://mabl.com
+  tags:
+  - AsynchronousJob
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-asynchronousjob-api-openapi.yml
+- aid: mabl:mabl-authorization-api
+  name: Mabl Authorization API
+  description: The Authorization API from Mabl — 2 operation(s) for authorization.
+  humanURL: https://mabl.com
+  tags:
+  - Authorization
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-authorization-api-openapi.yml
+- aid: mabl:mabl-authorizationpreflight-api
+  name: Mabl Authorization Preflight API
+  description: The AuthorizationPreflight API from Mabl — 1 operation(s) for authorizationpreflight.
+  humanURL: https://mabl.com
+  tags:
+  - AuthorizationPreflight
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-authorizationpreflight-api-openapi.yml
+- aid: mabl:mabl-azureboardssync-api
+  name: Mabl Azure Boards Sync API
+  description: The AzureBoardsSync API from Mabl — 9 operation(s) for azureboardssync.
+  humanURL: https://mabl.com
+  tags:
+  - AzureBoardsSync
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-azureboardssync-api-openapi.yml
+- aid: mabl:mabl-billing-api
+  name: Mabl Billing API
+  description: The Billing API from Mabl — 5 operation(s) for billing.
+  humanURL: https://mabl.com
+  tags:
+  - Billing
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-billing-api-openapi.yml
+- aid: mabl:mabl-branch-api
+  name: Mabl Branch API
+  description: The Branch API from Mabl — 8 operation(s) for branch.
+  humanURL: https://mabl.com
+  tags:
+  - Branch
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-branch-api-openapi.yml
+- aid: mabl:mabl-chat-api
+  name: Mabl Chat API
+  description: The Chat API from Mabl — 1 operation(s) for chat.
+  humanURL: https://mabl.com
+  tags:
+  - Chat
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-chat-api-openapi.yml
+- aid: mabl:mabl-company-api
+  name: Mabl Company API
+  description: The Company API from Mabl — 9 operation(s) for company.
+  humanURL: https://mabl.com
+  tags:
+  - Company
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-company-api-openapi.yml
+- aid: mabl:mabl-companydomain-api
+  name: Mabl Company Domain API
+  description: The CompanyDomain API from Mabl — 2 operation(s) for companydomain.
+  humanURL: https://mabl.com
+  tags:
+  - CompanyDomain
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-companydomain-api-openapi.yml
+- aid: mabl:mabl-conversation-api
+  name: Mabl Conversation API
+  description: The Conversation API from Mabl — 7 operation(s) for conversation.
+  humanURL: https://mabl.com
+  tags:
+  - Conversation
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-conversation-api-openapi.yml
+- aid: mabl:mabl-copy-api
+  name: Mabl Copy API
+  description: The Copy API from Mabl — 2 operation(s) for copy.
+  humanURL: https://mabl.com
+  tags:
+  - Copy
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-copy-api-openapi.yml
+- aid: mabl:mabl-coverage-api
+  name: Mabl Coverage API
+  description: The Coverage API from Mabl — 9 operation(s) for coverage.
+  humanURL: https://mabl.com
+  tags:
+  - Coverage
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-coverage-api-openapi.yml
+- aid: mabl:mabl-customfailurereason-api
+  name: Mabl Custom Failure Reason API
+  description: The CustomFailureReason API from Mabl — 4 operation(s) for customfailurereason.
+  humanURL: https://mabl.com
+  tags:
+  - CustomFailureReason
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-customfailurereason-api-openapi.yml
+- aid: mabl:mabl-customfilter-api
+  name: Mabl Custom Filter API
+  description: The CustomFilter API from Mabl — 3 operation(s) for customfilter.
+  humanURL: https://mabl.com
+  tags:
+  - CustomFilter
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-customfilter-api-openapi.yml
+- aid: mabl:mabl-databaseconnection-api
+  name: Mabl Database Connection API
+  description: The DatabaseConnection API from Mabl — 3 operation(s) for databaseconnection.
+  humanURL: https://mabl.com
+  tags:
+  - DatabaseConnection
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-databaseconnection-api-openapi.yml
+- aid: mabl:mabl-databasequeryexecution-api
+  name: Mabl Database Query Execution API
+  description: The DatabaseQueryExecution API from Mabl — 3 operation(s) for databasequeryexecution.
+  humanURL: https://mabl.com
+  tags:
+  - DatabaseQueryExecution
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-databasequeryexecution-api-openapi.yml
+- aid: mabl:mabl-datatable-api
+  name: Mabl Data Table API
+  description: The DataTable API from Mabl — 10 operation(s) for datatable.
+  humanURL: https://mabl.com
+  tags:
+  - DataTable
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-datatable-api-openapi.yml
+- aid: mabl:mabl-deployment-api
+  name: Mabl Deployment API
+  description: The Deployment API from Mabl — 2 operation(s) for deployment.
+  humanURL: https://mabl.com
+  tags:
+  - Deployment
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-deployment-api-openapi.yml
+- aid: mabl:mabl-diagnostic-api
+  name: Mabl Diagnostic API
+  description: The Diagnostic API from Mabl — 4 operation(s) for diagnostic.
+  humanURL: https://mabl.com
+  tags:
+  - Diagnostic
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-diagnostic-api-openapi.yml
+- aid: mabl:mabl-environment-api
+  name: Mabl Environment API
+  description: The Environment API from Mabl — 2 operation(s) for environment.
   humanURL: https://mabl.com
   tags:
   - Environment
-  tags_raw:
-  - Environments
   properties:
   - type: OpenAPI
-    url: openapi/mabl-environments-api-openapi.yml
-- aid: mabl:mabl-flows-api
-  name: Mabl Flows API
-  description: The Flows API from Mabl — 1 operation(s) for flows.
+    url: openapi/mabl-environment-api-openapi.yml
+- aid: mabl:mabl-event-api
+  name: Mabl Event API
+  description: The Event API from Mabl — 8 operation(s) for event.
+  humanURL: https://mabl.com
+  tags:
+  - Event
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-event-api-openapi.yml
+- aid: mabl:mabl-execution-api
+  name: Mabl Execution API
+  description: The Execution API from Mabl — 10 operation(s) for execution.
+  humanURL: https://mabl.com
+  tags:
+  - Execution
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-execution-api-openapi.yml
+- aid: mabl:mabl-executioncluster-api
+  name: Mabl Execution Cluster API
+  description: The ExecutionCluster API from Mabl — 4 operation(s) for executioncluster.
+  humanURL: https://mabl.com
+  tags:
+  - ExecutionCluster
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-executioncluster-api-openapi.yml
+- aid: mabl:mabl-executionhost-api
+  name: Mabl Execution Host API
+  description: The ExecutionHost API from Mabl — 5 operation(s) for executionhost.
+  humanURL: https://mabl.com
+  tags:
+  - ExecutionHost
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-executionhost-api-openapi.yml
+- aid: mabl:mabl-executioninput-api
+  name: Mabl Execution Input API
+  description: The ExecutionInput API from Mabl — 2 operation(s) for executioninput.
+  humanURL: https://mabl.com
+  tags:
+  - ExecutionInput
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-executioninput-api-openapi.yml
+- aid: mabl:mabl-executionnotification-api
+  name: Mabl Execution Notification API
+  description: The ExecutionNotification API from Mabl — 2 operation(s) for executionnotification.
+  humanURL: https://mabl.com
+  tags:
+  - ExecutionNotification
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-executionnotification-api-openapi.yml
+- aid: mabl:mabl-executionrunner-api
+  name: Mabl Execution Runner API
+  description: The ExecutionRunner API from Mabl — 4 operation(s) for executionrunner.
+  humanURL: https://mabl.com
+  tags:
+  - ExecutionRunner
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-executionrunner-api-openapi.yml
+- aid: mabl:mabl-export-api
+  name: Mabl Export API
+  description: The Export API from Mabl — 1 operation(s) for export.
+  humanURL: https://mabl.com
+  tags:
+  - Export
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-export-api-openapi.yml
+- aid: mabl:mabl-exportrequest-api
+  name: Mabl Export Request API
+  description: The ExportRequest API from Mabl — 2 operation(s) for exportrequest.
+  humanURL: https://mabl.com
+  tags:
+  - ExportRequest
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-exportrequest-api-openapi.yml
+- aid: mabl:mabl-fileupload-api
+  name: Mabl File Upload API
+  description: The FileUpload API from Mabl — 7 operation(s) for fileupload.
+  humanURL: https://mabl.com
+  tags:
+  - FileUpload
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-fileupload-api-openapi.yml
+- aid: mabl:mabl-find-api
+  name: Mabl Find API
+  description: The Find API from Mabl — 2 operation(s) for find.
+  humanURL: https://mabl.com
+  tags:
+  - Find
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-find-api-openapi.yml
+- aid: mabl:mabl-findmodel-api
+  name: Mabl Find Model API
+  description: The FindModel API from Mabl — 1 operation(s) for findmodel.
+  humanURL: https://mabl.com
+  tags:
+  - FindModel
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-findmodel-api-openapi.yml
+- aid: mabl:mabl-findsummary-api
+  name: Mabl Find Summary API
+  description: The FindSummary API from Mabl — 1 operation(s) for findsummary.
+  humanURL: https://mabl.com
+  tags:
+  - FindSummary
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-findsummary-api-openapi.yml
+- aid: mabl:mabl-flow-api
+  name: Mabl Flow API
+  description: The Flow API from Mabl — 17 operation(s) for flow.
   humanURL: https://mabl.com
   tags:
   - Flow
-  tags_raw:
-  - Flows
   properties:
   - type: OpenAPI
-    url: openapi/mabl-flows-api-openapi.yml
-- aid: mabl:mabl-issues-api
-  name: Mabl Issues API
-  description: The Issues API from Mabl — 2 operation(s) for issues.
+    url: openapi/mabl-flow-api-openapi.yml
+- aid: mabl:mabl-forgeinstallation-api
+  name: Mabl Forge Installation API
+  description: The ForgeInstallation API from Mabl — 3 operation(s) for forgeinstallation.
   humanURL: https://mabl.com
   tags:
-  - Issues
+  - ForgeInstallation
   properties:
   - type: OpenAPI
-    url: openapi/mabl-issues-api-openapi.yml
-- aid: mabl:mabl-test-runs-api
-  name: Mabl Test Runs API
-  description: The Test Runs API from Mabl — 3 operation(s) for test runs.
+    url: openapi/mabl-forgeinstallation-api-openapi.yml
+- aid: mabl:mabl-guardrail-api
+  name: Mabl Guardrail API
+  description: The Guardrail API from Mabl — 6 operation(s) for guardrail.
   humanURL: https://mabl.com
   tags:
-  - Test Runs
+  - Guardrail
   properties:
   - type: OpenAPI
-    url: openapi/mabl-test-runs-api-openapi.yml
-- aid: mabl:mabl-tests-api
-  name: Mabl Tests API
-  description: The Tests API from Mabl — 1 operation(s) for tests.
+    url: openapi/mabl-guardrail-api-openapi.yml
+- aid: mabl:mabl-health-api
+  name: Mabl Health API
+  description: The Health API from Mabl — 3 operation(s) for health.
   humanURL: https://mabl.com
   tags:
-  - Tests
+  - Health
   properties:
   - type: OpenAPI
-    url: openapi/mabl-tests-api-openapi.yml
-- aid: mabl:mabl-users-api
-  name: Mabl Users API
-  description: The Users API from Mabl — 1 operation(s) for users.
+    url: openapi/mabl-health-api-openapi.yml
+- aid: mabl:mabl-insight-api
+  name: Mabl Insight API
+  description: The Insight API from Mabl — 3 operation(s) for insight.
+  humanURL: https://mabl.com
+  tags:
+  - Insight
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-insight-api-openapi.yml
+- aid: mabl:mabl-issue-api
+  name: Mabl Issue API
+  description: The Issue API from Mabl — 7 operation(s) for issue.
+  humanURL: https://mabl.com
+  tags:
+  - Issue
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-issue-api-openapi.yml
+- aid: mabl:mabl-joblock-api
+  name: Mabl Job Lock API
+  description: The JobLock API from Mabl — 2 operation(s) for joblock.
+  humanURL: https://mabl.com
+  tags:
+  - JobLock
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-joblock-api-openapi.yml
+- aid: mabl:mabl-knowledgegraph-api
+  name: Mabl Knowledge Graph API
+  description: The KnowledgeGraph API from Mabl — 10 operation(s) for knowledgegraph.
+  humanURL: https://mabl.com
+  tags:
+  - KnowledgeGraph
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-knowledgegraph-api-openapi.yml
+- aid: mabl:mabl-linkagent-api
+  name: Mabl Link Agent API
+  description: The LinkAgent API from Mabl — 13 operation(s) for linkagent.
+  humanURL: https://mabl.com
+  tags:
+  - LinkAgent
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-linkagent-api-openapi.yml
+- aid: mabl:mabl-linklabel-api
+  name: Mabl Link Label API
+  description: The LinkLabel API from Mabl — 4 operation(s) for linklabel.
+  humanURL: https://mabl.com
+  tags:
+  - LinkLabel
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-linklabel-api-openapi.yml
+- aid: mabl:mabl-linklabelusage-api
+  name: Mabl Link Label Usage API
+  description: The LinkLabelUsage API from Mabl — 3 operation(s) for linklabelusage.
+  humanURL: https://mabl.com
+  tags:
+  - LinkLabelUsage
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-linklabelusage-api-openapi.yml
+- aid: mabl:mabl-linkmablnet-api
+  name: Mabl Link Mablnet API
+  description: The LinkMablnet API from Mabl — 14 operation(s) for linkmablnet.
+  humanURL: https://mabl.com
+  tags:
+  - LinkMablnet
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-linkmablnet-api-openapi.yml
+- aid: mabl:mabl-linkmetric-api
+  name: Mabl Link Metric API
+  description: The LinkMetric API from Mabl — 1 operation(s) for linkmetric.
+  humanURL: https://mabl.com
+  tags:
+  - LinkMetric
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-linkmetric-api-openapi.yml
+- aid: mabl:mabl-linkserver-api
+  name: Mabl Link Server API
+  description: The LinkServer API from Mabl — 6 operation(s) for linkserver.
+  humanURL: https://mabl.com
+  tags:
+  - LinkServer
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-linkserver-api-openapi.yml
+- aid: mabl:mabl-login-api
+  name: Mabl Login API
+  description: The Login API from Mabl — 5 operation(s) for login.
+  humanURL: https://mabl.com
+  tags:
+  - Login
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-login-api-openapi.yml
+- aid: mabl:mabl-mablscriptoverride-api
+  name: Mabl Mablscript Override API
+  description: The MablscriptOverride API from Mabl — 3 operation(s) for mablscriptoverride.
+  humanURL: https://mabl.com
+  tags:
+  - MablscriptOverride
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-mablscriptoverride-api-openapi.yml
+- aid: mabl:mabl-mabltrondistribution-api
+  name: Mabl Mabltron Distribution API
+  description: The MabltronDistribution API from Mabl — 2 operation(s) for mabltrondistribution.
+  humanURL: https://mabl.com
+  tags:
+  - MabltronDistribution
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-mabltrondistribution-api-openapi.yml
+- aid: mabl:mabl-mailbox-api
+  name: Mabl Mailbox API
+  description: The Mailbox API from Mabl — 7 operation(s) for mailbox.
+  humanURL: https://mabl.com
+  tags:
+  - Mailbox
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-mailbox-api-openapi.yml
+- aid: mabl:mabl-metadatageneration-api
+  name: Mabl Metadata Generation API
+  description: The MetadataGeneration API from Mabl — 1 operation(s) for metadatageneration.
+  humanURL: https://mabl.com
+  tags:
+  - MetadataGeneration
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-metadatageneration-api-openapi.yml
+- aid: mabl:mabl-metric-api
+  name: Mabl Metric API
+  description: The Metric API from Mabl — 1 operation(s) for metric.
+  humanURL: https://mabl.com
+  tags:
+  - Metric
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-metric-api-openapi.yml
+- aid: mabl:mabl-miscellaneouspublic-api
+  name: Mabl Miscellaneous Public API
+  description: The MiscellaneousPublic API from Mabl — 2 operation(s) for miscellaneouspublic.
+  humanURL: https://mabl.com
+  tags:
+  - MiscellaneousPublic
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-miscellaneouspublic-api-openapi.yml
+- aid: mabl:mabl-mobileappfile-api
+  name: Mabl Mobile App File API
+  description: The MobileAppFile API from Mabl — 3 operation(s) for mobileappfile.
+  humanURL: https://mabl.com
+  tags:
+  - MobileAppFile
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-mobileappfile-api-openapi.yml
+- aid: mabl:mabl-mobiledeviceconfiguration-api
+  name: Mabl Mobile Device Configuration API
+  description: >-
+    The MobileDeviceConfiguration API from Mabl — 1 operation(s) for mobiledeviceconfiguration.
+  humanURL: https://mabl.com
+  tags:
+  - MobileDeviceConfiguration
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-mobiledeviceconfiguration-api-openapi.yml
+- aid: mabl:mabl-mobiletrainingsession-api
+  name: Mabl Mobile Training Session API
+  description: The MobileTrainingSession API from Mabl — 6 operation(s) for mobiletrainingsession.
+  humanURL: https://mabl.com
+  tags:
+  - MobileTrainingSession
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-mobiletrainingsession-api-openapi.yml
+- aid: mabl:mabl-note-api
+  name: Mabl Note API
+  description: The Note API from Mabl — 3 operation(s) for note.
+  humanURL: https://mabl.com
+  tags:
+  - Note
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-note-api-openapi.yml
+- aid: mabl:mabl-oauthtoken-api
+  name: Mabl OAUTH Token API
+  description: The OauthToken API from Mabl — 5 operation(s) for oauthtoken.
+  humanURL: https://mabl.com
+  tags:
+  - OauthToken
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-oauthtoken-api-openapi.yml
+- aid: mabl:mabl-organization-api
+  name: Mabl Organization API
+  description: The Organization API from Mabl — 15 operation(s) for organization.
+  humanURL: https://mabl.com
+  tags:
+  - Organization
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-organization-api-openapi.yml
+- aid: mabl:mabl-planrun-api
+  name: Mabl Plan Run API
+  description: The PlanRun API from Mabl — 18 operation(s) for planrun.
+  humanURL: https://mabl.com
+  tags:
+  - PlanRun
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-planrun-api-openapi.yml
+- aid: mabl:mabl-prompt-api
+  name: Mabl Prompt API
+  description: The Prompt API from Mabl — 1 operation(s) for prompt.
+  humanURL: https://mabl.com
+  tags:
+  - Prompt
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-prompt-api-openapi.yml
+- aid: mabl:mabl-quota-api
+  name: Mabl Quota API
+  description: The Quota API from Mabl — 2 operation(s) for quota.
+  humanURL: https://mabl.com
+  tags:
+  - Quota
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-quota-api-openapi.yml
+- aid: mabl:mabl-report-api
+  name: Mabl Report API
+  description: The Report API from Mabl — 35 operation(s) for report.
+  humanURL: https://mabl.com
+  tags:
+  - Report
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-report-api-openapi.yml
+- aid: mabl:mabl-reporting-api
+  name: Mabl Reporting API
+  description: The Reporting API from Mabl — 22 operation(s) for reporting.
+  humanURL: https://mabl.com
+  tags:
+  - Reporting
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-reporting-api-openapi.yml
+- aid: mabl:mabl-resourcegroup-api
+  name: Mabl Resource Group API
+  description: The ResourceGroup API from Mabl — 4 operation(s) for resourcegroup.
+  humanURL: https://mabl.com
+  tags:
+  - ResourceGroup
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-resourcegroup-api-openapi.yml
+- aid: mabl:mabl-role-api
+  name: Mabl Role API
+  description: The Role API from Mabl — 3 operation(s) for role.
+  humanURL: https://mabl.com
+  tags:
+  - Role
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-role-api-openapi.yml
+- aid: mabl:mabl-rolegrant-api
+  name: Mabl Role Grant API
+  description: The RoleGrant API from Mabl — 2 operation(s) for rolegrant.
+  humanURL: https://mabl.com
+  tags:
+  - RoleGrant
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-rolegrant-api-openapi.yml
+- aid: mabl:mabl-saml-api
+  name: Mabl SAML API
+  description: The Saml API from Mabl — 3 operation(s) for saml.
+  humanURL: https://mabl.com
+  tags:
+  - Saml
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-saml-api-openapi.yml
+- aid: mabl:mabl-schedule-api
+  name: Mabl Schedule API
+  description: The Schedule API from Mabl — 11 operation(s) for schedule.
+  humanURL: https://mabl.com
+  tags:
+  - Schedule
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-schedule-api-openapi.yml
+- aid: mabl:mabl-snippet-api
+  name: Mabl Snippet API
+  description: The Snippet API from Mabl — 9 operation(s) for snippet.
+  humanURL: https://mabl.com
+  tags:
+  - Snippet
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-snippet-api-openapi.yml
+- aid: mabl:mabl-statedetection-api
+  name: Mabl State Detection API
+  description: The StateDetection API from Mabl — 3 operation(s) for statedetection.
+  humanURL: https://mabl.com
+  tags:
+  - StateDetection
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-statedetection-api-openapi.yml
+- aid: mabl:mabl-test-api
+  name: Mabl Test API
+  description: The Test API from Mabl — 26 operation(s) for test.
+  humanURL: https://mabl.com
+  tags:
+  - Test
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-test-api-openapi.yml
+- aid: mabl:mabl-testcase-api
+  name: Mabl Test Case API
+  description: The TestCase API from Mabl — 3 operation(s) for testcase.
+  humanURL: https://mabl.com
+  tags:
+  - TestCase
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-testcase-api-openapi.yml
+- aid: mabl:mabl-testcasemanagement-api
+  name: Mabl Test Case Management API
+  description: The TestCaseManagement API from Mabl — 21 operation(s) for testcasemanagement.
+  humanURL: https://mabl.com
+  tags:
+  - TestCaseManagement
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-testcasemanagement-api-openapi.yml
+- aid: mabl:mabl-testgeneration-api
+  name: Mabl Test Generation API
+  description: The TestGeneration API from Mabl — 1 operation(s) for testgeneration.
+  humanURL: https://mabl.com
+  tags:
+  - TestGeneration
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-testgeneration-api-openapi.yml
+- aid: mabl:mabl-trackeritem-api
+  name: Mabl Tracker Item API
+  description: The TrackerItem API from Mabl — 4 operation(s) for trackeritem.
+  humanURL: https://mabl.com
+  tags:
+  - TrackerItem
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-trackeritem-api-openapi.yml
+- aid: mabl:mabl-usage-api
+  name: Mabl Usage API
+  description: The Usage API from Mabl — 7 operation(s) for usage.
+  humanURL: https://mabl.com
+  tags:
+  - Usage
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-usage-api-openapi.yml
+- aid: mabl:mabl-user-api
+  name: Mabl User API
+  description: The User API from Mabl — 19 operation(s) for user.
   humanURL: https://mabl.com
   tags:
   - User
-  tags_raw:
-  - Users
   properties:
   - type: OpenAPI
-    url: openapi/mabl-users-api-openapi.yml
+    url: openapi/mabl-user-api-openapi.yml
+- aid: mabl:mabl-validateurl-api
+  name: Mabl Validate URL API
+  description: The ValidateUrl API from Mabl — 2 operation(s) for validateurl.
+  humanURL: https://mabl.com
+  tags:
+  - ValidateUrl
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-validateurl-api-openapi.yml
+- aid: mabl:mabl-validationpolicy-api
+  name: Mabl Validation Policy API
+  description: The ValidationPolicy API from Mabl — 1 operation(s) for validationpolicy.
+  humanURL: https://mabl.com
+  tags:
+  - ValidationPolicy
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-validationpolicy-api-openapi.yml
+- aid: mabl:mabl-variablerow-api
+  name: Mabl Variable Row API
+  description: The VariableRow API from Mabl — 2 operation(s) for variablerow.
+  humanURL: https://mabl.com
+  tags:
+  - VariableRow
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-variablerow-api-openapi.yml
+- aid: mabl:mabl-variabletable-api
+  name: Mabl Variable Table API
+  description: The VariableTable API from Mabl — 3 operation(s) for variabletable.
+  humanURL: https://mabl.com
+  tags:
+  - VariableTable
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-variabletable-api-openapi.yml
+- aid: mabl:mabl-vmimage-api
+  name: Mabl Vm Image API
+  description: The VmImage API from Mabl — 2 operation(s) for vmimage.
+  humanURL: https://mabl.com
+  tags:
+  - VmImage
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-vmimage-api-openapi.yml
+- aid: mabl:mabl-workspace-api
+  name: Mabl Workspace API
+  description: The Workspace API from Mabl — 1 operation(s) for workspace.
+  humanURL: https://mabl.com
+  tags:
+  - Workspace
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-workspace-api-openapi.yml
+- aid: mabl:mabl-workspaceinfrastructure-api
+  name: Mabl Workspace Infrastructure API
+  description: The WorkspaceInfrastructure API from Mabl — 1 operation(s) for workspaceinfrastructure.
+  humanURL: https://mabl.com
+  tags:
+  - WorkspaceInfrastructure
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-workspaceinfrastructure-api-openapi.yml
+- aid: mabl:mabl-workspaceintegration-api
+  name: Mabl Workspace Integration API
+  description: The WorkspaceIntegration API from Mabl — 9 operation(s) for workspaceintegration.
+  humanURL: https://mabl.com
+  tags:
+  - WorkspaceIntegration
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-workspaceintegration-api-openapi.yml
+- aid: mabl:mabl-workspaceinvitation-api
+  name: Mabl Workspace Invitation API
+  description: The WorkspaceInvitation API from Mabl — 4 operation(s) for workspaceinvitation.
+  humanURL: https://mabl.com
+  tags:
+  - WorkspaceInvitation
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-workspaceinvitation-api-openapi.yml
+- aid: mabl:mabl-xrayproxy-api
+  name: Mabl Xray Proxy API
+  description: The XrayProxy API from Mabl — 4 operation(s) for xrayproxy.
+  humanURL: https://mabl.com
+  tags:
+  - XrayProxy
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-xrayproxy-api-openapi.yml
+- aid: mabl:mabl-agent-token-api
+  name: Mabl Agent Token API
+  description: The Agent Token API from Mabl — 1 operation(s) for agent token.
+  humanURL: https://mabl.com
+  tags:
+  - Agent Token
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-agent-token-api-openapi.yml
+- aid: mabl:mabl-api-key-api
+  name: Mabl API Key API
+  description: The API Key API from Mabl — 8 operation(s) for api key.
+  humanURL: https://mabl.com
+  tags:
+  - API Key
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-api-key-api-openapi.yml
+- aid: mabl:mabl-test-run-api
+  name: Mabl Test Run API
+  description: The Test Run API from Mabl — 37 operation(s) for test run.
+  humanURL: https://mabl.com
+  tags:
+  - Test Run
+  properties:
+  - type: OpenAPI
+    url: openapi/mabl-test-run-api-openapi.yml
 common:
   - type: Plans
     url: plans/mabl-plans-pricing.yml

@@ -1,0 +1,562 @@
+openapi: 3.2.0
+info:
+  title: mabl Tracker Item API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: TrackerItem
+paths:
+  /issueTrackers/integrations/{workspace_integration_id}/items:
+    get:
+      tags:
+      - TrackerItem
+      summary: Search the work items behind an issue tracker integration
+      description: Items in the integration's configured project matching the query, for picking references to generate tests from. A query that is an item id (123 or AB#123) reads that item directly and returns it only if it lies in the project; any other query is a text search. With a category, text search is confined to the category's work item types, an id or work item link outside the category is omitted, and a blank query lists the category's most recently changed items. The workspace is taken from the stored integration. Results are read live; nothing is cached.
+      operationId: searchTrackerItems
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        description: The project to search, for an integration that covers several. Required for Jira, whose upstream search is per project; ignored by a tracker whose integration is one project.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 200
+          type: string
+      - name: query
+        in: query
+        description: An item id or search text; with a category, also a work item link. Blank returns no items unless a category is given.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 200
+          type: string
+      - name: limit
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 25
+          minimum: 1
+          type: integer
+          format: int32
+          default: 10
+      - name: category
+        in: query
+        description: 'Confine results to the tracker''s category of this name. requirement: the project''s Requirement category, such as User Story, Product Backlog Item or Issue. test_case: the project''s Test Case category.'
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - requirement
+          - test_case
+      responses:
+        '200':
+          description: Matching items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackerItemSearchResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '402':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+  /issueTrackers/integrations/{workspace_integration_id}/projects:
+    get:
+      tags:
+      - TrackerItem
+      summary: List the projects an issue tracker integration reads references from
+      description: The projects a reference picker may search. One entry for a tracker whose integration is a single project; for Jira, the configured projects, resolved live. The workspace is taken from the stored integration.
+      operationId: getTrackerProjects
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The integration's projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackerProjectList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '402':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+  /issueTrackers/workspaces/{workspace_id}/items:lookup:
+    post:
+      tags:
+      - TrackerItem
+      summary: Resolve a pasted tracker item id or link against the workspace's tracker…
+      description: 'Resolves 123, AB#123, PROJ-123 or an item URL. Never picks an integration for the caller: a supplied workspace_integration_id is the only one asked; a URL resolves only in the site, organization and project it names; an id found in more than one integration is ambiguous, with every match as a candidate; and when any integration could not be asked the result is ambiguous_or_unavailable rather than found. TestRail and Zephyr links are other_platform, without contacting any tracker.'
+      operationId: lookupTrackerItems
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackerItemLookupRequest'
+        required: true
+      responses:
+        '200':
+          description: The resolution and its candidates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackerItemLookupResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '402':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+  /issueTrackers/workspaces/{workspace_id}/items:content:
+    post:
+      tags:
+      - TrackerItem
+      summary: Read tracker items for use as a test-generation specification
+      description: 'The readable content of each item: a fixed set of fields chosen by the item''s category, converted to plain text, with test case steps parsed into action and expected pairs. The integration must belong to this workspace and be enabled, and each item must lie in its configured project. Every item reports readable and a reason, so one bad item does not fail the request.'
+      operationId: getTrackerItemContent
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackerItemContentRequest'
+        required: true
+      responses:
+        '200':
+          description: One entry per requested key, in request order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackerItemContentResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '402':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    TrackerItemContentReasonEnum:
+      type: string
+      description: 'not_found: the tracker has no such item, or it is not a valid key. not_in_project: the item lies outside the integration''s configured project. no_readable_content: the item was read but holds nothing in the readable fields, or earlier items used the whole size budget (truncated is then true). unavailable: the tracker could not be asked. deadline: the request ran out of time before this item was read. rate_limited: the organization''s request allowance is exhausted. unsupported_platform: the integration''s tracker does not support reading items.'
+      enum:
+      - not_found
+      - not_in_project
+      - no_readable_content
+      - unavailable
+      - deadline
+      - rate_limited
+      - unsupported_platform
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    TrackerItemSearchResult:
+      required:
+      - items
+      - search_status
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackerItemSummary'
+        search_status:
+          $ref: '#/components/schemas/TrackerItemSearchStatusEnum'
+    TrackerItemSection:
+      required:
+      - label
+      - text
+      type: object
+      properties:
+        label:
+          type: string
+        text:
+          type: string
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    TrackerItemContent:
+      required:
+      - display_key
+      - issue_key
+      - readable
+      type: object
+      properties:
+        issue_key:
+          type: string
+          example: '123'
+        display_key:
+          type: string
+          example: AB#123
+        readable:
+          type: boolean
+        reason:
+          $ref: '#/components/schemas/TrackerItemContentReasonEnum'
+        title:
+          type: string
+        item_type:
+          type: string
+        state:
+          type: string
+        url:
+          type: string
+        sections:
+          type: array
+          description: Free-text fields as plain text, e.g. Description and Acceptance Criteria.
+          items:
+            $ref: '#/components/schemas/TrackerItemSection'
+        steps:
+          type: array
+          description: Ordered test case steps, when the item has them.
+          items:
+            $ref: '#/components/schemas/TrackerItemStep'
+        truncated:
+          type: boolean
+          description: Whether content was dropped to fit the size budget. A caller must not present a truncated item as fully covered.
+      description: One item's readable content. An item that could not be read reports readable=false and a reason rather than an empty body, so a caller does not plan against a specification it never saw.
+    TrackerProject:
+      required:
+      - id
+      - name
+      type: object
+      properties:
+        id:
+          type: string
+          description: What search takes as project_id
+        key:
+          type: string
+          description: The short prefix the tracker writes on an item key, when it has one
+          example: PROJ
+        name:
+          type: string
+          example: Checkout
+      description: A project a reference picker can search within.
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    TrackerPlatformEnum:
+      type: string
+      description: The issue tracker an item lives in.
+      enum:
+      - azure_boards
+      - jira
+    TrackerProjectList:
+      required:
+      - projects
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackerProject'
+    TrackerItemLookupResult:
+      required:
+      - candidates
+      - status
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TrackerItemLookupStatusEnum'
+        candidates:
+          type: array
+          description: Exactly one when found
+          items:
+            $ref: '#/components/schemas/TrackerItemSummary'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    TrackerItemContentResult:
+      required:
+      - items
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackerItemContent'
+      description: One entry per requested key, in request order.
+    TrackerItemSummary:
+      required:
+      - display_key
+      - issue_key
+      - platform
+      - title
+      - workspace_integration_id
+      type: object
+      properties:
+        platform:
+          $ref: '#/components/schemas/TrackerPlatformEnum'
+        workspace_integration_id:
+          type: string
+          description: The integration whose project holds this item
+        issue_key:
+          type: string
+          description: The canonical key sent upstream
+          example: '123'
+        display_key:
+          type: string
+          description: The key as the tracker writes it
+          example: AB#123
+        title:
+          type: string
+        item_type:
+          type: string
+          example: User Story
+        state:
+          type: string
+          example: Active
+        category:
+          description: The category the tracker files the item's type under. Present on a lookup and on a search confined to a category; absent means unknown, never a particular category.
+          allOf:
+          - $ref: '#/components/schemas/TrackerItemCategoryEnum'
+        url:
+          type: string
+          description: The item in the tracker, for a human following up
+      description: A tracker item as a picker shows it
+    TrackerItemLookupRequest:
+      required:
+      - input
+      type: object
+      properties:
+        input:
+          maxLength: 2000
+          type: string
+          description: 123, AB#123 or a work item URL
+        workspace_integration_id:
+          type: string
+          description: Resolve only against this integration. Validated against the workspace.
+    TrackerItemLookupStatusEnum:
+      type: string
+      description: 'found: exactly one integration holds the item (the one candidate). ambiguous: several do; every match is a candidate and the caller must choose. ambiguous_or_unavailable: at least one integration could not be asked, so a match is never reported as unique. not_found: every integration asked answered, and none holds it in its project. not_connected: no enabled integration covers the site, organization and project the input names. other_platform: a TestRail or Zephyr link, not a tracker item. unrecognised: not an item id or link.'
+      enum:
+      - found
+      - ambiguous
+      - ambiguous_or_unavailable
+      - not_found
+      - not_connected
+      - other_platform
+      - unrecognised
+    TrackerItemStep:
+      type: object
+      properties:
+        index:
+          type: integer
+          description: 1-based position in the item.
+        action:
+          type: string
+        expected:
+          type: string
+    TrackerItemContentRequest:
+      required:
+      - issue_keys
+      - workspace_integration_id
+      type: object
+      properties:
+        workspace_integration_id:
+          type: string
+          description: The integration whose project holds these items. Item ids are unique only per organization, so the caller must say which; it is validated against the workspace.
+        issue_keys:
+          maxItems: 5
+          minItems: 1
+          type: array
+          description: Canonical keys, at most 5 -- each costs upstream calls and prompt budget
+          items:
+            maxLength: 50
+            type: string
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    TrackerItemSearchStatusEnum:
+      type: string
+      description: 'ok: the search ran. indexing: the tracker is still indexing the organization, so text search cannot answer yet; an id still resolves. unavailable: the tracker could not be asked.'
+      enum:
+      - ok
+      - indexing
+      - unavailable
+    TrackerItemCategoryEnum:
+      type: string
+      description: 'A tracker''s grouping of item types. Where a type is filed under several, the first of test_case, shared_step, bug and requirement wins. other: none of these.'
+      enum:
+      - test_case
+      - shared_step
+      - bug
+      - requirement
+      - other
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

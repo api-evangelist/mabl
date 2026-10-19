@@ -1,0 +1,838 @@
+openapi: 3.2.0
+info:
+  title: mabl API Key API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: API Key
+paths:
+  /apiKeys:
+    get:
+      tags:
+      - API Key
+      summary: Query API Keys
+      description: Used to query API Keys, by default without the secret key value. Only OWNERS can view raw API keys.
+      operationId: queryApiKeys
+      parameters:
+      - name: organization_id
+        in: query
+        description: The ID of the organization whose API keys should be retrieved. Mutually exclusive with company_id; exactly one must be set.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: company_id
+        in: query
+        description: The ID of the company whose API keys should be retrieved. Mutually exclusive with organization_id; exactly one must be set. Requires the caller to be an admin of the company.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: with_secrets
+        in: query
+        description: True if raw key should be returned. May only be used by OWNERS, otherwise will be effectively 'false'.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The query result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ApiKey
+  /apiKeys/self:
+    get:
+      tags:
+      - API Key
+      summary: Interrogate current API key in use
+      description: Used to retrieve information about API key used in the request
+      operationId: getApiKeySelf
+      parameters:
+      - name: with_secret
+        in: query
+        description: True if raw key should be returned
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: The API key used for the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '400':
+          description: API key header not sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ApiKey
+  /apiKeys/self/detailed:
+    get:
+      tags:
+      - API Key
+      summary: Interrogate current API key in use
+      description: Used to retrieve information about API key used in the request
+      operationId: getApiKeySelfDetailed
+      responses:
+        '200':
+          description: The API key used for the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyDetails'
+        '400':
+          description: API key header not sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ApiKey
+  /apiKeys/{id}:
+    get:
+      tags:
+      - API Key
+      summary: Get API Key
+      description: Used to retrieve information about an API key
+      operationId: getApiKeyByIdOrSecret
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the API key to retrieve (legacy key OR id, use of legacy keys is deprecated and will be removed in a future release)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: with_secret
+        in: query
+        description: True if the raw key should be returned. The raw key is only included for the key's owner - a workspace OWNER, or a company admin for company-scoped keys. Other authorized callers receive the key without secret_key rather than an error, which is indistinguishable from a key type whose secret is not recoverable.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: The API key with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ApiKey
+    delete:
+      tags:
+      - API Key
+      summary: Remove API Key
+      description: Used to remove an existing API key
+      operationId: removeApiKey
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the API key to remove (legacy key or ID)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No content result indicates successful removal
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::ApiKey
+    patch:
+      tags:
+      - API Key
+      summary: Update API Key
+      description: Updated limited API key fields
+      operationId: updateApiKey
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the API key to remove (legacy key or ID)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: with_secret
+        in: query
+        description: True if raw key should be returned
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKey'
+        required: true
+      responses:
+        '200':
+          description: API key with patches applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::ApiKey
+  /workspaces/{workspace_id}/apiKeys:
+    post:
+      tags:
+      - API Key
+      summary: Create a new API key
+      description: Used to create a new API key
+      operationId: createApiKey
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The ID of the workspace in which the key should be created
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Allows other API key properties to be passed in at creation time
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreationRequest'
+        required: false
+      responses:
+        '201':
+          description: The API Key that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::ApiKey
+  /companies/{company_id}/apiKeys:
+    post:
+      tags:
+      - API Key
+      summary: Create a new company-scoped API key
+      description: Creates a new API key scoped to a company. A company-scoped key authorizes actions across all workspaces owned by the company. Caller must be an admin of the company.
+      operationId: createCompanyApiKey
+      parameters:
+      - name: company_id
+        in: path
+        description: The ID of the company in which the key should be created
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Allows other API key properties to be passed in at creation time
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreationRequest'
+        required: false
+      responses:
+        '201':
+          description: The API Key that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::ApiKey
+  /cron/apiKeys/removeExpired:
+    get:
+      tags:
+      - API Key
+      summary: Removes all expired API Keys
+      description: Called to clean up expired API keys
+      operationId: removeExpired
+      responses:
+        '204':
+          description: Expired API key cleanup successful
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::ApiKey
+  /cron/apiKeys/notifyExpiring:
+    get:
+      tags:
+      - API Key
+      summary: Sends expiration alerts for API keys
+      description: Called to send notification emails for API keys that are about to expire. Checks for keys expiring in 7, 3, 1, and 0 days and notifies workspace owners.
+      operationId: notifyExpiring
+      responses:
+        '204':
+          description: API key expiration alerts sent successfully
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::ApiKey
+components:
+  schemas:
+    AgentType:
+      type: string
+      enum:
+      - test_authoring
+      - flow_authoring
+      - test_creation_planning
+      - test_planning
+      - agent_review
+      - app_summary
+      - test_run_analysis
+      - test_recovery
+      - runtime_recovery_summary_agent
+      - plan_run_analysis
+      - deployment_analysis
+      - workspace_results_analysis
+      - results_auto_analysis
+      - workspace_assistant
+      - app_modeling
+      - app_modeling_run
+      - file_assertion
+      - test_impact
+      - test_impact_shadow
+      - repair_notes
+      - external_agent
+      - exploratory_qa
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    MablSubscriptionPeriod:
+      type: string
+      description: The period of the subscription
+      enum:
+      - monthly
+      - quarterly
+      - yearly
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    Scope:
+      required:
+      - permission
+      - target
+      type: object
+      properties:
+        permission:
+          type: string
+          description: The permission to grant
+          enum:
+          - read
+          - write
+          - list
+          - read_secret
+          - authorize
+        target:
+          type: string
+          description: The entity to which the permission should be granted
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the API key, NOT the raw API Key secret
+          readOnly: true
+        secret_key:
+          type: string
+          description: secret API key (may not be returned from all endpoints)
+          readOnly: true
+        secret_key_hash:
+          type: string
+          description: Secure key hash (may not be returned from all endpoints)
+          readOnly: true
+        secret_key_hash_cypher:
+          type: string
+          description: Secure key hash type (may not be returned from all endpoints)
+          readOnly: true
+        encrypted_secret_key:
+          type: string
+          description: Encrypted secret API key (may not be returned from all endpoints)
+          readOnly: true
+        created_time:
+          type: integer
+          description: Time at which the API key was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this API key
+        deleted_time:
+          type: integer
+          description: Time at which the API key was deleted
+          format: int64
+        deleted_by_id:
+          type: string
+          description: The ID of the client/user who deleted this API key
+        expiration_time:
+          type: integer
+          description: Time at which this API key will expire
+          format: int64
+        last_updated_time:
+          type: integer
+          description: Time at which the organization API key was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this API key
+        organization_id:
+          type: string
+          description: DEPRECATED - The ID of the organization associated with this API key
+        name:
+          type: string
+          description: Friendly name for this API key
+        scopes:
+          type: array
+          description: Scopes to grant to this key
+          items:
+            $ref: '#/components/schemas/Scope'
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        type:
+          $ref: '#/components/schemas/ApiKeyType'
+        enabled:
+          type: boolean
+          description: False if key authentication should be paused
+          default: true
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this API key. Mutually exclusive with company_id.
+        company_id:
+          type: string
+          description: The ID of the company associated with this API key. Set for company-scoped keys that grant access to all workspaces owned by the company. Mutually exclusive with workspace_id.
+        agent_type:
+          description: Set on the credential an agent acts with. JWTs exchanged from this key carry the agent claim and are limited to the agent type ceiling.
+          allOf:
+          - $ref: '#/components/schemas/AgentType'
+        agent_session_id:
+          type: string
+          description: The agent session this key was minted for
+        agent_root_session_id:
+          type: string
+          description: The top-level agent session of the chain this key's session belongs to
+        agent_parent_session_id:
+          type: string
+          description: The agent session that started this key's session, if any
+        agent_instance_id:
+          type: string
+          description: The agent cloud instance this key was minted for. Keys bound to an instance are deleted when it ends.
+        agent_workspace_id:
+          type: string
+          description: The workspace the agent session runs in. JWTs exchanged from this key are bound to it.
+        agent_principal_is_support_admin:
+          type: boolean
+          description: The agent acts for a support admin, who is granted support access to the session workspace only.
+        agent_root_api_key_id:
+          type: string
+          description: The API key the agent acts for, when its session was started with a key rather than by a person. JWTs exchanged from this key act as that key, limited to the agent type ceiling.
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasDeletedActivity
+      - HasName
+      - HasOrganizationId
+      - HasWorkspaceId
+    MablPlanType:
+      type: string
+      description: The plan type this user is currently subscribed to
+      enum:
+      - enterprise
+      - enterprise_5000
+      - enterprise_10000
+      - enterprise_20000
+      - enterprise_50000
+      - essentials
+      - growth
+      - pay_as_you_go
+      - pro
+      - seed
+      - startup
+      - trial
+      - core_migrated
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    ApiKeyType:
+      type: string
+      description: The intended use of this API key
+      enum:
+      - agent_review
+      - ci_cd_integration
+      - command_line_interface
+      - custom
+      - database_query_execution
+      - deployment_trigger
+      - editor
+      - execution
+      - impersonation
+      - integration
+      - issue_tracker
+      - link_agent
+      - login
+      - reporting
+      - selenium_agent
+      - test_authoring
+      - usage_analytics
+      - user_management
+      - viewer
+      - workspace_admin
+      - workspace_assistant
+      - workspace_invitation_acceptance
+      - workspace_lifecycle
+      - workspace_setup
+    ApiKeyQueryResult:
+      required:
+      - api_keys
+      type: object
+      properties:
+        api_keys:
+          type: array
+          description: All API keys that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ApiKey'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ApiKeyCreationRequest:
+      required:
+      - name
+      - type
+      type: object
+      properties:
+        time_to_live:
+          type: string
+          description: The time to live for this API key specified in ISO-8601 duration format
+        name:
+          maxLength: 128
+          type: string
+          description: Friendly name for this API key
+        scopes:
+          type: array
+          description: Scopes to grant to this key
+          items:
+            $ref: '#/components/schemas/Scope'
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        type:
+          type: string
+          description: The intended use of this API key
+          enum:
+          - agent_review
+          - ci_cd_integration
+          - command_line_interface
+          - custom
+          - database_query_execution
+          - deployment_trigger
+          - editor
+          - execution
+          - issue_tracker
+          - link_agent
+          - reporting
+          - selenium_agent
+          - test_authoring
+          - usage_analytics
+          - user_management
+          - viewer
+          - workspace_admin
+          - workspace_assistant
+          - workspace_lifecycle
+          - workspace_setup
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this API key
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    ApiKeyDetails:
+      type: object
+      properties:
+        key_details:
+          $ref: '#/components/schemas/ApiKey'
+        account_details:
+          type: object
+          properties:
+            workspace_id:
+              type: string
+              description: the id of the workspace this key is associated with
+            workspace_name:
+              type: string
+              description: the name of the workspace this key is associated with
+            account_id:
+              type: string
+              description: the id of the account this key is associated with
+            company_id:
+              type: string
+              description: the id of the company this key is associated with
+            is_trial_account:
+              type: boolean
+              description: whether the associated account for this key is a trial account
+            is_core_account:
+              type: boolean
+              description: whether the associated account for this key is a core billing account
+            mabl_plan_type:
+              $ref: '#/components/schemas/MablPlanType'
+            mabl_subscription_period:
+              $ref: '#/components/schemas/MablSubscriptionPeriod'
+          description: Workspace/Account details
+      description: ApiKey details alongside
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

@@ -1,0 +1,860 @@
+openapi: 3.2.0
+info:
+  title: mabl Azure Boards Sync API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: AzureBoardsSync
+paths:
+  /cron/azureBoards/issueStatus:
+    post:
+      tags:
+      - AzureBoardsSync
+      summary: Report Azure Boards integrations the sync job has not synced recently
+      description: Cron endpoint, called by Cloud Scheduler. Logs one line per syncable Azure Boards integration whose sync lock was last written longer ago than the configured stale age, or never, which alerting counts. Authorization handled by CloudSchedulerAuthorizationFilter in web.xml.
+      operationId: checkAzureBoardsSyncStale
+      responses:
+        '204':
+          description: Check finished
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Integration
+  /azureBoards/sync/integrations:
+    get:
+      tags:
+      - AzureBoardsSync
+      summary: List the Azure Boards integrations to sync, least recently synced first
+      description: Enabled, connected Azure Boards integrations, ordered by the last write to each one's azure-boards-sync lock, never-synced first. Restricted to API keys with global read permission on integrations.
+      operationId: queryAzureBoardsSyncIntegrations
+      parameters:
+      - name: limit
+        in: query
+        description: Most integrations to return
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 500
+          minimum: 1
+          type: integer
+          format: int32
+          default: 200
+      responses:
+        '200':
+          description: The integrations to sync
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AzureBoardsSyncIntegrationList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+  /integrations/{integration_id}/azureBoards/sync/accessToken:
+    post:
+      tags:
+      - AzureBoardsSync
+      summary: Get a current Azure DevOps access token for an integration
+      description: Returns the integration's Azure DevOps access token, refreshing it when it has expired or when force_refresh is set. Only the access token is disclosed. Every call is audit-logged. A token is force-refreshed at most once a minute; a forced refresh sooner is refused with 429. Restricted to API keys with global read_secret permission on integrations.
+      operationId: createAzureBoardsSyncAccessToken
+      parameters:
+      - name: integration_id
+        in: path
+        description: Azure Boards workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          maxLength: 128
+          minLength: 1
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AzureBoardsSyncAccessTokenRequest'
+        required: true
+      responses:
+        '200':
+          description: A current access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AzureBoardsSyncAccessToken'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Integration
+  /integrations/{integration_id}/azureBoards/sync/throttle:
+    post:
+      tags:
+      - AzureBoardsSync
+      summary: Record an Azure DevOps throttle for the identity behind an integration
+      description: Holds off Azure DevOps calls for the Entra identity behind the integration's token until retry_after_seconds from now. An existing later hold is kept. The identity is derived by the server from the given token, which must still be the integration's. Requires the integration's sync lock. Restricted to API keys with global write permission on integrations.
+      operationId: createAzureBoardsSyncThrottle
+      parameters:
+      - name: integration_id
+        in: path
+        description: Azure Boards workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          maxLength: 128
+          minLength: 1
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AzureBoardsSyncThrottle'
+        required: true
+      responses:
+        '204':
+          description: Recorded
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Integration
+  /integrations/{integration_id}/azureBoards/sync/issues:
+    get:
+      tags:
+      - AzureBoardsSync
+      summary: Page through the integration's issues whose work items should be read
+      description: Walks the integration's issues in id order after the given id, returning those that are not tracker-deleted, belong to the configured project, and are open or changed state inside the reopen window. Rows passed over still advance next_after. Restricted to API keys with global read permission on integrations.
+      operationId: queryAzureBoardsSyncIssues
+      parameters:
+      - name: integration_id
+        in: path
+        description: Azure Boards workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          maxLength: 128
+          minLength: 1
+          type: string
+      - name: project_id
+        in: query
+        description: The project id the caller read Azure DevOps for; 409 when the integration now points elsewhere
+        required: true
+        style: form
+        explode: true
+        schema:
+          maxLength: 256
+          minLength: 1
+          type: string
+      - name: after
+        in: query
+        description: The next_after of the previous page; omit to start from the first issue
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 128
+          type: string
+      - name: limit
+        in: query
+        description: Most issues to return
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 200
+      responses:
+        '200':
+          description: The next issues to read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AzureBoardsSyncIssuePage'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+  /integrations/{integration_id}/azureBoards/sync/deletedIssues:
+    get:
+      tags:
+      - AzureBoardsSync
+      summary: Page through the integration's tracker-deleted issues that may have been…
+      description: Walks the integration's tracker-deleted issues in id order after the given id, returning those that belong to the configured project and were deleted inside the reopen window, so a restore in Azure is noticed. Rows passed over still advance next_after. Restricted to API keys with global read permission on integrations.
+      operationId: queryAzureBoardsSyncDeletedIssues
+      parameters:
+      - name: integration_id
+        in: path
+        description: Azure Boards workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          maxLength: 128
+          minLength: 1
+          type: string
+      - name: project_id
+        in: query
+        description: The project id the caller read Azure DevOps for; 409 when the integration now points elsewhere
+        required: true
+        style: form
+        explode: true
+        schema:
+          maxLength: 256
+          minLength: 1
+          type: string
+      - name: after
+        in: query
+        description: The next_after of the previous page; omit to start from the first issue
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 128
+          type: string
+      - name: limit
+        in: query
+        description: Most issues to return
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 200
+      responses:
+        '200':
+          description: The next tracker-deleted issues to read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AzureBoardsSyncIssuePage'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+  /integrations/{integration_id}/azureBoards/sync/observations:
+    post:
+      tags:
+      - AzureBoardsSync
+      summary: Record what Azure DevOps holds for a batch of the integration's issues
+      description: 'Records each observation on mabl''s copy of the issue only, ignoring one older than the revision already stored. An issue may appear once per batch. An existence_changed outcome means the issue flipped between present and deleted, which revisions cannot order, so the caller should read that work item again and send a fresh observation. Never retry a request automatically: a lost response is settled by the next read. After a call that timed out, do not release the lock; let it lapse, so no other holder writes while the request may still be running. Requires the integration''s sync lock. Restricted to API keys with global write permission on integrations.'
+      operationId: createAzureBoardsSyncObservations
+      parameters:
+      - name: integration_id
+        in: path
+        description: Azure Boards workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          maxLength: 128
+          minLength: 1
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AzureBoardsSyncObservationBatch'
+        required: true
+      responses:
+        '200':
+          description: One result per observation, in request order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AzureBoardsSyncObservationResults'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Integration
+  /integrations/{integration_id}/azureBoards/sync/reconnectRequired:
+    post:
+      tags:
+      - AzureBoardsSync
+      summary: Mark the integration as needing reconnection after Azure DevOps refused a…
+      description: Marks the integration reconnect-required, but only while it is still at the given version and token, so a reconnect made since is never overwritten. Requires the integration's sync lock. Restricted to API keys with global write permission on integrations.
+      operationId: createAzureBoardsSyncReconnectRequired
+      parameters:
+      - name: integration_id
+        in: path
+        description: Azure Boards workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          maxLength: 128
+          minLength: 1
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AzureBoardsSyncReconnectRequired'
+        required: true
+      responses:
+        '200':
+          description: Whether the integration was marked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AzureBoardsSyncReconnectRequiredResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Integration
+  /integrations/{integration_id}/azureBoards/sync/testCaseLinks:
+    get:
+      tags:
+      - AzureBoardsSync
+      summary: Page through the workspace's tests that link Azure Test Cases this integration…
+      description: Reads one page of the workspace's tests and returns those with at least one link that could name a work item of this integration, each link resolved as a candidate or as unresolved when another integration in the workspace could claim it too. A page may hold no tests while cursor is still set. Restricted to API keys with global read permission on integrations.
+      operationId: queryAzureBoardsSyncTestCaseLinks
+      parameters:
+      - name: integration_id
+        in: path
+        description: Azure Boards workspace integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          maxLength: 128
+          minLength: 1
+          type: string
+      - name: project_id
+        in: query
+        description: The configured project's id, as Azure DevOps just returned it
+        required: true
+        style: form
+        explode: true
+        schema:
+          maxLength: 256
+          minLength: 1
+          type: string
+      - name: project_name
+        in: query
+        description: The configured project's name, as Azure DevOps just returned it
+        required: true
+        style: form
+        explode: true
+        schema:
+          maxLength: 256
+          minLength: 1
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor from the previous page
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 2048
+          type: string
+      responses:
+        '200':
+          description: One page of linking tests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AzureBoardsSyncTestCaseLinkPage'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Integration
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse409:
+      description: Conflicts with the current state of the resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    AzureBoardsSyncThrottle:
+      required:
+      - lock_key
+      - oauth_token_id
+      - retry_after_seconds
+      type: object
+      properties:
+        oauth_token_id:
+          maxLength: 128
+          minLength: 1
+          type: string
+          description: The OAuth token whose request Azure DevOps throttled; 409 when the integration now uses another
+        lock_key:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: Key that holds the integration's azure-boards-sync job lock
+          x-sensitive: true
+        retry_after_seconds:
+          maximum: 3600
+          minimum: 1
+          type: integer
+          description: Seconds from now before the identity may call Azure DevOps again
+          format: int32
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    AzureBoardsSyncAccessTokenRequest:
+      type: object
+      properties:
+        force_refresh:
+          type: boolean
+          description: Refresh even when the token has not expired, because Azure DevOps just refused it
+          default: false
+    AzureBoardsSyncIssue:
+      required:
+      - issue_id
+      - work_item_id
+      type: object
+      properties:
+        issue_id:
+          type: string
+        work_item_id:
+          type: integer
+          format: int32
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    AzureBoardsSyncIssuePage:
+      required:
+      - issues
+      type: object
+      properties:
+        issues:
+          maxItems: 200
+          type: array
+          items:
+            $ref: '#/components/schemas/AzureBoardsSyncIssue'
+        next_after:
+          type: string
+          description: Pass as after for the next page; absent once the end of the integration's issues is reached
+    AzureBoardsSyncAccessToken:
+      required:
+      - access_token
+      - expires_at
+      - identity_key
+      - integration_version
+      - oauth_token_id
+      type: object
+      properties:
+        access_token:
+          type: string
+          x-sensitive: true
+        expires_at:
+          type: integer
+          description: Epoch milliseconds when the access token expires
+          format: int64
+        oauth_token_id:
+          type: string
+        integration_version:
+          type: string
+          description: The integration's entity version, for createAzureBoardsSyncReconnectRequired
+        identity_key:
+          type: string
+          description: SHA-256 hex of the Entra identity Azure DevOps throttles this token as
+        throttled_until:
+          type: integer
+          description: Epoch milliseconds before which the identity must not call Azure DevOps; absent when not throttled
+          format: int64
+    AzureBoardsSyncReconnectRequired:
+      required:
+      - integration_version
+      - lock_key
+      - oauth_token_id
+      type: object
+      properties:
+        lock_key:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: Key that holds the integration's azure-boards-sync job lock
+          x-sensitive: true
+        integration_version:
+          maxLength: 128
+          minLength: 1
+          type: string
+          description: The integration version the refused token was issued for
+        oauth_token_id:
+          maxLength: 128
+          minLength: 1
+          type: string
+          description: The OAuth token Azure DevOps refused
+    AzureBoardsSyncIntegrationList:
+      required:
+      - integrations
+      - omitted
+      type: object
+      properties:
+        integrations:
+          maxItems: 500
+          type: array
+          items:
+            $ref: '#/components/schemas/AzureBoardsSyncIntegration'
+        omitted:
+          type: integer
+          description: Integrations left out by the limit
+          format: int32
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    AzureBoardsSyncObservationResult:
+      required:
+      - issue_id
+      - outcome
+      type: object
+      properties:
+        issue_id:
+          type: string
+        outcome:
+          type: string
+          description: unchanged, written, existence_changed (written, and it flipped deletion, so read the work item again), or not_found (no issue of this integration has this id; nothing written)
+          enum:
+          - unchanged
+          - written
+          - existence_changed
+          - not_found
+    AzureBoardsSyncObservation:
+      required:
+      - issue_id
+      - present
+      type: object
+      properties:
+        issue_id:
+          maxLength: 128
+          minLength: 1
+          type: string
+        present:
+          type: boolean
+          description: False only once the recycle bin confirmed the work item was deleted
+        open:
+          type: boolean
+          description: Required when present; whether the work item's state is not in a Completed or Removed category
+        revision:
+          minimum: 0
+          type: integer
+          description: Required when present; the work item revision the state was read at
+          format: int32
+    AzureBoardsSyncTestCaseLink:
+      required:
+      - resolution
+      - work_item_id
+      type: object
+      properties:
+        work_item_id:
+          type: integer
+          format: int32
+        resolution:
+          type: string
+          description: candidate when the link names a work item of this integration, unresolved when another Azure Boards integration in the workspace could claim it too
+          enum:
+          - candidate
+          - unresolved
+    AzureBoardsSyncObservationResults:
+      required:
+      - results
+      type: object
+      properties:
+        results:
+          maxItems: 200
+          type: array
+          items:
+            $ref: '#/components/schemas/AzureBoardsSyncObservationResult'
+    AzureBoardsSyncReconnectRequiredResult:
+      required:
+      - marked
+      type: object
+      properties:
+        marked:
+          type: boolean
+          description: False when the integration changed since, so the refusal is discarded
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    AzureBoardsSyncLinkingTest:
+      required:
+      - links
+      - test_id
+      type: object
+      properties:
+        test_id:
+          type: string
+        name:
+          type: string
+        created_time:
+          type: integer
+          format: int64
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/AzureBoardsSyncTestCaseLink'
+    AzureBoardsSyncObservationBatch:
+      required:
+      - lock_key
+      - observations
+      - project_id
+      type: object
+      properties:
+        project_id:
+          maxLength: 256
+          minLength: 1
+          type: string
+          description: The project id the observations were read from; 409 when the integration now points elsewhere
+        lock_key:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: Key that holds the integration's azure-boards-sync job lock
+          x-sensitive: true
+        observations:
+          maxItems: 200
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/AzureBoardsSyncObservation'
+    AzureBoardsSyncIntegration:
+      required:
+      - automated_test_id
+      - id
+      - identity_key
+      - mark_linked_test_cases_automated
+      - oauth_token_id
+      - organization_url
+      - project_id
+      - version
+      - workspace_id
+      type: object
+      properties:
+        id:
+          type: string
+        workspace_id:
+          type: string
+        version:
+          type: string
+          description: The integration's entity version, for createAzureBoardsSyncReconnectRequired
+        organization_url:
+          type: string
+        project_id:
+          type: string
+        oauth_token_id:
+          type: string
+        identity_key:
+          type: string
+          description: SHA-256 hex of the Entra identity Azure DevOps throttles this integration's token as. Integrations sharing a value share a throttle.
+        automated_test_id:
+          type: string
+          description: The AutomatedTestId mabl writes on every Azure Test Case this integration marks Automated
+        mark_linked_test_cases_automated:
+          type: boolean
+        throttled_until:
+          type: integer
+          description: Epoch milliseconds before which the identity must not call Azure DevOps; absent when not throttled
+          format: int64
+        last_synced_time:
+          type: integer
+          description: Epoch milliseconds of the last write to the integration's sync lock; absent when never synced
+          format: int64
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    AzureBoardsSyncTestCaseLinkPage:
+      required:
+      - tests
+      type: object
+      properties:
+        tests:
+          maxItems: 200
+          type: array
+          items:
+            $ref: '#/components/schemas/AzureBoardsSyncLinkingTest'
+        cursor:
+          type: string
+          description: Pass as cursor for the next page; absent after the last page
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

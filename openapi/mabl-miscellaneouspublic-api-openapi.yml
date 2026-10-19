@@ -1,0 +1,53 @@
+openapi: 3.2.0
+info:
+  title: mabl Miscellaneous Public API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: MiscellaneousPublic
+paths:
+  /robots.txt:
+    get:
+      tags:
+      - MiscellaneousPublic
+      summary: Server robots.txt file
+      description: Ask bots not to crawl this API
+      operationId: getRobotsTxt
+      responses:
+        '200':
+          description: Operation was successful
+          content:
+            application/json:
+              schema:
+                type: string
+      x-mabl-action: Read::PublicPage
+  /sitemap.xml:
+    get:
+      tags:
+      - MiscellaneousPublic
+      summary: Serves XML sitemap
+      description: Provide the sitemap
+      operationId: getSitemap
+      responses:
+        '200':
+          description: Operation was successful
+          content:
+            application/json:
+              schema:
+                type: string
+      x-mabl-action: Read::PublicPage
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

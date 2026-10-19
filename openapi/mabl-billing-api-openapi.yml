@@ -1,0 +1,1060 @@
+openapi: 3.2.0
+info:
+  title: mabl Billing API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Billing
+paths:
+  /billing/products:
+    get:
+      tags:
+      - Billing
+      summary: Query Products
+      description: Used to query Products in Stripe
+      operationId: queryStripeProducts
+      parameters:
+      - name: active
+        in: query
+        description: Query by active status
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: legacy
+        in: query
+        description: Query by Product metadata[legacy] value
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: product_type
+        in: query
+        description: Query by Product metadata[product_type] value
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/MablStripeProductQueryType'
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablStripeProductQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Billing
+  /billing/prices:
+    get:
+      tags:
+      - Billing
+      summary: Query Stripe Prices
+      description: Used to query Prices in Stripe
+      operationId: queryStripePrices
+      parameters:
+      - name: active
+        in: query
+        description: Query by active status
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: legacy
+        in: query
+        description: Query by Product metadata[legacy] value
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: product_id
+        in: query
+        description: Query Prices by associated Product ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: interval
+        in: query
+        description: Query by Price billing interval
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/MablStripeBillingPeriod'
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablStripePriceQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Billing
+  /billing/accounts/{account_id}/subscription:
+    put:
+      tags:
+      - Billing
+      summary: Update account with new Subscription details
+      description: Used to update the mabl Account and Subscriptions for the associated Stripe Customer
+      operationId: updateMablStripeSubscription
+      parameters:
+      - name: account_id
+        in: path
+        description: ID of the Account to perform the Subscription update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The Subscription details for the Account
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablStripeSubscriptionUpdate'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Billing
+    delete:
+      tags:
+      - Billing
+      summary: Unsubscribe Account from all billing plans
+      description: Sets the billing details for an account
+      operationId: unsubscribeMablStripeSubscription
+      parameters:
+      - name: account_id
+        in: path
+        description: ID of the Account to perform the Subscription update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: prorate
+        in: query
+        description: If true, will generate a prorated invoice item that credits remaining unused time until the Subscription period end
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: invoice_now
+        in: query
+        description: If true, will generate a final invoice that invoices for any un-invoiced metered usage and new/pending proration invoice items
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: cancel_at_period_end
+        in: query
+        description: If true, will cancel the Subscriptions at the end of the current billing period
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Billing
+  /billing/accounts/{account_id}/payment-details:
+    put:
+      tags:
+      - Billing
+      summary: Update Stripe Customer payment information in Stripe and on the Account
+      description: Updates the Account and associated Stripe Customer
+      operationId: updateCustomerPaymentDetails
+      parameters:
+      - name: account_id
+        in: path
+        description: ID of the Account to perform the update on
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The Stripe Customer details for the associated Account
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MablStripeCustomerBillingDetailsUpdate'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Billing
+  /billing/executionCreditWeights:
+    get:
+      tags:
+      - Billing
+      summary: Get the current ExecutionCreditWeights entity being applied to new accounts
+      description: Used to view the current ExecutionCreditWeights entity
+      operationId: getCurrentExecutionCreditWeights
+      responses:
+        '200':
+          description: Results of the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionCreditWeights'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Billing
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    Subscription:
+      type: object
+      properties:
+        plan_type:
+          type: string
+          description: The type of plan this subscription is on
+          enum:
+          - journey_executions
+          - executions
+          - monthly
+          - quarterly
+          - technical_account_manager
+          - yearly
+          - annual_executions
+        plan_subtype:
+          type: string
+          enum:
+          - a11y
+          - api
+          - browser
+          - technical_account_manager
+          - performance
+        plan_id:
+          type: string
+          description: The id for the plan subscribed to in stripe
+          readOnly: true
+        subscription_id:
+          type: string
+          description: The id of the subscription in stripe.  A subscription can have multiple subscription items.
+          readOnly: true
+        subscription_items_id:
+          type: string
+          description: The id of the subscription item for this account on this plan.  This is the id we need to bill against.
+      description: A stripe subscription
+    MablStripePriceQueryResult:
+      type: object
+      properties:
+        prices:
+          type: array
+          description: All Stripe Prices that matched the query
+          items:
+            $ref: '#/components/schemas/MablStripePrice'
+    ExecutionLocation:
+      required:
+      - cloud
+      - region
+      type: object
+      properties:
+        cloud:
+          type: string
+          description: Cloud identifier, e.g. gcp or aws
+        region:
+          type: string
+          description: Region as the cloud names it, e.g. us-south1
+      description: 'Where test runs execute: a cloud and one of that cloud''s regions. A region name means nothing without its cloud, so the two are always set together.'
+    MablSubscriptionPeriod:
+      type: string
+      description: The period of the subscription
+      enum:
+      - monthly
+      - quarterly
+      - yearly
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    CoreAddonEnum:
+      type: string
+      description: Core billing addon
+      enum:
+      - a11y
+      - advanced_ai
+      - advanced_content_validation
+      - mobile
+      - performance
+      - tam
+    MablStripeCustomer:
+      type: object
+      properties:
+        company_name:
+          type: string
+          description: The customer’s business name
+        email:
+          type: string
+          description: The customer’s email address
+        phone:
+          type: string
+          description: The customer’s phone number
+        address:
+          type: object
+          properties:
+            line1:
+              type: string
+              description: Address line 1 (e.g., street, PO Box, or company name)
+            line2:
+              type: string
+              description: Address line 2 (e.g., apartment, suite, unit, or building)
+            city:
+              type: string
+              description: City, district, suburb, town, or village
+            state:
+              type: string
+              description: State, county, province, or region
+            country:
+              type: string
+              description: Two-letter country code (ISO 3166-1 alpha-2)
+            postal_code:
+              type: string
+              description: ZIP or postal code
+          description: The Customer's address
+        shipping:
+          type: object
+          properties:
+            address:
+              type: object
+              properties:
+                line1:
+                  type: string
+                  description: Address line 1 (e.g., street, PO Box, or company name)
+                line2:
+                  type: string
+                  description: Address line 2 (e.g., apartment, suite, unit, or building)
+                city:
+                  type: string
+                  description: City, district, suburb, town, or village
+                state:
+                  type: string
+                  description: State, county, province, or region
+                country:
+                  type: string
+                  description: Two-letter country code (ISO 3166-1 alpha-2)
+                postal_code:
+                  type: string
+                  description: ZIP or postal code
+            name:
+              type: string
+              description: Shipping name
+            phone:
+              type: string
+              description: Shipping phone (including extension)
+          description: The Customer's mailing and shipping address. Appears on invoices emailed to this customer.
+      description: Stripe Customer details associated with an Account
+    MablStripePriceMetadata:
+      type: object
+      properties:
+        legacy:
+          type: boolean
+          description: Whether the Price is legacy or not
+      description: Set of arbitrary key-value pairs you can attach to the Price
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    MablStripeProductQueryResult:
+      type: object
+      properties:
+        products:
+          type: array
+          description: All Stripe Products that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/MablStripeProduct'
+    MablStripeSubscriptionUpdate:
+      type: object
+      properties:
+        stripe_customer_id:
+          type: string
+          description: Stripe Customer ID for the associated Account
+        prorate:
+          type: boolean
+          description: If true, will generate a proration invoice item that credits remaining unused time until the Subscription period end
+        invoice_cancellations_now:
+          type: boolean
+          description: If true, will generate a final invoice that invoices resulting cancellations for any un-invoiced metered usage and new/pending proration invoice items. Only valid when cancelling Subscriptions alongside an update.
+        collection_method:
+          type: string
+          description: Either charge_automatically, or send_invoice. When charging automatically, Stripe will attempt to pay this subscription at the end of the cycle using the default source attached to the customer. When sending an invoice, Stripe will email your customer an invoice with payment instructions and mark the subscription as active.
+          enum:
+          - charge_automatically
+          - send_invoice
+        trial_until_next_anchor:
+          type: boolean
+          description: Defines if a newly created Subscription should be a trial until the next billing anchor (1st of month at 23:00 UTC)
+        days_until_due:
+          type: integer
+          description: Number of days a customer has to pay invoices generated by this subscription. Valid only for subscriptions where collection_method is set to send_invoice.
+          format: int64
+        force_recreate:
+          type: boolean
+          description: If true, will entirely cancel and recreate Subscriptions
+        backdate_start_time:
+          type: integer
+          description: For new subscriptions, a past time in epoch millis to backdate the subscription’s start date to. If set, the first invoice will contain a proration for the timespan between the start date and the current time.
+          format: int64
+        core:
+          type: object
+          properties:
+            interval:
+              $ref: '#/components/schemas/MablStripeBillingPeriod'
+            price:
+              type: string
+              description: ID of the associated Stripe Price
+          description: Description of the `core` mabl Subscription.
+        addons:
+          type: array
+          description: Description of the addons to be applied to the Account.
+          items:
+            $ref: '#/components/schemas/AccountSubscriptionAddons'
+        overages:
+          type: object
+          properties:
+            allocations:
+              type: object
+              properties:
+                credits:
+                  type: integer
+                  description: Total number of allocated credits for the billing period
+                  format: int64
+                automators:
+                  type: integer
+                  description: Total number of allocated automators for the billing period. Omit for unlimited (mabl Core accounts).
+                  format: int32
+                participants:
+                  type: integer
+                  description: Total number of allocated participants for the billing period. Omit for unlimited (mabl Core accounts).
+                  format: int32
+              description: Allocations for credits, automators, and participants to be applied to the Account.
+            interval:
+              $ref: '#/components/schemas/MablStripeBillingPeriod'
+            price_ids:
+              type: array
+              description: ID of the related Stripe Price for the overages Subscription
+              items:
+                type: string
+                description: ID of the related Stripe Price for the overages Subscription Item
+          description: Description of the `overages` mabl Subscription. This will include up to three Prices (credits, automators, and participants).
+      description: mabl Subscription update
+    MablStripeSubscriptionType:
+      type: string
+      description: Subscription variant; core and overages Subscription can be separated on different intervals.
+      enum:
+      - core
+      - overages
+    MablPlanType:
+      type: string
+      description: The plan type this user is currently subscribed to
+      enum:
+      - enterprise
+      - enterprise_5000
+      - enterprise_10000
+      - enterprise_20000
+      - enterprise_50000
+      - essentials
+      - growth
+      - pay_as_you_go
+      - pro
+      - seed
+      - startup
+      - trial
+      - core_migrated
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    BillingAllocations:
+      type: object
+      properties:
+        credits:
+          type: integer
+          description: Total number of credits allocated for the billing period
+          format: int64
+        automators:
+          type:
+          - integer
+          - 'null'
+          description: Total number of automators allocated for the billing period. Absent for unlimited (mabl Core accounts).
+          format: int32
+          x-dao-apply-nulls: true
+        participants:
+          type:
+          - integer
+          - 'null'
+          description: Total number of participants allocated for the billing period. Absent for unlimited (mabl Core accounts).
+          format: int32
+          x-dao-apply-nulls: true
+        enforce_limit:
+          type:
+          - boolean
+          - 'null'
+          description: 'When true on a workspace''s allocations, the workspace''s explicit credit allocation is enforced: new cloud runs are blocked once the allocation is exhausted for the billing period. Absent or false, the allocation is informational only. Requires an explicit credits value. Only meaningful on a workspace''s allocations; ignored on an account subscription''s allocations.
+
+            '
+      description: Allocations for the billing period
+    MablStripeProduct:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the Product
+        object:
+          type: string
+          description: String representing the object’s type, value is 'product'
+        active:
+          type: boolean
+          description: Whether the Product is available for purchases
+        default_price:
+          type: string
+          description: The ID of the Price that is the default Price for this Product
+        description:
+          type: string
+          description: The Product’s description, meant to be displayable to the customer
+        metadata:
+          $ref: '#/components/schemas/MablStripeProductMetadata'
+        name:
+          type: string
+          description: The Product’s name, meant to be displayable to the customer
+      description: Stripe Products describe the specific goods or services we offer to our customers
+    MablStripeCustomerBillingDetailsUpdate:
+      description: Stripe Customer billing details update
+      allOf:
+      - $ref: '#/components/schemas/MablStripeCustomer'
+      - type: object
+        properties:
+          source:
+            type: string
+            description: Unique tokenized identifier for the associated credit card object in Stripe
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the DailyExecutionUsage
+        disabled:
+          type: boolean
+          description: True if the account has been manually disabled; false/undefined otherwise
+        disabled_last_updated_time:
+          type: integer
+          description: Time at which the disabled flag was last updated
+          format: int64
+        disabled_last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated the disabled flag
+        name:
+          type: string
+          description: The name of the account
+        stripe_customer_details:
+          $ref: '#/components/schemas/StripeCustomerDetails'
+        stripe_customer_id:
+          type: string
+          description: Legacy billing accounts only -- The ID of customer in stripe
+        company_id:
+          type: string
+          description: The id of the company that owns the account
+        customer_name:
+          type: string
+          description: DEPRECATED - The name of the customer
+        subscription:
+          type: object
+          properties:
+            allocations:
+              $ref: '#/components/schemas/BillingAllocations'
+            addons:
+              type: array
+              description: Account addons
+              items:
+                $ref: '#/components/schemas/AccountSubscriptionAddons'
+            execution_credit_weights:
+              $ref: '#/components/schemas/ExecutionCreditWeights'
+            legacy:
+              type: boolean
+              description: Indicator if the account is on the legacy billing system
+            stripe:
+              type: object
+              properties:
+                customer:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: ID of the associated Stripe Customer
+                    name:
+                      type: string
+                      description: Name of the associated Stripe Customer
+                    state:
+                      type: string
+                      description: State, county, province, or region of the associated Stripe Customer
+                    country:
+                      type: string
+                      description: Two letter ISO 3166-1 country code of the associated Stripe Customer
+                  description: Information about the associated Stripe Customer
+                subscriptions:
+                  type: array
+                  description: Array of Stripe Subscriptions as they relate to mabl billing
+                  items:
+                    $ref: '#/components/schemas/MablStripeSubscription'
+              description: Stripe information associated with the account
+            is_trial:
+              type: boolean
+              description: Indicates if the Account subscription is a trial. This does not indicate if the trial is active or expired.
+            trial_start_time:
+              type: integer
+              description: Time free trial started in epoch time
+              format: int64
+            trial_end_time:
+              type: integer
+              description: Time free trial ends in epoch time
+              format: int64
+            start_time:
+              type: integer
+              description: Time the user first subscribed
+              format: int64
+            end_time:
+              type: integer
+              description: Time the user's subscription ends
+              format: int64
+          description: mabl Core billing accounts only -- Subscription related information about the account
+        stripe_subscriptions:
+          type: array
+          description: Legacy billing accounts only -- The plans that a customer is subscribed to
+          items:
+            $ref: '#/components/schemas/Subscription'
+        has_completed_additional_trial_info:
+          type: boolean
+          description: flag indicating wether the user who created this account has completed the additional information required when authenticating with google
+        free_trial_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time free trial started in epoch time
+          format: int64
+        free_trial_end_time:
+          type: integer
+          description: Legacy billing accounts only -- time free trial ends in epoch time
+          format: int64
+        subscription_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user first subscribed
+          format: int64
+        subscription_end_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user's subscription ends
+          format: int64
+        mabl_plan_type:
+          $ref: '#/components/schemas/MablPlanType'
+        mabl_subscription_period:
+          $ref: '#/components/schemas/MablSubscriptionPeriod'
+        allocated_test_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of browser test runs allocated to this account by its subscription
+        allocated_api_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of API test runs allocated to this account by its subscription
+        allocated_a11y_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of a11y step runs allocated to this account by its subscription
+        performance_subscription_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user first subscribed to performance testing feature
+          format: int64
+        allocated_performance_minutes:
+          type: integer
+          description: Legacy billing accounts only -- The amount of performance virtual user-minutes allocated to this account by its subscription. This allocation represents the "soft cap" after which overages will be incurred and is purely informational. The performance "hard cap" can be found in the workspace quota under allocations => performance.
+        api_steps_billable:
+          type: boolean
+          description: Legacy billing accounts only -- If true, API steps in browser tests will count toward API overages; otherwise only API test requests will be counted
+        effective_features:
+          type: array
+          description: Computed set of all features that this account has access to
+          readOnly: true
+          items:
+            type: string
+          x-dao-derived: true
+        granted_features:
+          type: array
+          description: Set of additional features that should be included in 'effective_features' regardless of plan type
+          items:
+            type: string
+        excluded_features:
+          type: array
+          description: Set of features that should be excluded from 'effective_features' regardless of plan type; overrides granted_features.
+          items:
+            type: string
+        execution_location_pin:
+          description: Where test runs of this account's workspaces execute, unless a workspace has its own pin; ahead of any pin on the company. Set and cleared only by mabl through PUT/DELETE /accounts/{account_id}/executionLocationPin; ignored by the generic account update.
+          allOf:
+          - $ref: '#/components/schemas/ExecutionLocation'
+          x-dao-unindexed: true
+        created_time:
+          type: integer
+          description: Time at which the account was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this account
+        last_updated_time:
+          type: integer
+          description: Time at which the account was last updated
+          format: int64
+          readOnly: true
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this account
+      description: A billing account
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    MablStripeBillingPeriod:
+      type: string
+      description: Interval of the Stripe Subscription billing cycle
+      enum:
+      - month
+      - quarter
+      - annual
+    AccountSubscriptionAddons:
+      type: object
+      properties:
+        addon:
+          $ref: '#/components/schemas/CoreAddonEnum'
+        quantity:
+          type: integer
+          description: Quantity of the addon to be applied to the Account.
+          format: int64
+      description: Configuration of Core billing addons
+    MablStripeProductType:
+      type: string
+      description: Product variant
+      enum:
+      - core
+      - credit_overages
+    MablStripePrice:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the Price
+        object:
+          type: string
+          description: String representing the object’s type
+        active:
+          type: boolean
+          description: Whether the Price can be used for new purchases
+        billing_scheme:
+          type: string
+          description: Describes how to compute the Price per period
+        metadata:
+          $ref: '#/components/schemas/MablStripePriceMetadata'
+        nickname:
+          type: string
+          description: A brief description of the Price, hidden from customers
+        product:
+          type: string
+          description: The ID of the Stripe Product this Price is associated with
+        recurring:
+          type: object
+          properties:
+            aggregate_usage:
+              type: string
+              description: Specifies a usage aggregation strategy for prices of usage_type=metered
+            interval:
+              type: string
+              description: The frequency at which a subscription is billed
+            interval_count:
+              type: integer
+              description: The number of intervals (specified in the interval attribute) between subscription billings
+              format: int64
+            usage_type:
+              type: string
+          description: The recurring components of a Price such as interval and usage_type
+        unit_amount:
+          type: integer
+          description: The unit amount in cents to be charged, represented as a whole integer if possible. Only set if billing_scheme=per_unit
+          format: int64
+      description: Stripe Prices define the unit cost, currency, and (optional) billing cycle for both recurring and one-time purchases of products
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    MablStripeSubscription:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID of the Subscription in Stripe
+        interval:
+          $ref: '#/components/schemas/MablStripeBillingPeriod'
+        billing_cycle_anchor:
+          type: integer
+          description: The reference point in epoch time millis that aligns past, present, and future billing cycle interval start and end times. Note, this can be in the future!
+          format: int64
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID of the Subscription Item in Stripe
+              created_time:
+                type: integer
+                description: The time in epoch millis that this subscription item was created.
+                format: int64
+              price_id:
+                type: string
+                description: ID of the associated Price in Stripe
+              type:
+                $ref: '#/components/schemas/MablStripeProductType'
+            description: Description of a Stripe Subscription Item as it relates to mabl billing
+        type:
+          $ref: '#/components/schemas/MablStripeSubscriptionType'
+      description: Description of a Stripe Subscription as it relates to mabl billing
+    MablStripeProductQueryType:
+      type: string
+      description: Product variants used for querying
+      enum:
+      - core
+      - credit_overages
+    MablStripeProductMetadata:
+      type: object
+      properties:
+        legacy:
+          type: boolean
+          description: Whether the Product is legacy or not
+        product_type:
+          $ref: '#/components/schemas/MablStripeProductType'
+      description: Set of arbitrary key-value pairs you can attach to the Product
+    StripeCustomerDetails:
+      type: object
+      properties:
+        stripe_country:
+          type: string
+          description: Two letter ISO 3166-1 country code
+        stripe_state:
+          type: string
+          description: State, county, province, or region.
+        customer_name:
+          type: string
+          description: The name of the customer
+      description: Details about the customer in stripe
+    ExecutionCreditWeights:
+      type: object
+      properties:
+        adhoc_ai_assertion_batch:
+          type: integer
+          description: Adhoc ai assertion batch size per billable unit
+          format: int32
+        functional_advanced_ai:
+          type: integer
+          description: Defines how many additional credits each functional test will consume due to advanced ai features
+          format: int32
+        functional_api:
+          type: integer
+          description: Defines how many credits each functional api test consume
+          format: int32
+        functional_browser:
+          type: integer
+          description: Defines how many credits each functional browser test consume
+          format: int32
+        functional_mobile:
+          type: integer
+          description: Defines how many credits each functional mobile test consume
+          format: int32
+        performance_api_15vum:
+          type: integer
+          description: Defines how many credits 15 virtual user minutes consume in a performance api test
+          format: int32
+        performance_browser_15vum:
+          type: integer
+          description: Defines how many credits 15 virtual user minutes consume in a performance browser test
+          format: int32
+      description: A mapping used to translate test executions into the equivalent execution credit usage
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

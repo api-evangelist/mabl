@@ -1,0 +1,331 @@
+openapi: 3.2.0
+info:
+  title: mabl Link Metric API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: LinkMetric
+paths:
+  /link/metrics/{metric_type}:
+    get:
+      tags:
+      - LinkMetric
+      summary: Query Link networking metrics
+      description: 'Query time-series networking metrics for Link tunnels and Link Agents, proxied from Cloud Monitoring. Scope is selected by owner (workspace or company) and optionally narrowed to a single tunnel (Link label) or a single Link Agent. Metrics exist per protocol: legacy Link Tunnel exposes tunnel-level throughput only; mablnet exposes the full set per agent and per tunnel. Series for protocols the owner''s account is not entitled to (or that do not support the requested metric) are omitted, and supported_protocols reflects what was queryable.'
+      operationId: queryLinkMetrics
+      parameters:
+      - name: metric_type
+        in: path
+        description: The metric to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/LinkMetricType'
+      - name: owner_type
+        in: query
+        description: The kind of owner the tunnels are scoped to (user-owned tunnels are not queryable)
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+      - name: owner_id
+        in: query
+        description: ID of the owner (workspace ID or company ID) whose Link metrics to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: tunnel
+        in: query
+        description: If specified, narrow the query to the tunnel with this Link label
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: link_agent_id
+        in: query
+        description: If specified, narrow the query to a single Link Agent (mablnet only)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: group_by
+        in: query
+        description: Return one series per tunnel or per agent instead of a single aggregate series
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/LinkMetricGroupBy'
+      - name: start_time
+        in: query
+        description: Start of the query window, epoch milliseconds
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End of the query window, epoch milliseconds
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: step_seconds
+        in: query
+        description: Resolution of the returned series in seconds
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 3600
+          minimum: 30
+          type: integer
+          format: int32
+          default: 60
+      responses:
+        '200':
+          description: The requested metric series
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkMetricResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+components:
+  schemas:
+    LinkTunnelOwnerType:
+      type: string
+      description: 'The kind of entity a mablnet tunnel is scoped to — its "owner". `workspace` is the classic scope: one tunnel per workspace. `company` scopes a single tunnel to an entire company, so every workspace under that company shares one mablnet tenant (and one Link Agent fleet) instead of needing a tunnel each. `user` is a personal tunnel scoped to a single user, private to that user — its egress is the user''s own machine, used to route a cloud test run through it. All three are mablnet-only: legacy Link Tunnel is always workspace-scoped.
+
+        '
+      enum:
+      - workspace
+      - company
+      - user
+      x-mabl-scope: public
+    LinkMetricSeries:
+      type: object
+      properties:
+        protocol:
+          $ref: '#/components/schemas/LinkMetricProtocol'
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+          description: 'Identity of this series within the response, e.g. direction (sent/received), outcome (how a connection ended, on connection_outcomes), tunnel (Link label, when grouped by tunnel), link_agent_id (when grouped by agent)
+
+            '
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkMetricPoint'
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    LinkMetricGroupBy:
+      type: string
+      description: How to split the returned series within the requested scope
+      enum:
+      - none
+      - tunnel
+      - agent
+    LinkMetricType:
+      type: string
+      description: 'Link networking metric types. `throughput` (bytes/second, in and out) is available for both protocols; the rest are mablnet-only: `rtt` (seconds), `packets_lost` (packets/second), `packets_retransmitted` (packets/second), `active_sessions` (concurrent SOCKS sessions), `congestion_window` (bytes, inner-QUIC cwnd), `failed_dials` (sessions/second the agent could not connect to the customer''s target), `tunnel_saturation` (percent, split by `direction` = download/upload — the share of time the tunnel was the throughput bottleneck, the "add Link Agents" signal), and `connection_outcomes` (sessions/second, split by `outcome` — how the agent''s SOCKS connections ended, `success` alongside each failure mode).
+
+        '
+      enum:
+      - throughput
+      - rtt
+      - packets_lost
+      - packets_retransmitted
+      - active_sessions
+      - congestion_window
+      - failed_dials
+      - tunnel_saturation
+      - connection_outcomes
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    LinkMetricPoint:
+      type: object
+      properties:
+        time:
+          type: integer
+          description: Sample timestamp, epoch milliseconds
+          format: int64
+        value:
+          type: number
+          description: Sample value, in the unit declared on the result
+          format: double
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    LinkMetricResult:
+      type: object
+      properties:
+        metric_type:
+          $ref: '#/components/schemas/LinkMetricType'
+        unit:
+          type: string
+          description: 'Unit of every point value (bytes_per_second, seconds, packets_per_second, sessions, bytes, sessions_per_second, percent)
+
+            '
+        start_time:
+          type: integer
+          description: Start of the query window, epoch milliseconds
+          format: int64
+        end_time:
+          type: integer
+          description: End of the query window, epoch milliseconds
+          format: int64
+        step_seconds:
+          type: integer
+          description: Resolution of the returned series in seconds
+          format: int32
+        supported_protocols:
+          type: array
+          description: 'Protocols this metric was queryable for in the requested scope — an empty series list with a non-empty supported_protocols means "no traffic", while a protocol absent here means "metric not available for that protocol" (e.g. rtt for legacy)
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkMetricProtocol'
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkMetricSeries'
+    LinkMetricProtocol:
+      type: string
+      description: The Link protocol whose pipeline produced a series
+      enum:
+      - mablnet
+      - legacy
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

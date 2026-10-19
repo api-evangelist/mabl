@@ -1,0 +1,2209 @@
+openapi: 3.2.0
+info:
+  title: mabl Event API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Event
+paths:
+  /execution/result/event/{event_id}:
+    get:
+      tags:
+      - Event
+      summary: Get a deployment result summary
+      description: Retrieve information about the plan runs executed using the deployment events API.
+      operationId: getExecutionResultForEvent
+      parameters:
+      - name: event_id
+        in: path
+        description: The event ID to retrieve test execution results for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResult'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Read::PlanExecution
+  /execution/result/event/{event_id}/plan/{plan_id}:
+    get:
+      tags:
+      - Event
+      summary: Get the execution result associated with an event ID and plan ID
+      operationId: getExecutionResultForEventAndPlan
+      parameters:
+      - name: event_id
+        in: path
+        description: The event ID for which to retrieve execution results
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: plan_id
+        in: path
+        description: The plan ID to use to filter results; only results associated with this plan will be returned
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResult'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::PlanExecution
+  /events:
+    get:
+      tags:
+      - Event
+      summary: Query Events
+      description: Used to query events
+      operationId: queryEvents
+      parameters:
+      - name: workspace_id
+        in: query
+        description: ID of the workspace for which to query events
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: environment_id
+        in: query
+        description: ID of the environment for which to query events
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: ID of the application for which to query events
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DeploymentEvent
+  /events/deployment:
+    get:
+      tags:
+      - Event
+      summary: Query Deployment Events
+      description: Used to query deployment events
+      operationId: queryDeploymentEvents
+      parameters:
+      - name: workspace_id
+        in: query
+        description: ID of the workspace for which to query deployment events
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: environment_id
+        in: query
+        description: ID of the environment for which to query deployment events
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Start time of the query range, in epoch milliseconds.  Oldest allowed value is 400d in the past.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End time of the query range, in epoch milliseconds.  Oldest allowed value is 400d in the past.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: include_test_executions
+        in: query
+        description: If false, excludes executions from the run_result in the response, improving performance for large result sets.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
+      - name: limit
+        in: query
+        description: The limit to use for pagination. Defaults to 10 if not specified; maximum limit is 100.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 10
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentEventQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DeploymentEvent
+      x-mabl-scope: public
+    post:
+      tags:
+      - Event
+      summary: Trigger tests on deployment
+      description: Create a deployment event to trigger a parallel run of all active plans that meet specified conditions, including application, environment, and plan label. Learn more in the docs.
+      operationId: onDeploy
+      parameters:
+      - name: preview
+        in: query
+        description: Set to true to preview what would be run
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      requestBody:
+        description: The deployment event
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentEvent'
+        required: true
+      responses:
+        '201':
+          description: The deployment event was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentEvent'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: The provided API Key is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: The provided application or environment could not be found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::DeploymentEvent
+      x-mabl-scope: public
+  /events/deployment/revision:
+    get:
+      tags:
+      - Event
+      summary: Query Deployment Events by revision
+      description: Used to query deployment events by revision (commit ID/SHA)
+      operationId: queryDeploymentEventsByRevision
+      parameters:
+      - name: workspace_id
+        in: query
+        description: ID of the workspace for which to query deployment events
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: revision
+        in: query
+        description: revision (commit ID/SHA) to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentEventQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DeploymentEvent
+      x-mabl-scope: public
+  /events/{id}:
+    get:
+      tags:
+      - Event
+      summary: Retrieve an existing event
+      description: Used to retrieve an existing event
+      operationId: getEvent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the event to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The event that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          description: Missing or invalid API token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Given token is not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DeploymentEvent
+    delete:
+      tags:
+      - Event
+      summary: Delete an event
+      description: Used to delete an existing event
+      operationId: removeEvent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the event to delete
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The Event was successfully removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Insight not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::DeploymentEvent
+  /events/deployment/{id}:
+    get:
+      tags:
+      - Event
+      summary: Retrieve an existing deployment event
+      description: Used to retrieve an existing deployment event
+      operationId: getDeploymentEvent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the event to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The event that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentEventResult'
+        '401':
+          description: Missing or invalid API token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Given token is not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DeploymentEvent
+    patch:
+      tags:
+      - Event
+      summary: Update deployment event
+      description: Update selective attributes on existing deployment event (backend only)
+      operationId: updateDeploymentEvent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the event to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Update request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentEventUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Updated entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentEventResult'
+        '401':
+          description: Missing or invalid API token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Given token is not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::DeploymentEvent
+  /events/runtime-recovery-session:
+    post:
+      tags:
+      - Event
+      summary: Record a Runtime Recovery Session event
+      description: Publishes a SYSTEM_EVENT observation for a completed runtime recovery session whose verdict was "pass". Internal use only; called by server-agents after the Runtime Recovery Summary agent finalizes its verdict. The observation flows through the state-detection and insights pipelines and ultimately becomes an Insight.
+      operationId: triggerRuntimeRecoverySessionEvent
+      parameters: []
+      requestBody:
+        description: Details of the completed runtime recovery session.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuntimeRecoverySessionEventRequest'
+        required: true
+      responses:
+        '202':
+          description: The runtime recovery session event was accepted for publishing
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::DeploymentEvent
+components:
+  schemas:
+    TestSelection:
+      required:
+      - source
+      - test_ids
+      type: object
+      properties:
+        test_ids:
+          maxItems: 50
+          minItems: 1
+          type: array
+          description: The ids of the tests to run, at most 50 entries. An id repeated in the list runs once
+          items:
+            type: string
+          x-mabl-scope: public
+        impact_session_id:
+          maxLength: 64
+          type: string
+          description: Optional id of the test impact analysis session that chose these tests. It must be a test impact session in this workspace that recorded the tests it returned, and every entry in test_ids must be one of them; otherwise the event is rejected with a 400 and nothing runs. The deployment event is recorded onto the session so the analysis and what it triggered stay linked; if that record cannot be written, link_warning says so and the event and its runs are unaffected
+          x-mabl-scope: public
+        source:
+          type: string
+          description: Whether a person chose this set of tests or software did. Which software is recorded by impact_session_id, which names the session rather than a category
+          enum:
+          - agent
+          - user
+          x-mabl-scope: public
+        name:
+          maxLength: 120
+          type: string
+          description: Optional display name for the synthesized plan
+          x-mabl-scope: public
+        retry_failed_tests:
+          type: boolean
+          description: When true, if any test in the selection fails, mabl reruns only the failed tests, once, on the same deployment event. The event's succeeded is true if the rerun passes; succeeded_first_attempt stays false so a pass on the second attempt is still visible. The rerun resolves each test's branch again, so it runs the latest version there. Each rerun test counts as a test run. Off when omitted
+          x-mabl-scope: public
+        credentials:
+          maxItems: 50
+          type: array
+          description: Optional login credentials for individual selected tests, such as the plan_credentials_id a test impact analysis reports for each test. A listed test logs in with its credentials_id instead of plan_overrides.credentials_id, and a test not listed runs with plan_overrides as usual. Each test_id must be in test_ids and listed once, and each credentials_id must be credentials in this workspace; otherwise the whole event is refused and nothing runs
+          items:
+            $ref: '#/components/schemas/SelectedTestCredentials'
+          x-mabl-scope: public
+        skipped_tests:
+          type: array
+          description: Tests that were accepted but not run, with the reason. Set by mabl
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/SkippedTest'
+          x-mabl-scope: public
+        resolved_tests:
+          type: array
+          description: The version each test resolved to, and the mabl branch that version came from. Set by mabl
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ResolvedTest'
+          x-mabl-scope: public
+      description: 'An explicit set of tests to run for a deployment, in place of matching stored plans by label. mabl runs them as one synthesized plan whose identity is scoped to the event, so the runs appear on the deployment results page like any other deployment run. Supports browser or API tests, without mixing types. Each test runs at its version on the selection''s mabl branch, falling back to master when it has none there. That branch is the event''s branch (or source_control_tag), else the deployment''s branch, else the snapshot action''s from, else the environment''s branch, else master, and must be the same for every deployment that can run the selected test type. A branch mabl does not have is not an error: every test runs at master, and resolved_tests shows it. The snapshot action''s from is the exception and must name an existing branch. A test with no version on the branch or master is refused. An environment''s snapshot branch has no master fallback, so a test missing from the snapshot is refused. Each enabled test requires a compatible deployment. The first run runs the versions in resolved_tests. Retries, from retry_failed_tests or a manual rerun, resolve the branch again and run any later edit. Flows are not pinned; they resolve on the branch when each test starts.'
+    Event:
+      required:
+      - workspace_id
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID for this event
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this event
+        environment_id:
+          type: string
+          description: The ID of the environment associated with this event
+        application_id:
+          type: string
+          description: The ID of the application associated with this event
+        event_type:
+          type: string
+          description: The type of event
+        event_time:
+          type: integer
+          description: Time at which the event occurred
+          format: int64
+        source_control:
+          $ref: '#/components/schemas/SourceControl'
+        received_time:
+          type: integer
+          description: Time at which the event was received by the API
+          format: int64
+        revision:
+          type: string
+          description: Revision associated with the event
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value pairs used to pass additional information about this event
+        type_specific_fields:
+          type: object
+          additionalProperties: true
+          description: Additional key-value pairs used to record additional, canonical fields relevant to only some event types
+        triggered_plan_run_summaries:
+          type: array
+          description: Summaries of the plans that ran as a result of this event
+          items:
+            $ref: '#/components/schemas/DeploymentPlanSummary'
+      description: Describes a generic event
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+    BaseTestRunResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Test run id
+          x-mabl-scope: public
+        test_ref_id:
+          type: string
+          description: reference to this test in another system
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: workspace Id
+          x-mabl-scope: public
+        started_time:
+          type: integer
+          description: Time test run was started, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        completed_time:
+          type: integer
+          description: Time test run was completed, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        journey_id:
+          type: string
+          description: (deprecated, use test_id) Test id
+          readOnly: true
+          x-mabl-scope: public
+        test_id:
+          type: string
+          description: Test id
+          readOnly: true
+          x-mabl-scope: public
+        test_labels:
+          type: array
+          description: Test labels
+          items:
+            type: string
+          x-mabl-scope: public
+        test_name:
+          type: string
+          description: Test name
+          x-mabl-scope: public
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        failure_summary:
+          $ref: '#/components/schemas/TestRunFailureSummary'
+        failure_categorization:
+          $ref: '#/components/schemas/FailureCategorization'
+        test_cases:
+          type: array
+          description: User provided external test cases
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ExternalTestCase'
+          x-mabl-scope: public
+        timing_summary:
+          $ref: '#/components/schemas/TimingSummary'
+        execution_source:
+          $ref: '#/components/schemas/TestSource'
+        status:
+          type: string
+          description: The current status of this test run
+          enum:
+          - awaiting_precondition
+          - skipped
+          - rate_limited
+          - queued
+          - running
+          - completed
+          - failed
+          - terminating
+          - terminated
+          x-mabl-scope: public
+        status_cause:
+          type: string
+          description: Cause for setting given status, such as failure cause. Updated in pairs with Status.
+          x-mabl-scope: public
+        outcome:
+          $ref: '#/components/schemas/TestRunResultOutcomeEnum'
+        customer_log_uri:
+          type: string
+          description: Customer facing output log (formerly output_log_uri)
+      description: Results of a test run
+    ExecutionResult:
+      type: object
+      properties:
+        event_status:
+          $ref: '#/components/schemas/EventStatus'
+        plan_execution_metrics:
+          $ref: '#/components/schemas/ExecutionMetrics'
+        journey_execution_metrics:
+          $ref: '#/components/schemas/ExecutionMetrics'
+        failure_analysis:
+          $ref: '#/components/schemas/FailureRootCauseAnalysis'
+        executions:
+          type: array
+          description: Complete list of all plan runs
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ExecutionSummary'
+          x-mabl-scope: public
+      description: Summary of plan/test execution results
+    SourceControl:
+      type: object
+      properties:
+        revision:
+          type: string
+          description: the primary source revision associated with this object
+          x-mabl-scope: public
+        revisions:
+          type: array
+          description: all source revision ids associated with this object
+          items:
+            type: string
+          x-mabl-scope: public
+        commit_username:
+          type: string
+          description: the username of the user who committed the revision associated with this object
+        branch_name:
+          type: string
+          description: the branch associated with this object
+        branches:
+          type: array
+          description: Related branches
+          items:
+            $ref: '#/components/schemas/SourceControlBranch'
+          x-mabl-scope: public
+        pull_request:
+          $ref: '#/components/schemas/SourceControlPullRequest'
+        pull_requests:
+          type: array
+          description: Related pull requests
+          items:
+            $ref: '#/components/schemas/SourceControlPullRequest'
+          x-mabl-scope: public
+        authors:
+          type: array
+          description: Related authors. Should be at least one
+          items:
+            $ref: '#/components/schemas/SourceControlAuthor'
+          x-mabl-scope: public
+        repository_url:
+          type: string
+          description: the url of the repository associated with this object
+        repository_name:
+          type: string
+          description: the name of the repository associated with this object
+        repository:
+          $ref: '#/components/schemas/SourceControlRepository'
+    SkippedTest:
+      required:
+      - reason
+      - test_id
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The id of the test that was not run
+          x-mabl-scope: public
+        reason:
+          type: string
+          description: Why the test was not run
+          enum:
+          - disabled
+          x-mabl-scope: public
+      description: A test that a selection named but that mabl did not run
+    ExecutionParameter:
+      required:
+      - type
+      - value
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of this parameter
+          enum:
+          - basic_auth
+          - credentials
+          - ignore_variables
+          - value
+          - variable_row
+          - variables
+        name:
+          type: string
+          description: The name of this parameter
+        value:
+          type: string
+          description: The value of this parameter
+        argument:
+          type: string
+          description: Additional text data for this parameter.
+        argumentObject:
+          description: Additional data for this parameter.
+          oneOf:
+          - $ref: '#/components/schemas/DynamicScenarioSelection'
+          - $ref: '#/components/schemas/StaticScenarioSelection'
+      description: A parameter that is passed during execution of a Plan
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    TestSummary:
+      required:
+      - app_href
+      - href
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: Test id
+          readOnly: true
+          x-mabl-scope: public
+        name:
+          type: string
+          description: test name
+          readOnly: true
+          x-mabl-scope: public
+        href:
+          type: string
+          description: URL for retrieving the test
+          readOnly: true
+          x-mabl-scope: public
+        app_href:
+          type: string
+          description: URL for viewing the test in the mabl app
+          readOnly: true
+          x-mabl-scope: public
+        tags:
+          type: array
+          description: tags associated with this test
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Tag'
+          x-mabl-scope: public
+    TestRunResultOutcomeEnum:
+      type: string
+      enum:
+      - passed
+      - failed
+      - stopped
+    PlanSummary:
+      required:
+      - app_href
+      - href
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: plan id
+          readOnly: true
+          x-mabl-scope: public
+        name:
+          type: string
+          description: plan name
+          readOnly: true
+          x-mabl-scope: public
+        href:
+          type: string
+          description: URL for retrieving the plan
+          readOnly: true
+          x-mabl-scope: public
+        app_href:
+          type: string
+          description: URL for viewing the plan in the mabl app
+          readOnly: true
+          x-mabl-scope: public
+        tags:
+          type: array
+          description: tags associated with the plan
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Tag'
+          x-mabl-scope: public
+    TimingSummary:
+      type: object
+      properties:
+        find_time_ms:
+          type: integer
+          description: Total time spent in finds for this run
+          format: int64
+        find_extra_wait_time_ms:
+          type: integer
+          description: Extra wait time added by intelligent waiting in finds
+          format: int64
+      description: Sumamry of various timing measures for this run
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    PlanOverrideOptions:
+      type: object
+      properties:
+        api_url:
+          type: string
+          description: Optional api URL override.  If not specified the api URL configured on the plan will be used
+          x-mabl-scope: public
+        browser_type:
+          type: string
+          description: DEPRECATED - The browser that should be used when executing tests, use browser_types
+          enum:
+          - chrome
+          - edge
+          - firefox
+          - internet_explorer
+          - safari
+        browser_types:
+          type: array
+          description: The browsers to execute tests on
+          items:
+            type: string
+          x-mabl-scope: public
+        credentials_id:
+          type: string
+          description: ID of the credentials object - last portion of the URL on Settings/Credentials
+          x-mabl-scope: public
+        credentials_required:
+          type: boolean
+          description: Set to true if the credentials_id is present, otherwise omit
+          x-mabl-scope: public
+        deployment_id:
+          type: string
+          description: DEPRECATED - use deployment_ids - The deployment ID associated with this run policy
+        deployment_ids:
+          type: array
+          description: The deployment IDs associated with this run policy
+          items:
+            type: string
+        emulation_mode:
+          type: string
+          description: Mobile device emulation. When mobile is specified, browser_types is ignored in favor of web_emulation_types.
+          enum:
+          - desktop
+          - mobile_web
+        execution_stages:
+          type: array
+          description: Describes how test should be executed
+          items:
+            $ref: '#/components/schemas/ExecutionStage'
+        journeys:
+          type: array
+          description: DEPRECATED - use execution_stages
+          items:
+            $ref: '#/components/schemas/TestConfiguration'
+        http_auth_credentials_id:
+          type: string
+          description: ID of HTTP Basic Auth credentials - last portion of the URL on Settings/Credentials
+          x-mabl-scope: public
+        http_auth_credentials_required:
+          type: boolean
+          description: Set to true if http_auth_credentials_id is present, otherwise omit
+          x-mabl-scope: public
+        http_headers:
+          type: array
+          description: Custom HTTP headers to send with all requests
+          items:
+            $ref: '#/components/schemas/HttpHeader'
+          x-mabl-scope: public
+        http_headers_required:
+          type: boolean
+          description: Flag indicating whether or not custom HTTP headers are required
+        link_agent_label:
+          type: string
+          description: DEPRECATED - use link_agent_labels
+          deprecated: true
+          x-mabl-scope: public
+        link_agent_labels:
+          type: array
+          description: Optional Link Agent Labels override for the deployment
+          items:
+            type: string
+          x-mabl-scope: public
+        mobile_app_file_ids:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of mobile platform => mobile app file ID override
+          x-mabl-scope: public
+        mobile_device_ids:
+          type: array
+          description: Devices to use for mobile testing
+          items:
+            type: string
+        nodejs_runtime_variant:
+          type: string
+          description: Override the Node.js execution runtime variant, if v2 runtime in use
+          enum:
+          - playwright
+          - puppeteer
+        organization_id:
+          type: string
+          description: Likely unused, added here for backward CLI client compatibility
+        run_multiplier:
+          minimum: 1
+          type: integer
+          description: if > 1, will start multiple copies of each test run when this plan runs
+          format: int32
+        uri:
+          type: string
+          description: DEPRECATED - Alias for web_url
+          x-mabl-scope: public
+        web_url:
+          type: string
+          description: Optional web URL override.  If not specified the web URL configured on the plan will be used
+          x-mabl-scope: public
+        send_mabl_header:
+          type: boolean
+          description: Controls whether or not the x-mabl-agent header is sent on requests
+        execution_runner_size:
+          $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+      description: Overridable Plan attributes
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    DeploymentEventQueryResult:
+      required:
+      - deployments
+      type: object
+      properties:
+        deployments:
+          type: array
+          description: All deployments that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/DeploymentEventResult'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+    TestConfiguration:
+      required:
+      - journey_id
+      type: object
+      properties:
+        journey_id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutionParameter'
+      description: Specifies a Test that should be executed as part of a Plan
+    DynamicScenarioSelection:
+      required:
+      - count
+      - query
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - dynamic
+        query:
+          type: string
+          description: The user query prompt
+        count:
+          type: integer
+          description: The estimated count of scenarios
+      description: Dynamic scenario selection parameter argument
+    FailureRootCauseAnalysis:
+      type: object
+      properties:
+        headline:
+          type: string
+          description: The short summary of the run analysis; typically limited to one sentence
+          readOnly: true
+          x-mabl-scope: public
+        summary:
+          type: string
+          description: The summary of the analysis for the run failure
+          readOnly: true
+          x-mabl-scope: public
+        failure_category_id:
+          type: string
+          description: The suggested failure category if applicable
+          readOnly: true
+          x-mabl-scope: public
+        evidence_details:
+          type: string
+          description: Agent-generated detailed evidence supporting the analysis, if available
+          readOnly: true
+          x-mabl-scope: public
+    RuntimeRecoverySessionEventRequest:
+      required:
+      - agent_session_id
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The ID of the workspace where the runtime recovery session ran.
+        agent_session_id:
+          type: string
+          description: The Agent Session ID for the RRS run. The UI uses this to fetch and render the Runtime Recovery Summary panel on the resulting insight detail page.
+        journey_run_id:
+          type: string
+          description: The ID of the test run that the RRS evaluated.
+        journey_id:
+          type: string
+          description: Test variant ID (changes per edit).
+        journey_invariant_id:
+          type: string
+          description: Test invariant ID (constant across versions).
+        plan_run_id:
+          type: string
+          description: The plan run ID (if the test ran as part of a plan).
+        environment_id:
+          type: string
+          description: The environment in which the test ran.
+        application_id:
+          type: string
+          description: The application under test.
+        verdict_summary:
+          type: string
+          description: One-sentence user-facing summary from the RRS agent verdict. Used as the list-view subtitle on the resulting insight.
+        insight_text:
+          type: string
+          description: Optional learning text emitted by the RRS agent.
+      description: Request body for publishing a Runtime Recovery Session SYSTEM_EVENT observation. Sent by server-agents when an RRS agent verdict is "pass".
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    SourceControlRepository:
+      required:
+      - html_url
+      - id
+      - name
+      - owner_name
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique repository id (immutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        full_name:
+          type: string
+          description: vendor unique name to identify this repo across all vendor's repos
+          x-mabl-scope: public
+        owner_name:
+          type: string
+          description: repository name unique within owner scope
+        owner:
+          $ref: '#/components/schemas/SourceControlRepositoryOwner'
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+        is_public:
+          type: boolean
+          description: true if repository publicly visible
+          x-mabl-scope: public
+        checkout_url:
+          type: string
+          description: SCM remote checkout path
+          x-mabl-scope: public
+      description: the SCM repository associated with this object
+    TestSource:
+      type: string
+      description: Where the test lives
+      enum:
+      - mabl_cloud
+      - external
+      - mabl_local
+      - mabl_agent
+      x-mabl-scope: public
+    DeploymentEventResult:
+      required:
+      - id
+      - workspace_id
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID for the deployment event
+          x-mabl-scope: public
+        environment_id:
+          type: string
+          description: ID of the environment associated with this deployment
+          x-mabl-scope: public
+        environment_name:
+          type: string
+          description: Name of the environment associated with this deployment. Absent when the deployment carries no environment or the environment has since been deleted.
+          x-mabl-scope: public
+        application_id:
+          type: string
+          description: ID of the application associated with this deployment
+          x-mabl-scope: public
+        application_name:
+          type: string
+          description: Name of the application associated with this deployment. Absent when the deployment carries no application or the application has since been deleted.
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: ID of the workspace associated with this deployment
+          x-mabl-scope: public
+        event_time:
+          type: integer
+          description: Epoch millisecond timestamp at which the deployment occurred
+          format: int64
+          x-mabl-scope: public
+        received_time:
+          type: integer
+          description: Epoch millisecond timestamp the event was received at
+          format: int64
+          x-mabl-scope: public
+        revision:
+          type: string
+          description: Source code revision
+          x-mabl-scope: public
+        branch:
+          type: string
+          description: The mabl branch the event named, from branch or source_control_tag, even when mabl has no such branch. Absent when the event named none. The branch each selected test ran on is in test_selection.resolved_tests
+          x-mabl-scope: public
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value pairs used to pass additional information about this deployment
+          x-mabl-scope: public
+        triggered_plan_run_summaries:
+          type: array
+          description: Summary of the plans that were triggered by this deployment event
+          items:
+            $ref: '#/components/schemas/DeploymentPlanSummary'
+          x-mabl-scope: public
+        plan_overrides:
+          type: object
+          description: Optional overrides specified for the stored properties of any triggered plans
+          x-mabl-scope: public
+        plan_labels:
+          type: array
+          description: If specified, only plans matching the given labels were executed
+          items:
+            type: string
+          x-mabl-scope: public
+        test_selection:
+          $ref: '#/components/schemas/TestSelection'
+        test_selection_unreadable:
+          type: boolean
+          description: True when this deployment has a stored test selection that the API could not read, so test_selection is absent. The selection is unknown, not none. Absent when the selection was readable or the deployment had none.
+          x-mabl-scope: public
+        actions:
+          type: object
+          description: Optional actions specified for mabl to take on this deployment
+          x-mabl-scope: public
+        run_result:
+          $ref: '#/components/schemas/ExecutionResult'
+        source_control:
+          $ref: '#/components/schemas/SourceControl'
+      description: Describes a deployment event and the result of any triggered plan runs
+    DeploymentEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID for this event, set by mabl
+          readOnly: true
+          x-mabl-scope: public
+        environment_id:
+          type: string
+          description: The ID of the environment. When provided, mabl only triggers plans that contain this environment.
+          x-mabl-scope: public
+        application_id:
+          type: string
+          description: The ID of the application. When provided, mabl only triggers plans that contain this application.
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: The ID of the workspace associated with this deployment, set by mabl
+          readOnly: true
+          x-mabl-scope: public
+        event_time:
+          type: integer
+          description: Time at which the deployment occurred
+          format: int64
+        received_time:
+          type: integer
+          description: Time at which the deployment event was received by the API
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        revision:
+          type: string
+          description: The source code revision associated with the deployment
+          x-mabl-scope: public
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value pairs used to pass additional information about this deployment
+        target_runtime_version:
+          type: string
+          description: Target execution test runner image tag to execute
+        target_orchestration_version:
+          type: string
+          description: Optional orchestration runtime version to use, if applicable. Otherwise use default orchestration version.
+        debug:
+          type: boolean
+          description: If true will capture additional debugging information during execution of triggered test runs.  Support admin or feature flag required.
+        triggered_plan_run_summaries:
+          type: array
+          description: Summary of the plans that were triggered by this deployment event
+          items:
+            $ref: '#/components/schemas/DeploymentPlanSummary'
+          x-mabl-scope: public
+        plan_overrides:
+          $ref: '#/components/schemas/PlanOverrideOptions'
+        plan_labels:
+          minItems: 1
+          type: array
+          description: If specified, only plans matching the given labels will execute
+          items:
+            type: string
+          x-mabl-scope: public
+        test_selection:
+          $ref: '#/components/schemas/TestSelection'
+        link_warning:
+          type: string
+          description: Present when the event was created but a side effect of it was not recorded, such as linking the event back to the agent session that selected the tests. The event and its runs are unaffected
+          readOnly: true
+          x-mabl-scope: public
+        source_control:
+          $ref: '#/components/schemas/SourceControl'
+        source_control_tag:
+          type: string
+          description: deprecated, use branch
+          x-mabl-scope: public
+        branch:
+          type: string
+          description: The mabl branch to run tests from
+          x-mabl-scope: public
+        actions:
+          $ref: '#/components/schemas/DeploymentActions'
+      description: Describes a deployment event
+    ResolvedTest:
+      required:
+      - branch
+      - test_id
+      - test_variant_id
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The id of the selected test
+          x-mabl-scope: public
+        test_variant_id:
+          type: string
+          description: The id of the resolved test version, in the form test_id:version. Test runs in the deployment results report it as their test_id
+          x-mabl-scope: public
+        branch:
+          type: string
+          description: The mabl branch the version came from, which is the selection's mabl branch, or master when the test has no version there
+          x-mabl-scope: public
+      description: The version a selected test resolved to when mabl accepted the event
+    AssertFailure:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Assert failure description without expected/found values to eliminate the need for parsing downstream
+          x-mabl-scope: public
+        expected:
+          type: string
+          description: Expected value where applicable
+          x-mabl-scope: public
+        found:
+          type: string
+          description: Value actually found during test execution
+          x-mabl-scope: public
+      description: Details about assert failure
+    SourceControlRepositoryOwner:
+      required:
+      - html_url
+      - id
+      - name
+      - owner_type
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique repository id (immutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        owner_type:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+        avatar_url:
+          type: string
+          description: owner avatar image URL
+          x-mabl-scope: public
+      description: the SCM repository associated with this object
+    EventStatus:
+      type: object
+      properties:
+        succeeded:
+          type: boolean
+          description: True if succeeded_first_attempt is true or succeeded_with_retries is true
+          readOnly: true
+          x-mabl-scope: public
+        succeeded_first_attempt:
+          type: boolean
+          description: True if all associated plan runs passed on the first attempt
+          readOnly: true
+          x-mabl-scope: public
+        succeeded_with_retries:
+          type: boolean
+          description: True if all associated plan runs passed taking retries into account
+          readOnly: true
+          x-mabl-scope: public
+        succeeded_by_plan:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: Map of plan ID to boolean indicating whether the plan passed
+          readOnly: true
+          x-mabl-scope: public
+    PlanRunTriggerType:
+      type: string
+      enum:
+      - manual
+      - retry
+      - schedule
+      - customer_event
+      - insight
+      - external
+      x-mabl-scope: public
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    SelectedTestCredentials:
+      required:
+      - credentials_id
+      - test_id
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The id of a test in test_ids
+          x-mabl-scope: public
+        credentials_id:
+          maxLength: 64
+          type: string
+          description: The id of the login credentials the test runs with
+          x-mabl-scope: public
+      description: The login credentials one selected test runs with
+    DeploymentSnapshotAction:
+      required:
+      - from
+      type: object
+      properties:
+        from:
+          type: string
+          description: The name of the branch to snapshot from.  Including this will update the environment to associate it with a fixed snapshot of the given branch.  If excluded, the environment will be updated to run latest from master.  Only applicable if an environment is included in the deployment event.
+          x-mabl-scope: public
+      description: Tells mabl to snapshot the branch onto the environment as part of a deployment event
+    SourceControlPullRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique pull request identifier (immutable)
+          x-mabl-scope: public
+        number:
+          type: integer
+          description: the number associated with the pull request (repository unique)
+          x-mabl-scope: public
+        title:
+          type: string
+          description: the title of the pull request
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view pull request object
+          x-mabl-scope: public
+      description: the pull request associated with this object
+    TestRunFailureSummary:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          description: ID of the flow in which the failure occurred
+          x-mabl-scope: public
+        flow_name:
+          type: string
+          description: Name of the flow in which the failure occurred, if any
+          x-mabl-scope: public
+        step_number:
+          type: integer
+          description: Step number within the flow where the failure occurred
+          format: int32
+          x-mabl-scope: public
+        step_id:
+          type: string
+          description: ID of the step (with respect to the flow) where the failure occurred
+          x-mabl-scope: public
+        step_id_in_test:
+          type: string
+          description: ID of the step (with respect to the test) where the failure occurred
+          x-mabl-scope: public
+        step_display_number:
+          type: string
+          description: Display number of the failing step in nested dotted notation (e.g. "2.7" or "2.7.3"). Null when unavailable; only populated for runs executed after this field shipped (not present on backfilled historical runs).
+        error:
+          type: string
+          description: Unexpected error or formatted assertion failure that was recorded
+          x-mabl-scope: public
+        image_uri:
+          type: string
+          description: URL of an image showing the error
+          x-mabl-scope: public
+        image_href:
+          type: string
+          description: URL of an image showing the error
+          x-mabl-scope: public
+        image_artifact_url:
+          type: string
+          description: API url of the image that will redirect to a newly signed image url
+          x-mabl-scope: public
+        assert_failure:
+          $ref: '#/components/schemas/AssertFailure'
+      description: Information useful for diagnosing test run failures
+    DeploymentEventUpdateRequest:
+      type: object
+      properties:
+        source_control:
+          $ref: '#/components/schemas/SourceControl'
+      description: Updatable deployment event attributes
+    DeploymentActions:
+      type: object
+      properties:
+        rebaseline_images:
+          type: boolean
+          description: Set to true to tell mabl to rebaseline image models for all images associated with this test
+          x-mabl-scope: public
+        set_static_baseline:
+          type: boolean
+          description: Set to true to tell mabl to use the images generated by this deplyment as a static baseline.  This will lock the baseline to this image until a new baseline is provided.
+          x-mabl-scope: public
+        snapshot:
+          $ref: '#/components/schemas/DeploymentSnapshotAction'
+      description: Actions to give mabl for this deployment
+    PlanExecutionResult:
+      required:
+      - href
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: The plan run ID
+          readOnly: true
+          x-mabl-scope: public
+        status:
+          type: string
+          description: Current status of the plan run
+          readOnly: true
+          enum:
+          - queued
+          - pre_execution
+          - scheduling
+          - scheduled
+          - succeeded
+          - failed
+          - cancelled
+          - post_execution
+          - completed
+          - terminated
+          x-mabl-scope: public
+        status_cause:
+          type: string
+          description: Cause for setting given status, such as failure cause
+          readOnly: true
+          x-mabl-scope: public
+        href:
+          type: string
+          description: URL for retrieving the plan run
+          readOnly: true
+          x-mabl-scope: public
+        is_retry:
+          type: boolean
+          description: true if this plan run is a retry of a previously failed execution
+          readOnly: true
+          x-mabl-scope: public
+        retry_of_id:
+          type: string
+          description: if is_retry is true, this is the ID of the plan run that this retry is associated with
+          x-mabl-scope: public
+        trigger_type:
+          description: 'How the plan run was started. A rerun kept on the event is manual: it can rerun a subset of tests or run them from another branch, and it does not count toward the event''s status.'
+          readOnly: true
+          allOf:
+          - $ref: '#/components/schemas/PlanRunTriggerType'
+          x-mabl-scope: public
+      description: Provides information about the result of a plan execution
+    DeploymentPlanSummary:
+      type: object
+      properties:
+        plan_id:
+          type: string
+          description: Unique ID for this plan
+          x-mabl-scope: public
+        plan_run_id:
+          type: string
+          description: The ID of run of the plan
+          x-mabl-scope: public
+      description: Plans that run for this deployment
+    FailureCategorization:
+      type: object
+      properties:
+        failure_category_id:
+          type: string
+          description: A failure category id
+        failure_synopsis:
+          type: string
+          description: DEPRECATED -- Now persisted as FailureAnalysis -- A synopsis of the failure summary
+          deprecated: true
+        failure_summary_text:
+          type: string
+          description: A summary describing the test run failure and potential root cause
+        is_failure_category_generated:
+          type: boolean
+          description: Indicates if the failure category was generated by AI
+        is_failure_summary_generated:
+          type: boolean
+          description: Indicates if the failure summary was generated by AI
+        suggested_failure_category_id:
+          type: string
+          description: Failure category ID suggested by automated analysis. Server-managed; client-supplied values are ignored on write.
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who updated the categorization of this failure
+          readOnly: true
+        last_updated_time:
+          type: integer
+          description: time the failure categorization was last updated
+          format: int64
+          readOnly: true
+        failure_reason_assignment_source:
+          type: string
+          description: How the failure reason was assigned to this test run. Server-managed; client-supplied values are ignored on write.
+          enum:
+          - manual
+          - auto
+        failure_reason_assigned_by_id:
+          type: string
+          description: The ID of the user or system that assigned the failure reason. Server-managed; client-supplied values are ignored on write.
+        failure_reason_assigned_time:
+          type: integer
+          description: Timestamp in epoch milliseconds when the failure reason was assigned. Server-managed; client-supplied values are ignored on write.
+          format: int64
+      description: Information describing the cause of a test run failure
+    SourceControlBranch:
+      required:
+      - html_url
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: repository unique branch name
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+      description: the SCM branch associated with this object
+    ExecutionSummary:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Current status of the plan run
+          readOnly: true
+          enum:
+          - queued
+          - pre_execution
+          - scheduling
+          - scheduled
+          - succeeded
+          - failed
+          - cancelled
+          - post_execution
+          - completed
+          - terminated
+          x-mabl-scope: public
+        status_cause:
+          type: string
+          description: Cause for setting given status, such as failure cause
+          readOnly: true
+          x-mabl-scope: public
+        success:
+          type: boolean
+          description: true if the plan completed successfully
+          readOnly: true
+          x-mabl-scope: public
+        plan:
+          $ref: '#/components/schemas/PlanSummary'
+        plan_execution:
+          $ref: '#/components/schemas/PlanExecutionResult'
+        journeys:
+          type: array
+          description: The tests in this plan
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestSummary'
+          x-mabl-scope: public
+        journey_executions:
+          type: array
+          description: The test runs in this plan
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestRunResult'
+          x-mabl-scope: public
+        start_time:
+          type: integer
+          description: Plan run start time
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        stop_time:
+          type: integer
+          description: Plan run end time
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+    ExecutionStage:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of this stage
+        concurrency:
+          type: string
+          description: How journeys should be executed
+          enum:
+          - sequential
+          - parallel
+        concurrency_limit:
+          type: integer
+          description: The maximum number of concurrent test runs for this stage. Only used with parallel execution
+          format: int32
+        always_run_stage:
+          type: boolean
+          description: if true this stage will always run regardless of whether previous stages have passed
+        always_run_journeys:
+          type: boolean
+          description: if true all journeys within this stage will be run even if a preceding journey has failed
+        journeys:
+          type: array
+          description: The journeys included in this stage; if concurrency is sequential they will be executed in this order
+          items:
+            $ref: '#/components/schemas/TestConfiguration'
+        browser_types_override:
+          type: array
+          items:
+            type: string
+        use_browser_types_override:
+          type: boolean
+          description: If true, the browser types in this stage will be used instead of the browser types from the plan
+        run_multiplier_override:
+          minimum: 1
+          type: integer
+          format: int32
+        use_run_multiplier_override:
+          type: boolean
+          description: If true, the run multiplier in this stage will be used instead of the run multiplier from the plan
+        ignore_datatables:
+          type: boolean
+          description: If true, the data tables specified in the journeys in this stage will be ignored
+      description: Describes a stage of plan execution
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    SourceControlAuthor:
+      required:
+      - avatar_url
+      - html_url
+      - id
+      - user_name
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique author id (invariant)
+          x-mabl-scope: public
+        user_name:
+          type: string
+          description: author username name (mutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: author full name (mutable)
+          x-mabl-scope: public
+        email:
+          type: string
+          description: author email
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view author
+          x-mabl-scope: public
+        avatar_url:
+          type: string
+          description: author avatar image URL
+          x-mabl-scope: public
+        user_type:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+      description: the SCM author associated with this object
+    TestTypeEnum:
+      type: string
+      description: Type of test
+      enum:
+      - api
+      - browser
+      - performance
+      - mobile
+      - desktop
+      x-mabl-scope: public
+    TestRunResult:
+      required:
+      - app_href
+      - href
+      - journey_execution_id
+      - journey_id
+      type: object
+      description: Provides information about the result of a test run
+      allOf:
+      - $ref: '#/components/schemas/BaseTestRunResult'
+      - type: object
+        properties:
+          journey_execution_id:
+            type: string
+            description: (deprecated, use id instead) The test run ID
+            readOnly: true
+            x-mabl-scope: public
+          application_id:
+            type: string
+            description: the id of the application associated with this run
+            readOnly: true
+            x-mabl-scope: public
+          environment_id:
+            type: string
+            description: the id of the environment associated with this run
+            readOnly: true
+            x-mabl-scope: public
+          initial_url:
+            type: string
+            description: the URL where the test started
+            readOnly: true
+            x-mabl-scope: public
+          credentials_id:
+            type: string
+            description: The id of the credentials this run used, if any. This is the plan or deployment override when the run carried one, and otherwise the default set on the test version that ran.
+            readOnly: true
+            x-mabl-scope: public
+          branch:
+            type: string
+            description: 'The branch this run was requested against, taken from the branch on the triggering deployment event or plan run override and, failing that, the environment''s branch. This is the branch asked for, which is not always the branch the executed test version came from: when a branch has not modified a test, the run executes that test''s master version. The version that actually ran is the trailing version suffix on test_id, so a caller can compare it against the test''s source_control_tags to tell a branch-specific version from an inherited master one.'
+            readOnly: true
+            x-mabl-scope: public
+          run_multiplier_index:
+            minimum: 0
+            type: integer
+            description: Zero-indexed run multiplier index for this run
+            format: int32
+            readOnly: true
+            x-mabl-scope: public
+          retry_of_id:
+            type: string
+            description: On a plan run retry, the ID of the test run from the retried plan run that this run re-runs
+            readOnly: true
+          browser_type:
+            type: string
+            description: the type of browser associated with this run
+            readOnly: true
+            x-mabl-scope: public
+          scenario_name:
+            type: string
+            description: the scenario name associated with this run, if any
+            readOnly: true
+            x-mabl-scope: public
+          success:
+            type: boolean
+            description: true if the test run completed successfully
+            readOnly: true
+            x-mabl-scope: public
+          href:
+            type: string
+            description: URL for retrieving the test run
+            readOnly: true
+            x-mabl-scope: public
+          app_href:
+            type: string
+            description: URL for viewing the test run results in the mabl app
+            readOnly: true
+            x-mabl-scope: public
+          start_time:
+            type: integer
+            description: (deprecated, use started_time) The time this test run started
+            format: int64
+            readOnly: true
+            x-mabl-scope: public
+          stop_time:
+            type: integer
+            description: (deprecated, use completed_time) The time this test run stopped
+            format: int64
+            readOnly: true
+            x-mabl-scope: public
+          termination_reason:
+            type: string
+            description: Termination reason when status is terminated (mirrors TestRun.termination_reason values, e.g. usage_quota_exceeded)
+            x-mabl-scope: public
+    HttpHeader:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the header
+          x-mabl-scope: public
+        value:
+          type: string
+          description: The value of the header
+          x-mabl-scope: public
+        log_header_value:
+          type: boolean
+          description: Log the header value in the execution log, if not true only the header name is logged.
+          x-mabl-scope: public
+      description: An HTTP header
+    ExecutionMetrics:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: The total number of executions
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        passed:
+          type: integer
+          description: The number of executions that passed
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        failed:
+          type: integer
+          description: The number of executions that failed
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        running:
+          type: integer
+          description: The number of executions that are still running
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        skipped:
+          type: integer
+          description: The number of executions that were skipped
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        terminated:
+          type: integer
+          description: The total number of executions that were terminated before completion
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+    ExecutionRunnerSizeEnum:
+      type: string
+      description: available runner sizes
+      enum:
+      - x1
+      - x2
+      - x3
+      - x4
+      - x5
+      - x6
+      - small
+      - medium
+      - large
+      - inherit
+    StaticScenarioSelection:
+      required:
+      - count
+      - scenario_ids
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - static
+        scenario_ids:
+          type: array
+          description: The selection scenario IDs
+          items:
+            type: string
+        count:
+          type: integer
+          description: The estimated count of scenarios
+      description: Static scenario selection parameter argument
+    ExternalTestCase:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id associated with this test case
+          x-mabl-scope: public
+      description: External test case
+    EventQueryResult:
+      type: object
+      properties:
+        events:
+          type: array
+          description: All events that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Event'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

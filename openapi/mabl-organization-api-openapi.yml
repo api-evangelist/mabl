@@ -1,0 +1,1895 @@
+openapi: 3.2.0
+info:
+  title: mabl Organization API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Organization
+paths:
+  /organizations:
+    get:
+      tags:
+      - Organization
+      summary: Query Organizations
+      description: Used to query organizations
+      operationId: queryOrganizations
+      parameters:
+      - name: account_id
+        in: query
+        description: Query for organizations in the given account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: enrich_credits
+        in: query
+        description: When true, compute effective_credit_allocation for each workspace. Omit for faster responses when credit data is not needed.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Workspace
+    post:
+      tags:
+      - Organization
+      summary: Create Organization
+      description: Used to create new organizations
+      operationId: createOrganization
+      requestBody:
+        description: The organization to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        '201':
+          description: The organization that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Workspace
+  /organizations/{id}/supportAccess:
+    get:
+      tags:
+      - Organization
+      summary: Determine if workspace is support accessible
+      description: Return support access configuration for workspace
+      operationId: isWorkspaceSupportAccessible
+      parameters:
+      - name: id
+        in: path
+        description: Organization id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Support access response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceSupportAccessEnabledResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Workspace
+    put:
+      tags:
+      - Organization
+      summary: Update Organization support access, available only to authorized users
+      description: Change support access. Returns an updated organization entity
+      operationId: updateWorkspaceSupportAccess
+      parameters:
+      - name: id
+        in: path
+        description: Organization id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Update body
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceSupportAccess'
+        required: true
+      responses:
+        '200':
+          description: The updated organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+  /organizations/{id}/linkAccess:
+    patch:
+      tags:
+      - Organization
+      summary: Update the workspace's Link tunnel access consent settings
+      description: Set which callers may reach a Link (mablnet) tunnel owned by this workspace. Only settings present in the request are applied; omitted ones keep their current value, and an absent setting has always meant not consented. Available only to a workspace owner — deliberately not to global admins or api keys, since this is the customer's consent to give. Returns the updated workspace.
+      operationId: updateWorkspaceLinkAccess
+      parameters:
+      - name: id
+        in: path
+        description: Organization id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The consent settings to change
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceLinkAccessConfigUpdate'
+        required: true
+      responses:
+        '200':
+          description: The updated organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+  /organizations/{id}/testRecoveryAgentMode:
+    put:
+      tags:
+      - Organization
+      summary: Update Organization Test Recovery Agent mode, available only to workspace owners
+      description: DEPRECATED. Prefer PUT /organizations/{id}/agentBehavior, which updates all owner-managed agent behavior settings in a single call. Kept available while existing clients migrate.
+      operationId: updateWorkspaceTestRecoveryAgentMode
+      parameters:
+      - name: id
+        in: path
+        description: Organization id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The Test Recovery Agent mode update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceTestRecoveryAgentConfig'
+        required: true
+      responses:
+        '200':
+          description: The updated organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+  /organizations/{id}/agentBehavior:
+    put:
+      tags:
+      - Organization
+      summary: Update the workspace agent behavior settings, available only to workspace owners
+      description: Update all owner-managed agent behavior settings for the workspace in a single call. `require_agent_edits_on_branches` and `recovery_agent_auto_edits` are gated by the agentic_test_editing feature; if the workspace does not have that feature their values are ignored.
+      operationId: updateWorkspaceAgentBehavior
+      parameters:
+      - name: id
+        in: path
+        description: Organization id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The agent behavior settings update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentBehaviorConfig'
+        required: true
+      responses:
+        '200':
+          description: The updated organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+  /organizations/{id}/executionLocationPin:
+    put:
+      tags:
+      - Organization
+      summary: Pin where the workspace's test runs execute
+      description: Pins the cloud and region that test runs of this workspace execute in. A pin on a workspace wins over one on its account, which wins over one on its company. A run whose test type does not execute in the pinned location runs in the default one. Only mabl can set it (global organizations write scope or mabl global admin).
+      operationId: setWorkspaceExecutionLocationPin
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The location to pin
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionLocation'
+        required: true
+      responses:
+        '200':
+          description: The updated workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+    delete:
+      tags:
+      - Organization
+      summary: Remove the workspace's execution location pin
+      description: Removes the workspace's pin, so its test runs follow the next pin up, or the default location. Same authorization as setting it.
+      operationId: clearWorkspaceExecutionLocationPin
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The pin was removed, or there was none
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+  /organizations/{id}/credentialPolicy:
+    put:
+      tags:
+      - Organization
+      summary: Update the workspace credential policy, available only to workspace owners
+      description: 'Update the workspace''s credential policy. When `require_cloud_only_credentials` is true, credentials created in this workspace must be cloud credentials, and a create that does not ask for one is rejected. The policy is deliberately owner-managed rather than left to whoever creates the credential, and it applies to every caller including API keys. It governs creation only: credentials that already exist are neither converted nor made read-only.'
+      operationId: updateWorkspaceCredentialPolicy
+      parameters:
+      - name: id
+        in: path
+        description: Organization id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The credential policy update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceCredentialPolicyConfig'
+        required: true
+      responses:
+        '200':
+          description: The updated organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+  /organizations/{id}:
+    get:
+      tags:
+      - Organization
+      summary: Get Organization
+      description: Used to retrieve information about an organization
+      operationId: getOrganization
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization to retrieve (regular or cloud safe)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The organization with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Workspace
+    delete:
+      tags:
+      - Organization
+      summary: Remove Organization
+      description: Used to remove an organization
+      operationId: removeOrganization
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The organization that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Workspace
+    patch:
+      tags:
+      - Organization
+      summary: Update Organization
+      description: Used to update existing organizations
+      operationId: updateOrganization
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        '200':
+          description: The updated organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+  /organizations/{id}/account:
+    get:
+      tags:
+      - Organization
+      summary: Get Account by Organization id
+      description: Used to retrieve account information for an organization
+      operationId: getAccountByWorkspaceId
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization to retrieve (regular or cloud safe)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The account for the organization with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Account
+  /organizations/tombstoned/{id}:
+    get:
+      tags:
+      - Organization
+      summary: Get tombstoned organization
+      description: Used to retrieve a tombstoned organization
+      operationId: getTombstonedOrganization
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The potentially tombstoned organization with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Workspace
+  /organizations/{id}/labsFeatures:
+    patch:
+      tags:
+      - Organization
+      summary: Updates the enabled labs features to the given workspace
+      description: Updates the labs features that have been activated for a workspace
+      operationId: updateWorkspaceLabsFeatures
+      parameters:
+      - name: id
+        in: path
+        description: the workspace id to set the active labs features for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The labs features to set as enabled in the workspace
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabsFeatureUpdate'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Workspace
+  /organizations/search:
+    get:
+      tags:
+      - Organization
+      summary: Search workspaces
+      description: Search workspaces by account with optional filters, backed by Spanner
+      operationId: searchWorkspaces
+      parameters:
+      - name: account_id
+        in: query
+        description: Filter by account ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: id
+        in: query
+        description: Filter by exact workspace ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: Filter by workspace name (case-insensitive substring match)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: onboarded
+        in: query
+        description: Filter by onboarding status
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        description: Maximum number of results to return (default 100, max 1000)
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Pagination cursor from a previous response
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Workspaces matching the search criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceSearchResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Workspace
+  /organizations/{id}/entityCounts:
+    get:
+      tags:
+      - Organization
+      summary: Get entity counts for a workspace
+      description: Returns the count of entities in the workspace
+      operationId: getWorkspaceEntityCounts
+      parameters:
+      - name: id
+        in: path
+        description: The workspace id to get entity counts for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Entity counts for the workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityCounts'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Workspace
+  /user-roles/{id}:
+    get:
+      tags:
+      - Organization
+      summary: Get User Roles
+      description: Used to get all of a user's roles
+      operationId: getUserRoles
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the user whose roles should be retrieved
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The complete list of roles for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+    patch:
+      tags:
+      - Organization
+      summary: Update User Roles
+      description: Used to modify roles for a user. Available to global write clients, owners or company owners of all affected workspaces, API keys with write:users scope on every affected workspace, and to the user themselves for removals only. Adding a role in a workspace where the user already holds one returns 409.
+      operationId: updateUserRoles
+      parameters:
+      - name: id
+        in: path
+        description: The user ID to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24. Allows for enforced atomic updates, to prevent update collisions
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The user roles to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleUpdate'
+        required: true
+      responses:
+        '200':
+          description: The complete list of roles after applying this update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /user-roles/acknowledge/{workspace_id}:
+    post:
+      tags:
+      - Organization
+      summary: Acknowledge users own role in the specified workspace
+      description: Acknowledging a workspace role means the user has been presented with and dismissed information about their role and joining their new workspace
+      operationId: acknowledgeWorkspaceRole
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace in which the role will be acknowledged
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No content response indicates successful acknowledgement of the role.
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User or user role not found in this workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+components:
+  schemas:
+    WorkspaceSearchResult:
+      type: object
+      properties:
+        workspaces:
+          type: array
+          description: Workspaces matching the search criteria
+          items:
+            $ref: '#/components/schemas/WorkspaceSearchReference'
+        cursor:
+          type: string
+          description: Pagination cursor for the next page of results
+    Subscription:
+      type: object
+      properties:
+        plan_type:
+          type: string
+          description: The type of plan this subscription is on
+          enum:
+          - journey_executions
+          - executions
+          - monthly
+          - quarterly
+          - technical_account_manager
+          - yearly
+          - annual_executions
+        plan_subtype:
+          type: string
+          enum:
+          - a11y
+          - api
+          - browser
+          - technical_account_manager
+          - performance
+        plan_id:
+          type: string
+          description: The id for the plan subscribed to in stripe
+          readOnly: true
+        subscription_id:
+          type: string
+          description: The id of the subscription in stripe.  A subscription can have multiple subscription items.
+          readOnly: true
+        subscription_items_id:
+          type: string
+          description: The id of the subscription item for this account on this plan.  This is the id we need to bill against.
+      description: A stripe subscription
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    MablSubscriptionPeriod:
+      type: string
+      description: The period of the subscription
+      enum:
+      - monthly
+      - quarterly
+      - yearly
+    ExecutionLocation:
+      required:
+      - cloud
+      - region
+      type: object
+      properties:
+        cloud:
+          type: string
+          description: Cloud identifier, e.g. gcp or aws
+        region:
+          type: string
+          description: Region as the cloud names it, e.g. us-south1
+      description: 'Where test runs execute: a cloud and one of that cloud''s regions. A region name means nothing without its cloud, so the two are always set together.'
+    OrganizationQueryResult:
+      type: object
+      properties:
+        organizations:
+          type: array
+          description: All organizations that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Organization'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    UserRoleUpdate:
+      type: object
+      properties:
+        add:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+        remove:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+    LabsFeatureUpdate:
+      type: object
+      properties:
+        features:
+          type: array
+          description: The list of labs features that are enabled
+          items:
+            type: string
+    LinkAccessConfig:
+      type: object
+      properties:
+        created_time:
+          type: integer
+          description: created time, epoch millis
+          format: int64
+        created_by_id:
+          type: string
+          description: created by user id
+        last_updated_time:
+          type: integer
+          description: last updated time, epoch millis
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: last update by user id
+        enable_link_access_by_support:
+          type: boolean
+          description: 'When true, a mabl support admin may reach the tunnel''s published services, such as the SOCKS proxy and reachability probes. When false they may still reach the tunnel''s control plane — draining a host, inspecting carriers — which is never gated, but no traffic-carrying service.
+
+            '
+        member_access_roles:
+          type: array
+          description: 'Which member roles may reach the tunnel''s published services with their own credentials — the tunnel''s audience. A caller is admitted when they hold at least one role named here, so holding a role is necessary and never sufficient: the owner has to have named it. An empty array admits nobody, which is where every owner starts, and leaves only api keys — cloud execution is unaffected.
+
+
+            Absent and empty both admit nobody; the difference is about the PATCH, not about access. A PATCH omitting this field leaves the audience as it is, and one sending an empty array clears it.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAccessRoleEnum'
+      description: 'Consent settings governing who may reach a Link (mablnet) tunnel owned by this workspace or company. Deliberately separate from support_access_config: not all of this has anything to do with support, and reaching a customer''s network is a distinct decision from seeing their workspace.
+
+
+        This is the set an owner of either kind carries. A workspace additionally carries enable_personal_tunnels — see WorkspaceLinkAccessConfig, which extends this. That flag is meaningless for a company: a personal tunnel belongs to a user, and both halves of the decision it governs are asked of a workspace.
+
+
+        Everything here is opt-in. An absent config, and an absent setting within a present config, both admit nobody. The exception is a workspace on a trial account, which reads each setting its owner has not set as the most permissive value — support may reach the tunnel, every role is admitted, personal tunnels are allowed — and is returned that way. Those defaults are never stored, so they end with the trial. None of this affects api-key access to a tunnel — an `execution` key reaching a tunnel for a cloud test run is unaffected throughout.
+
+        '
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    CoreAddonEnum:
+      type: string
+      description: Core billing addon
+      enum:
+      - a11y
+      - advanced_ai
+      - advanced_content_validation
+      - mobile
+      - performance
+      - tam
+    FlowCounts:
+      type: object
+      properties:
+        reusable_flow_count:
+          type: integer
+          description: The number of reusable flows in the workspace
+          format: int64
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the organization
+        cloud_safe_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP and Kubernetes safe)
+        created_time:
+          type: integer
+          description: Time at which the organization was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this organization
+        resource_bucket_name:
+          type: string
+          description: Input/output artifact bucket. Null if not yet created.
+        last_updated_time:
+          type: integer
+          description: Time at which the organization was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this organization
+        name:
+          type: string
+          description: The display name of the organization
+        account_id:
+          type: string
+          description: The id of the account this organization is in
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        support_access_config:
+          $ref: '#/components/schemas/WorkspaceSupportAccess'
+        link_access_config:
+          $ref: '#/components/schemas/WorkspaceLinkAccessConfig'
+        onboarded:
+          type: boolean
+          description: flag indicating whether the organization has gone through onboarding
+        allocations:
+          allOf:
+          - $ref: '#/components/schemas/BillingAllocations'
+          x-dao-apply-nulls: true
+        allocated_test_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of test runs allocated to this workspace
+        allocated_api_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of API test runs allocated to this workspace
+        allocated_a11y_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of a11y step runs allocated to this workspace
+        labs_features:
+          type: array
+          description: Set of labs features activated for this workspace
+          items:
+            type: string
+        excluded_features:
+          type: array
+          description: 'Set of features to exclude from this workspace, overriding account-level grants. When a feature appears here, authorization checks against this workspace will deny it even if the parent account has the feature enabled. Admin-only field.
+
+            '
+          items:
+            type: string
+        execution_runner_size:
+          $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+        execution_location_pin:
+          description: Where this workspace's test runs execute, ahead of any pin on its account or company. Set and cleared only by mabl through PUT/DELETE /organizations/{id}/executionLocationPin; ignored by the generic workspace update. A run whose test type does not execute in the pinned location runs in the default one.
+          allOf:
+          - $ref: '#/components/schemas/ExecutionLocation'
+          x-dao-unindexed: true
+        generated_artifact_locale:
+          type: string
+          description: The workspace's locale used to create new artifacts (e.g. test failure summaries, element descriptions). Default is 'en'.
+        test_recovery_agent_mode:
+          $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+        auto_assign_failure_reason_enabled:
+          type: boolean
+          description: 'When true, agent-generated failure analysis assigns its suggested failure reason to the test run automatically. When false, the suggested failure reason is still persisted but is not assigned. New workspaces enable this by default. Manual assignments always take precedence.
+
+            '
+        require_agent_edits_on_branches:
+          type: boolean
+          description: 'When true, agents must save new tests and edits to a branch rather than the main branch. Owner-editable; behind the agentic_test_editing feature flag.
+
+            '
+        recovery_agent_auto_edits:
+          type: boolean
+          description: 'When true, the recovery agent automatically kicks off test edits when it identifies a fix. Owner-editable; behind the agentic_test_editing feature flag.
+
+            '
+        require_cloud_only_credentials:
+          type: boolean
+          description: 'When true, credentials created in this workspace must be cloud credentials, whose secrets can never be read back. Enforced on create for every caller, including API keys, rather than left to whoever creates the credential. Existing non-cloud credentials are unaffected and stay editable. Owner-editable.
+
+            '
+        effective_credit_allocation:
+          type: integer
+          description: 'Computed effective credit allocation for this workspace. Equals allocations.credits if explicitly set, otherwise the workspace''s equal share of remaining account credits.
+
+            '
+          format: int64
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasAccountId
+      - HasName
+    EntityCounts:
+      type: object
+      properties:
+        test_counts:
+          $ref: '#/components/schemas/TestCounts'
+        flow_counts:
+          $ref: '#/components/schemas/FlowCounts'
+    TestRecoveryAgentModeEnum:
+      type: string
+      description: Test Recovery Agent mode. Use `inherit` (plan-level only) to defer to the workspace-level default.
+      enum:
+      - 'off'
+      - fail_at_end
+      - pass
+      - inherit
+    MablStripeSubscriptionType:
+      type: string
+      description: Subscription variant; core and overages Subscription can be separated on different intervals.
+      enum:
+      - core
+      - overages
+    LinkAccessRoleEnum:
+      type: string
+      description: 'A role that may be admitted to a Link (mablnet) tunnel''s published services, as named in member_access_roles.
+
+
+        `company_admin` is the company OWNER: of the owning workspace''s company for a workspace-owned tunnel, of the company itself for a company-owned one. The three workspace roles mean that role in the owning workspace; on a company-owned tunnel they mean that role in any workspace belonging to the company.
+
+        '
+      enum:
+      - company_admin
+      - workspace_owner
+      - workspace_editor
+      - workspace_viewer
+    MablPlanType:
+      type: string
+      description: The plan type this user is currently subscribed to
+      enum:
+      - enterprise
+      - enterprise_5000
+      - enterprise_10000
+      - enterprise_20000
+      - enterprise_50000
+      - essentials
+      - growth
+      - pay_as_you_go
+      - pro
+      - seed
+      - startup
+      - trial
+      - core_migrated
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    BillingAllocations:
+      type: object
+      properties:
+        credits:
+          type: integer
+          description: Total number of credits allocated for the billing period
+          format: int64
+        automators:
+          type:
+          - integer
+          - 'null'
+          description: Total number of automators allocated for the billing period. Absent for unlimited (mabl Core accounts).
+          format: int32
+          x-dao-apply-nulls: true
+        participants:
+          type:
+          - integer
+          - 'null'
+          description: Total number of participants allocated for the billing period. Absent for unlimited (mabl Core accounts).
+          format: int32
+          x-dao-apply-nulls: true
+        enforce_limit:
+          type:
+          - boolean
+          - 'null'
+          description: 'When true on a workspace''s allocations, the workspace''s explicit credit allocation is enforced: new cloud runs are blocked once the allocation is exhausted for the billing period. Absent or false, the allocation is informational only. Requires an explicit credits value. Only meaningful on a workspace''s allocations; ignored on an account subscription''s allocations.
+
+            '
+      description: Allocations for the billing period
+    UserRoles:
+      required:
+      - roles
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+          x-mabl-scope: public
+    WorkspaceLinkAccessConfig:
+      description: 'A workspace''s consent flags: everything an owner of either kind carries, plus enable_personal_tunnels, which only a workspace has.
+
+        '
+      allOf:
+      - $ref: '#/components/schemas/LinkAccessConfig'
+      - type: object
+        properties:
+          enable_personal_tunnels:
+            type: boolean
+            description: 'When true, members of this workspace may start personal tunnels, and this workspace may route cloud test traffic to one. A user may start a personal tunnel if any workspace they belong to allows it, since no single workspace owns it; but only a workspace that allows them may send its runs through one.
+
+              '
+    WorkspaceSupportAccessEnabledResponse:
+      required:
+      - enable_support_access
+      type: object
+      properties:
+        enable_support_access:
+          type: boolean
+          description: Enables support access to workspace
+    WorkspaceLinkAccessConfigUpdate:
+      description: 'Consent changes for a workspace, applied by PATCH. Adds the workspace-only flag to the set both owner kinds share.
+
+        '
+      allOf:
+      - $ref: '#/components/schemas/LinkAccessConfigUpdate'
+      - type: object
+        properties:
+          enable_personal_tunnels:
+            type: boolean
+            description: See WorkspaceLinkAccessConfig.enable_personal_tunnels
+    WorkspaceSupportAccess:
+      required:
+      - enable_support_access
+      type: object
+      properties:
+        created_time:
+          type: integer
+          description: created time, epoch millis
+          format: int64
+        created_by_id:
+          type: string
+          description: created by user id
+        last_updated_time:
+          type: integer
+          description: last updated time, epoch millis
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: last update by user id
+        enable_support_access:
+          type: boolean
+          description: Enables support access to workspace
+    WorkspaceSearchReference:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The workspace ID
+        account_id:
+          type: string
+          description: The parent account ID
+        name:
+          type: string
+          description: The display name of the workspace
+        cloud_safe_id:
+          type: string
+          description: Cloud safe ID representation
+        created_by_id:
+          type: string
+          description: ID of the user who created the workspace
+        created_time:
+          type: integer
+          description: Time at which the workspace was created
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: ID of the user who last updated the workspace
+        last_updated_time:
+          type: integer
+          description: Time at which the workspace was last updated
+          format: int64
+        onboarded:
+          type: boolean
+          description: Whether the workspace has completed onboarding
+        labs_features:
+          type: array
+          description: Labs features activated for this workspace
+          items:
+            type: string
+        execution_runner_size:
+          $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+        test_recovery_agent_mode:
+          $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+        generated_artifact_locale:
+          type: string
+          description: Locale used for generating artifacts
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the DailyExecutionUsage
+        disabled:
+          type: boolean
+          description: True if the account has been manually disabled; false/undefined otherwise
+        disabled_last_updated_time:
+          type: integer
+          description: Time at which the disabled flag was last updated
+          format: int64
+        disabled_last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated the disabled flag
+        name:
+          type: string
+          description: The name of the account
+        stripe_customer_details:
+          $ref: '#/components/schemas/StripeCustomerDetails'
+        stripe_customer_id:
+          type: string
+          description: Legacy billing accounts only -- The ID of customer in stripe
+        company_id:
+          type: string
+          description: The id of the company that owns the account
+        customer_name:
+          type: string
+          description: DEPRECATED - The name of the customer
+        subscription:
+          type: object
+          properties:
+            allocations:
+              $ref: '#/components/schemas/BillingAllocations'
+            addons:
+              type: array
+              description: Account addons
+              items:
+                $ref: '#/components/schemas/AccountSubscriptionAddons'
+            execution_credit_weights:
+              $ref: '#/components/schemas/ExecutionCreditWeights'
+            legacy:
+              type: boolean
+              description: Indicator if the account is on the legacy billing system
+            stripe:
+              type: object
+              properties:
+                customer:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: ID of the associated Stripe Customer
+                    name:
+                      type: string
+                      description: Name of the associated Stripe Customer
+                    state:
+                      type: string
+                      description: State, county, province, or region of the associated Stripe Customer
+                    country:
+                      type: string
+                      description: Two letter ISO 3166-1 country code of the associated Stripe Customer
+                  description: Information about the associated Stripe Customer
+                subscriptions:
+                  type: array
+                  description: Array of Stripe Subscriptions as they relate to mabl billing
+                  items:
+                    $ref: '#/components/schemas/MablStripeSubscription'
+              description: Stripe information associated with the account
+            is_trial:
+              type: boolean
+              description: Indicates if the Account subscription is a trial. This does not indicate if the trial is active or expired.
+            trial_start_time:
+              type: integer
+              description: Time free trial started in epoch time
+              format: int64
+            trial_end_time:
+              type: integer
+              description: Time free trial ends in epoch time
+              format: int64
+            start_time:
+              type: integer
+              description: Time the user first subscribed
+              format: int64
+            end_time:
+              type: integer
+              description: Time the user's subscription ends
+              format: int64
+          description: mabl Core billing accounts only -- Subscription related information about the account
+        stripe_subscriptions:
+          type: array
+          description: Legacy billing accounts only -- The plans that a customer is subscribed to
+          items:
+            $ref: '#/components/schemas/Subscription'
+        has_completed_additional_trial_info:
+          type: boolean
+          description: flag indicating wether the user who created this account has completed the additional information required when authenticating with google
+        free_trial_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time free trial started in epoch time
+          format: int64
+        free_trial_end_time:
+          type: integer
+          description: Legacy billing accounts only -- time free trial ends in epoch time
+          format: int64
+        subscription_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user first subscribed
+          format: int64
+        subscription_end_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user's subscription ends
+          format: int64
+        mabl_plan_type:
+          $ref: '#/components/schemas/MablPlanType'
+        mabl_subscription_period:
+          $ref: '#/components/schemas/MablSubscriptionPeriod'
+        allocated_test_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of browser test runs allocated to this account by its subscription
+        allocated_api_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of API test runs allocated to this account by its subscription
+        allocated_a11y_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of a11y step runs allocated to this account by its subscription
+        performance_subscription_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user first subscribed to performance testing feature
+          format: int64
+        allocated_performance_minutes:
+          type: integer
+          description: Legacy billing accounts only -- The amount of performance virtual user-minutes allocated to this account by its subscription. This allocation represents the "soft cap" after which overages will be incurred and is purely informational. The performance "hard cap" can be found in the workspace quota under allocations => performance.
+        api_steps_billable:
+          type: boolean
+          description: Legacy billing accounts only -- If true, API steps in browser tests will count toward API overages; otherwise only API test requests will be counted
+        effective_features:
+          type: array
+          description: Computed set of all features that this account has access to
+          readOnly: true
+          items:
+            type: string
+          x-dao-derived: true
+        granted_features:
+          type: array
+          description: Set of additional features that should be included in 'effective_features' regardless of plan type
+          items:
+            type: string
+        excluded_features:
+          type: array
+          description: Set of features that should be excluded from 'effective_features' regardless of plan type; overrides granted_features.
+          items:
+            type: string
+        execution_location_pin:
+          description: Where test runs of this account's workspaces execute, unless a workspace has its own pin; ahead of any pin on the company. Set and cleared only by mabl through PUT/DELETE /accounts/{account_id}/executionLocationPin; ignored by the generic account update.
+          allOf:
+          - $ref: '#/components/schemas/ExecutionLocation'
+          x-dao-unindexed: true
+        created_time:
+          type: integer
+          description: Time at which the account was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this account
+        last_updated_time:
+          type: integer
+          description: Time at which the account was last updated
+          format: int64
+          readOnly: true
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this account
+      description: A billing account
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+    WorkspaceCredentialPolicyConfig:
+      type: object
+      properties:
+        require_cloud_only_credentials:
+          type: boolean
+          description: Whether new credentials must be created as cloud credentials
+      description: 'Credential policy update. Each field is optional; only fields present in the request are applied. Missing fields leave the workspace''s existing value unchanged.
+
+        '
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    WorkspaceTestRecoveryAgentConfig:
+      required:
+      - test_recovery_agent_mode
+      type: object
+      properties:
+        test_recovery_agent_mode:
+          $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+    UserRole:
+      required:
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        workspace_id:
+          type: string
+          description: The workspace this role applies to. Preferred over `organization_id`. At least one of `workspace_id` or `organization_id` must be present.
+          x-mabl-scope: public
+        organization_id:
+          type: string
+          description: Deprecated alias for `workspace_id`. Retained so legacy callers keep working; new code should use `workspace_id`.
+          deprecated: true
+        acknowledged_status:
+          type: string
+          description: Status marking whether the user has acknowledged the welcome message in the joined workspace
+          enum:
+          - requires_acknowledgement
+          - acknowledged
+    TestCounts:
+      type: object
+      properties:
+        test_count:
+          type: integer
+          description: The total number of tests in the workspace
+          format: int64
+        default_test_count:
+          type: integer
+          description: 'Deprecated: use test_count instead'
+          format: int64
+          deprecated: true
+        non_default_test_count:
+          type: integer
+          description: 'Deprecated: use test_count instead'
+          format: int64
+          deprecated: true
+    MablStripeBillingPeriod:
+      type: string
+      description: Interval of the Stripe Subscription billing cycle
+      enum:
+      - month
+      - quarter
+      - annual
+    AccountSubscriptionAddons:
+      type: object
+      properties:
+        addon:
+          $ref: '#/components/schemas/CoreAddonEnum'
+        quantity:
+          type: integer
+          description: Quantity of the addon to be applied to the Account.
+          format: int64
+      description: Configuration of Core billing addons
+    MablStripeProductType:
+      type: string
+      description: Product variant
+      enum:
+      - core
+      - credit_overages
+    AgentBehaviorConfig:
+      type: object
+      properties:
+        test_recovery_agent_mode:
+          $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+        require_agent_edits_on_branches:
+          type: boolean
+          description: Whether agents must save edits on branches
+        recovery_agent_auto_edits:
+          type: boolean
+          description: Whether the recovery agent automatically kicks off test edits
+        auto_assign_failure_reason_enabled:
+          type: boolean
+          description: Whether agent-generated failure analysis may assign the failure reason automatically
+      description: 'Agent behavior settings update. Each field is optional; only fields present in the request are applied. Missing fields leave the workspace''s existing value unchanged.
+
+        '
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    MablStripeSubscription:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID of the Subscription in Stripe
+        interval:
+          $ref: '#/components/schemas/MablStripeBillingPeriod'
+        billing_cycle_anchor:
+          type: integer
+          description: The reference point in epoch time millis that aligns past, present, and future billing cycle interval start and end times. Note, this can be in the future!
+          format: int64
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID of the Subscription Item in Stripe
+              created_time:
+                type: integer
+                description: The time in epoch millis that this subscription item was created.
+                format: int64
+              price_id:
+                type: string
+                description: ID of the associated Price in Stripe
+              type:
+                $ref: '#/components/schemas/MablStripeProductType'
+            description: Description of a Stripe Subscription Item as it relates to mabl billing
+        type:
+          $ref: '#/components/schemas/MablStripeSubscriptionType'
+      description: Description of a Stripe Subscription as it relates to mabl billing
+    UserRoleEnum:
+      type: string
+      description: The possible values for user role
+      enum:
+      - owner
+      - editor
+      - viewer
+    StripeCustomerDetails:
+      type: object
+      properties:
+        stripe_country:
+          type: string
+          description: Two letter ISO 3166-1 country code
+        stripe_state:
+          type: string
+          description: State, county, province, or region.
+        customer_name:
+          type: string
+          description: The name of the customer
+      description: Details about the customer in stripe
+    LinkAccessConfigUpdate:
+      type: object
+      properties:
+        enable_link_access_by_support:
+          type: boolean
+          description: See LinkAccessConfig.enable_link_access_by_support
+        member_access_roles:
+          type: array
+          description: 'Replaces the audience wholesale — send the roles that should be admitted, not a delta, and an empty array to admit nobody. See LinkAccessConfig.member_access_roles
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAccessRoleEnum'
+      description: 'Consent changes for a workspace or company, applied by PATCH. Every field is optional and only the fields present are applied — omitting one leaves it as it is, which is not the same as sending false or an empty array. The audit fields on LinkAccessConfig are server-owned and so are absent here.
+
+        '
+    ExecutionRunnerSizeEnum:
+      type: string
+      description: available runner sizes
+      enum:
+      - x1
+      - x2
+      - x3
+      - x4
+      - x5
+      - x6
+      - small
+      - medium
+      - large
+      - inherit
+    ExecutionCreditWeights:
+      type: object
+      properties:
+        adhoc_ai_assertion_batch:
+          type: integer
+          description: Adhoc ai assertion batch size per billable unit
+          format: int32
+        functional_advanced_ai:
+          type: integer
+          description: Defines how many additional credits each functional test will consume due to advanced ai features
+          format: int32
+        functional_api:
+          type: integer
+          description: Defines how many credits each functional api test consume
+          format: int32
+        functional_browser:
+          type: integer
+          description: Defines how many credits each functional browser test consume
+          format: int32
+        functional_mobile:
+          type: integer
+          description: Defines how many credits each functional mobile test consume
+          format: int32
+        performance_api_15vum:
+          type: integer
+          description: Defines how many credits 15 virtual user minutes consume in a performance api test
+          format: int32
+        performance_browser_15vum:
+          type: integer
+          description: Defines how many credits 15 virtual user minutes consume in a performance browser test
+          format: int32
+      description: A mapping used to translate test executions into the equivalent execution credit usage
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

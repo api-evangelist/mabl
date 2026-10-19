@@ -1,0 +1,1147 @@
+openapi: 3.2.0
+info:
+  title: mabl Company API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Company
+paths:
+  /user-company-roles/{id}:
+    get:
+      tags:
+      - Company
+      summary: Get User's Company Roles
+      description: Used to get all of a user's company roles
+      operationId: getUserCompanyRoles
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the user whose company roles should be retrieved
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The complete list of company roles for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCompanyRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+    patch:
+      tags:
+      - Company
+      summary: Update User's Company Roles
+      description: Used to modify company roles for a user
+      operationId: updateUserCompanyRoles
+      parameters:
+      - name: id
+        in: path
+        description: The user ID to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24. Allows for enforced atomic updates, to prevent update collisions
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The user roles to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCompanyRoleUpdate'
+        required: true
+      responses:
+        '200':
+          description: The complete list of roles after applying this update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCompanyRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /companies:
+    get:
+      tags:
+      - Company
+      summary: Query Companies
+      description: Used to query companies
+      operationId: queryCompanies
+      parameters:
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Company
+    post:
+      tags:
+      - Company
+      summary: Create Company
+      description: Used to create new Companies
+      operationId: createCompany
+      requestBody:
+        description: The company to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyUpdateRequest'
+        required: true
+      responses:
+        '201':
+          description: The company that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Company
+  /companies/{id}:
+    get:
+      tags:
+      - Company
+      summary: get company details
+      description: Get the details for a given company
+      operationId: getCompany
+      parameters:
+      - name: id
+        in: path
+        description: The id of the company to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Company found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Company
+    delete:
+      tags:
+      - Company
+      summary: Remove Company
+      description: Removes an company and associated workspaces
+      operationId: removeCompany
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the company to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The company that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Company
+    patch:
+      tags:
+      - Company
+      summary: update company object
+      description: Update the company object
+      operationId: updateCompany
+      parameters:
+      - name: id
+        in: path
+        description: The id of the company to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The company update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Company updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Company
+  /companies/{id}/sessionTimeout:
+    patch:
+      tags:
+      - Company
+      summary: Update session timeout for a company
+      description: Update the session timeout for a company
+      operationId: updateCompanySessionTimeout
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the company to update its session timeout
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The session timeout update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanySessionTimeoutUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Company session timeout updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Company
+  /companies/{id}/linkAccess:
+    patch:
+      tags:
+      - Company
+      summary: Update the company's Link tunnel access consent settings
+      description: Set which callers may reach a Link (mablnet) tunnel owned by this company. Only settings present in the request are applied; omitted ones keep their current value, and an absent setting has always meant not consented. Available only to a company owner — deliberately not to global admins, api keys, or an owner of some member workspace, since a company tunnel is shared across workspaces and this is the company's consent to give. Returns the updated company.
+      operationId: updateCompanyLinkAccess
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the company
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The consent settings to change
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkAccessConfigUpdate'
+        required: true
+      responses:
+        '200':
+          description: The updated company
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Company
+  /companies/{id}/executionLocationPin:
+    put:
+      tags:
+      - Company
+      summary: Pin where the company's test runs execute
+      description: Pins the cloud and region that test runs of this company execute in. A pin on a workspace wins over one on its account, which wins over one on its company. A run whose test type does not execute in the pinned location runs in the default one. Only mabl can set it (global companies write scope or mabl global admin).
+      operationId: setCompanyExecutionLocationPin
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the company
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The location to pin
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionLocation'
+        required: true
+      responses:
+        '200':
+          description: The updated company
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Company
+    delete:
+      tags:
+      - Company
+      summary: Remove the company's execution location pin
+      description: Removes the company's pin, so its test runs follow the next pin up, or the default location. Same authorization as setting it.
+      operationId: clearCompanyExecutionLocationPin
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the company
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The pin was removed, or there was none
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Company
+  /companies/{id}/linkInfrastructureKey:
+    put:
+      tags:
+      - Company
+      summary: Assign the company's dedicated Link infrastructure key
+      description: Pin the company's Link (mablnet) tunnels to a dedicated infrastructure cluster. The key must be unique across companies unless `allow_shared` is set. Operator-only (global company write scope or mabl global admin). Takes effect within the endpoint resolver's cache TTL plus each agent's next poll.
+      operationId: setCompanyLinkInfrastructureKey
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the company
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The key assignment to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyLinkInfrastructureKeyUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: The updated company
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: Key already held by another company and allow_shared not set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Company
+    delete:
+      tags:
+      - Company
+      summary: Clear the company's dedicated Link infrastructure key
+      description: Revert the company's Link (mablnet) tunnels to the shared multi-tenant cluster. Agents re-home on their next poll; decommission the terraform cluster only after verifying no company still holds the key.
+      operationId: clearCompanyLinkInfrastructureKey
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the company
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The updated company
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Company
+  /companies/{id}/workspaces:
+    get:
+      tags:
+      - Company
+      summary: List workspaces in a company
+      description: Returns every workspace belonging to the company, grouped by the owning account. Endpoint authorized with a company-scoped API key, or by a company admin user.
+      operationId: getCompanyWorkspaces
+      parameters:
+      - name: id
+        in: path
+        description: Company ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The accounts in the company, each with its workspaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyWorkspacesResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Company
+      x-mabl-scope: public
+    post:
+      tags:
+      - Company
+      summary: Create a workspace in a company
+      description: Creates a new workspace in one of the company's billing accounts. Endpoint authorized with a company-scoped API key, or by a company admin user.
+      operationId: createCompanyWorkspace
+      parameters:
+      - name: id
+        in: path
+        description: Company ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The workspace to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompanyWorkspaceRequest'
+        required: true
+      responses:
+        '201':
+          description: The workspace that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Workspace
+      x-mabl-scope: public
+  /recover/companies/{company_id}:
+    post:
+      tags:
+      - Company
+      summary: Recover Company
+      description: Recover tombstoned company and all associated workspaces
+      operationId: recoverCompany
+      parameters:
+      - name: company_id
+        in: path
+        description: The id of the company to recover
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The company that was recovered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: No company to recover
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Recover::Company
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    CompanyLinkInfrastructureKeyUpdateRequest:
+      required:
+      - key
+      type: object
+      properties:
+        key:
+          pattern: ^[a-z]([a-z0-9-]{0,10}[a-z0-9])$
+          type: string
+          description: 'The dedicated cluster''s link infrastructure key. 2-12 chars of [a-z0-9-], starting with a letter and ending alphanumeric (the 12-char cap is a derived-GCP-resource-name budget; must match the terraform cluster key). Must correspond to an applied `clusters` map entry in infra/terraform/mablnet.
+
+            '
+        allow_shared:
+          type: boolean
+          description: 'Explicit consent to assign a key that another company already holds (holding-company / M&A case). Evaluated per request, never persisted — without it, assigning an already-held key fails naming the current holders.
+
+            '
+    CompanyQueryResult:
+      type: object
+      properties:
+        companies:
+          type: array
+          description: All companies that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Company'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ExecutionLocation:
+      required:
+      - cloud
+      - region
+      type: object
+      properties:
+        cloud:
+          type: string
+          description: Cloud identifier, e.g. gcp or aws
+        region:
+          type: string
+          description: Region as the cloud names it, e.g. us-south1
+      description: 'Where test runs execute: a cloud and one of that cloud''s regions. A region name means nothing without its cloud, so the two are always set together.'
+    LinkAccessConfig:
+      type: object
+      properties:
+        created_time:
+          type: integer
+          description: created time, epoch millis
+          format: int64
+        created_by_id:
+          type: string
+          description: created by user id
+        last_updated_time:
+          type: integer
+          description: last updated time, epoch millis
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: last update by user id
+        enable_link_access_by_support:
+          type: boolean
+          description: 'When true, a mabl support admin may reach the tunnel''s published services, such as the SOCKS proxy and reachability probes. When false they may still reach the tunnel''s control plane — draining a host, inspecting carriers — which is never gated, but no traffic-carrying service.
+
+            '
+        member_access_roles:
+          type: array
+          description: 'Which member roles may reach the tunnel''s published services with their own credentials — the tunnel''s audience. A caller is admitted when they hold at least one role named here, so holding a role is necessary and never sufficient: the owner has to have named it. An empty array admits nobody, which is where every owner starts, and leaves only api keys — cloud execution is unaffected.
+
+
+            Absent and empty both admit nobody; the difference is about the PATCH, not about access. A PATCH omitting this field leaves the audience as it is, and one sending an empty array clears it.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAccessRoleEnum'
+      description: 'Consent settings governing who may reach a Link (mablnet) tunnel owned by this workspace or company. Deliberately separate from support_access_config: not all of this has anything to do with support, and reaching a customer''s network is a distinct decision from seeing their workspace.
+
+
+        This is the set an owner of either kind carries. A workspace additionally carries enable_personal_tunnels — see WorkspaceLinkAccessConfig, which extends this. That flag is meaningless for a company: a personal tunnel belongs to a user, and both halves of the decision it governs are asked of a workspace.
+
+
+        Everything here is opt-in. An absent config, and an absent setting within a present config, both admit nobody. The exception is a workspace on a trial account, which reads each setting its owner has not set as the most permissive value — support may reach the tunnel, every role is admitted, personal tunnels are allowed — and is returned that way. Those defaults are never stored, so they end with the trial. None of this affects api-key access to a tunnel — an `execution` key reaching a tunnel for a cloud test run is unaffected throughout.
+
+        '
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    CompanyWorkspaceSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the workspace
+          x-mabl-scope: public
+        name:
+          type: string
+          description: The display name of the workspace
+          x-mabl-scope: public
+      description: Minimal identifying details for a workspace in the company
+    UserCompanyRole:
+      required:
+      - company_id
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        company_id:
+          type: string
+          description: The company to which this role applies
+    CompanyUpdateRequest:
+      type: object
+      properties:
+        company:
+          $ref: '#/components/schemas/Company'
+        account_ids:
+          type: array
+          items:
+            type: string
+        admin_ids:
+          type: array
+          description: The IDs of Company administrators
+          items:
+            type: string
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    UserCompanyRoles:
+      required:
+      - roles
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCompanyRole'
+    LinkAccessRoleEnum:
+      type: string
+      description: 'A role that may be admitted to a Link (mablnet) tunnel''s published services, as named in member_access_roles.
+
+
+        `company_admin` is the company OWNER: of the owning workspace''s company for a workspace-owned tunnel, of the company itself for a company-owned one. The three workspace roles mean that role in the owning workspace; on a company-owned tunnel they mean that role in any workspace belonging to the company.
+
+        '
+      enum:
+      - company_admin
+      - workspace_owner
+      - workspace_editor
+      - workspace_viewer
+    CreateCompanyWorkspaceRequest:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: The display name for the new workspace
+          x-mabl-scope: public
+        account_id:
+          type: string
+          description: 'The billing account that will own the new workspace. Required when the company owns more than one account. When omitted and the company owns exactly one account, that account is used.
+
+            '
+          x-mabl-scope: public
+        owner_user_ids:
+          maxItems: 50
+          type: array
+          description: 'Users to grant the owner role in the new workspace. Each must already be a member of the company, holding either a role in one of its workspaces or a company role; naming a user outside the company, or one that does not exist, is rejected. If any grant fails the whole creation is rolled back, so keep the list to the users who genuinely need to own the workspace.
+
+            '
+          items:
+            type: string
+          x-mabl-scope: public
+        credit_allocation:
+          type: integer
+          description: 'Credits reserved for the new workspace in each billing period. When omitted the workspace draws on the account''s unallocated credits alongside its siblings.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        enforce_credit_limit:
+          type: boolean
+          description: 'When true, cloud runs in the new workspace are blocked once its credit allocation is exhausted for the billing period. Requires credit_allocation.
+
+            '
+          x-mabl-scope: public
+      description: Request to create a workspace in a company
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    Company:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the Company
+        name:
+          type: string
+          description: The Company name
+        created_time:
+          type: integer
+          description: Time at which the account was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this account
+        last_updated_time:
+          type: integer
+          description: Time at which the account was last updated
+          format: int64
+          readOnly: true
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this account
+        sso_connections:
+          type: array
+          description: Array of sso connections
+          items:
+            $ref: '#/components/schemas/CompanySSOConnection'
+        session_timeout:
+          type: string
+          description: The desired session timeout
+          enum:
+          - default
+          - hours_04
+          - hours_08
+          - hours_10
+          - hours_12
+          - hours_24
+          - hours_72
+        link_infrastructure_key:
+          type: string
+          description: 'Key of the dedicated Link (mablnet) infrastructure cluster this company''s tunnels are pinned to (e.g. `acme` -> `acme-wss.link.mabl.com`). Absent for the multi-tenant shared cluster (key `mabl`). Operator-managed via PUT/DELETE /companies/{id}/linkInfrastructureKey only — never via the generic company update.
+
+            '
+          readOnly: true
+        execution_location_pin:
+          description: Where test runs of this company's workspaces execute, unless their account or workspace has its own pin. Set and cleared only by mabl through PUT/DELETE /companies/{id}/executionLocationPin; ignored by the generic company update.
+          allOf:
+          - $ref: '#/components/schemas/ExecutionLocation'
+          x-dao-unindexed: true
+        link_access_config:
+          $ref: '#/components/schemas/LinkAccessConfig'
+      description: A billing company
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+    CompanyAccountWorkspaces:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The id of the account
+          x-mabl-scope: public
+        account_name:
+          type: string
+          description: The display name of the account
+          x-mabl-scope: public
+        workspaces:
+          type: array
+          description: The workspaces owned by this account
+          items:
+            $ref: '#/components/schemas/CompanyWorkspaceSummary'
+          x-mabl-scope: public
+      description: A billing account in the company and the workspaces it owns
+    CompanyWorkspacesResult:
+      type: object
+      properties:
+        company_id:
+          type: string
+          description: The id of the company the workspaces belong to
+          x-mabl-scope: public
+        accounts:
+          type: array
+          description: The company's accounts, each with the workspaces it owns
+          items:
+            $ref: '#/components/schemas/CompanyAccountWorkspaces'
+          x-mabl-scope: public
+      description: All workspaces in a company, grouped by their owning account
+    UserCompanyRoleUpdate:
+      type: object
+      properties:
+        add:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCompanyRole'
+        remove:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCompanyRole'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    CompanySessionTimeoutUpdateRequest:
+      type: object
+      properties:
+        session_timeout:
+          type: string
+          description: The desired session timeout
+          enum:
+          - default
+          - hours_04
+          - hours_08
+          - hours_10
+          - hours_12
+          - hours_24
+          - hours_72
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the workspace
+          x-mabl-scope: public
+        name:
+          type: string
+          description: The display name of the workspace
+          x-mabl-scope: public
+        account_id:
+          type: string
+          description: The id of the billing account that owns the workspace
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the workspace was created, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+      description: A mabl workspace
+    CompanySSOConnection:
+      type: object
+      properties:
+        connection_id:
+          type: string
+          description: ID of SSO connection entity
+      description: SSO connection information associated with the Company
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    UserRoleEnum:
+      type: string
+      description: The possible values for user role
+      enum:
+      - owner
+      - editor
+      - viewer
+    LinkAccessConfigUpdate:
+      type: object
+      properties:
+        enable_link_access_by_support:
+          type: boolean
+          description: See LinkAccessConfig.enable_link_access_by_support
+        member_access_roles:
+          type: array
+          description: 'Replaces the audience wholesale — send the roles that should be admitted, not a delta, and an empty array to admit nobody. See LinkAccessConfig.member_access_roles
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAccessRoleEnum'
+      description: 'Consent changes for a workspace or company, applied by PATCH. Every field is optional and only the fields present are applied — omitting one leaves it as it is, which is not the same as sending false or an empty array. The audit fields on LinkAccessConfig are server-owned and so are absent here.
+
+        '
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

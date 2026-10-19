@@ -1,0 +1,312 @@
+openapi: 3.2.0
+info:
+  title: mabl SAML API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Saml
+paths:
+  /preview/{id}:
+    post:
+      tags:
+      - Saml
+      summary: Configure a preview environment
+      description: Called to configure a preview environment to work with
+      operationId: configurePreviewEnvironment
+      parameters:
+      - name: id
+        in: path
+        description: Preview environment to configure
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The setup connection
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::SsoConfiguration
+  /saml:
+    post:
+      tags:
+      - Saml
+      summary: Create an initial saml connection setup for a company
+      description: Used to initialize the saml connection for a company
+      operationId: initializeSaml
+      parameters:
+      - name: company_id
+        in: query
+        description: Primary domain for the saml connection of the form
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: Primary domain for the saml connection of the form
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The setup connection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamlConnection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::SsoConfiguration
+  /saml/{id}:
+    post:
+      tags:
+      - Saml
+      summary: Configure a saml connection
+      description: 'Used to configure the saml connection for a company.
+
+
+        Core configuration changes (issuer_uri, login_urls) require the allow_core_config_update
+
+        flag to be set to true. This protects against accidental misconfiguration. Certificate updates
+
+        (x509cert, xml_metadata), domains, and active status changes are considered maintenance operations and
+
+        do not require this flag.'
+      operationId: configureSaml
+      parameters:
+      - name: id
+        in: path
+        description: Id of the saml connection to configure
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: rebuild_provider_config
+        in: query
+        description: 'Set to true to allow core configuration changes (issuer_uri, login_url, domains)
+
+          and regenerate identity provider field mappings from the metadata. Without this flag,
+
+          only maintenance operations like certificate updates and active status changes are allowed.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        description: The xml metadata body
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamlConnection'
+        required: true
+      responses:
+        '200':
+          description: The setup connection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamlConnection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::SsoConfiguration
+components:
+  schemas:
+    IdentityProviderSpec:
+      type: object
+      properties:
+        issuer_uri:
+          type: string
+          description: The uri identifying the issuer
+        login_url:
+          type: string
+          description: the uri to login to use to login to the identity provider
+        x509cert:
+          type: string
+          description: The x509 cert for the connection
+        xml_metadata:
+          type: string
+          description: Base-64 encoded XML Metadata
+      description: Identity provider details
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    SamlConnection:
+      required:
+      - active
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the connection
+        company_id:
+          type: string
+          description: the mabl company id this connection is associated with
+        domains:
+          type: array
+          description: Array of domains to associate with this connection (domain lock)
+          items:
+            type: string
+        active:
+          type: boolean
+          description: true if the connection is active/live
+        service_provider:
+          $ref: '#/components/schemas/ServiceProviderSpec'
+        identity_provider:
+          $ref: '#/components/schemas/IdentityProviderSpec'
+      description: Saml connection details
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    ServiceProviderSpec:
+      type: object
+      properties:
+        audience_uri:
+          type: string
+          description: The entity id of the service provider
+        reply_url:
+          type: string
+          description: The callbackUri for the service providier
+      description: Service Provider details
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

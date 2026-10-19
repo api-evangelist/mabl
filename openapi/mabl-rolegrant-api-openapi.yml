@@ -1,0 +1,359 @@
+openapi: 3.2.0
+info:
+  title: mabl Role Grant API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: RoleGrant
+paths:
+  /roleGrants:
+    get:
+      tags:
+      - RoleGrant
+      summary: Query RoleGrants
+      description: Used to query RoleGrants
+      operationId: queryRoleGrants
+      parameters:
+      - name: parent_namespace
+        in: query
+        description: Namespace of the parent for which to query RoleGrants
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/RoleGrantParentNamespace'
+      - name: parent_id
+        in: query
+        description: ID of the parent for which to query RoleGrants
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: principal_namespace
+        in: query
+        description: Namespace of the principal for which to query RoleGrants
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/RoleGrantPrincipalNamespace'
+      - name: principal_id
+        in: query
+        description: ID of the principal for which to query RoleGrants
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleGrantQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::RoleGrant
+    post:
+      tags:
+      - RoleGrant
+      summary: Create RoleGrant
+      description: The RoleGrant to create
+      operationId: createRoleGrant
+      requestBody:
+        description: The RoleGrant to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleGrant'
+        required: true
+      responses:
+        '201':
+          description: The RoleGrant that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleGrant'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::RoleGrant
+  /roleGrants/{id}:
+    get:
+      tags:
+      - RoleGrant
+      summary: Get RoleGrant details
+      description: Get the details for a given RoleGrant
+      operationId: getRoleGrant
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the RoleGrant to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: RoleGrant found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleGrant'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: RoleGrant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::RoleGrant
+    delete:
+      tags:
+      - RoleGrant
+      summary: Delete RoleGrant
+      description: Delete a RoleGrant
+      operationId: removeRoleGrant
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the RoleGrant to delete
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Successful remove
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: RoleGrant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::RoleGrant
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    RoleGrantParentNamespace:
+      type: string
+      description: Namespace of the parent to which this RoleGrant belongs
+      enum:
+      - workspaces
+    RoleGrant:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID of the RoleGrant
+        parent_namespace:
+          $ref: '#/components/schemas/RoleGrantParentNamespace'
+        parent_id:
+          type: string
+          description: Id of the Parent to which this RoleGrant belongs
+        role_id:
+          type: string
+          description: ID of the Role associated with this RoleGrant
+        managed_role:
+          type: boolean
+          description: Specifies if this is a ManagedRole. ManagedRoles are controlled by mabl and statically defined in code. Only CustomRoles are persisted.
+        principal_id:
+          type: string
+          description: ID of the Principal for which this RoleGrant applies
+        principal_namespace:
+          $ref: '#/components/schemas/RoleGrantPrincipalNamespace'
+        scope:
+          $ref: '#/components/schemas/RoleGrantScope'
+        target:
+          type: string
+          description: ID of the Resource for which this RoleGrant applies
+        created_time:
+          type: integer
+          description: Time at which the RoleGrant was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this RoleGrant
+          readOnly: true
+        acknowledged_status:
+          type: string
+          description: LEGACY PROPERTY. Status marking whether the user has acknowledged the welcome message in the joined workspace.
+          readOnly: true
+          enum:
+          - requires_acknowledgement
+          - acknowledged
+      description: A RoleGrant
+    RoleGrantPrincipalNamespace:
+      type: string
+      description: Namespace of the principal to which this RoleGrant applies
+      enum:
+      - users
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    RoleGrantScope:
+      type: string
+      description: Scope of the Resource for which this RoleGrant applies
+      enum:
+      - global
+      - companies
+      - workspaces
+      - resource_groups
+      - credentials
+      - datatables
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    RoleGrantQueryResult:
+      type: object
+      properties:
+        role_grants:
+          type: array
+          description: All RoleGrants that matched the query
+          items:
+            $ref: '#/components/schemas/RoleGrant'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

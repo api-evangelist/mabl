@@ -1,0 +1,253 @@
+openapi: 3.2.0
+info:
+  title: Mabltron Distribution API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: MabltronDistribution
+paths:
+  /mabltron/download:
+    get:
+      tags:
+      - MabltronDistribution
+      summary: Download the mabltron installer
+      description: Download latest mabltron installer for the specified OS platform
+      operationId: downloadInstaller
+      parameters:
+      - name: platform
+        in: query
+        description: The OS platform (windows/macos/linux) to get the installer for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - windows
+          - windows-advanced
+          - macos
+          - macos-arm64
+          - linux
+      - name: packaging
+        in: query
+        description: The OS-specific packaging format to retrieve
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - appimage
+          - deb
+          - pacman
+          - rpm
+          - targz
+      responses:
+        '303':
+          description: Redirect to installer URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedirectResponse'
+        '400':
+          description: Invalidate platform supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedirectResponse'
+      x-mabl-action: Read::Distribution
+  /mabltron/latest:
+    get:
+      tags:
+      - MabltronDistribution
+      summary: Gets the latest version of the mabltron installer
+      description: Gets the latest version of the mabltron installer for the specified platform
+      operationId: getLatestInstallerInfo
+      parameters:
+      - name: platform
+        in: query
+        description: The OS platform (windows/macos/linux) to get the installer for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - windows
+          - windows-advanced
+          - macos
+          - macos-arm64
+          - linux
+      - name: packaging
+        in: query
+        description: The OS-specific packaging format to retrieve
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - appimage
+          - deb
+          - pacman
+          - rpm
+          - targz
+      responses:
+        '200':
+          description: The installer info for the latest installer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MabltronInstallerInfo'
+        '400':
+          description: Invalidate platform supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: Installer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Distribution
+components:
+  schemas:
+    MabltronInstallerInfo:
+      required:
+      - url
+      - version
+      type: object
+      properties:
+        version:
+          type: string
+          description: The version of the installer
+        url:
+          type: string
+          description: The URL to download the installer from
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    RedirectResponse:
+      type: object
+      properties:
+        redirectUrl:
+          type: string
+          x-mabl-scope: public
+  responses:
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

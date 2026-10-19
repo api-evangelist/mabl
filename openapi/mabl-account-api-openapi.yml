@@ -1,0 +1,2350 @@
+openapi: 3.2.0
+info:
+  title: mabl Account API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Account
+paths:
+  /accounts/{account_id}/seats:
+    get:
+      tags:
+      - Account
+      summary: Account seat allocation and utilization
+      description: Allocated, used, and available seats for an account, split by automator and participant. Available is max(allocated - used, 0). Available to company administrators and company-scoped API keys (USER_MANAGEMENT or REPORTING).
+      operationId: getAccountSeats
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: month
+        in: query
+        description: One based month (1-12) for the used-seat computation. Defaults to the current month.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 12
+          minimum: 1
+          type: integer
+          format: int32
+      - name: year
+        in: query
+        description: 0 based year for the used-seat computation (e.g. 2020). Defaults to the current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Seat allocation and utilization summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeatSummary'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Read::Account
+  /accounts/{account_id}/seats/usage:
+    get:
+      tags:
+      - Account
+      summary: Per-user seat utilization for an account
+      description: Per-user seat utilization for an account over a calendar month, classifying each active user as an automator or participant based on their automator-event count. Available to company administrators and company-scoped API keys (USER_MANAGEMENT or REPORTING).
+      operationId: getAccountSeatUsage
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: month
+        in: query
+        description: One based month (1-12) to report on. Defaults to the current month.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 12
+          minimum: 1
+          type: integer
+          format: int32
+      - name: year
+        in: query
+        description: Zero based year to report on (e.g. 2020). Defaults to the current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: limit
+        in: query
+        description: Maximum number of users to return in a single response.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Per-user seat utilization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeatUsage'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Read::Account
+  /accounts:
+    get:
+      tags:
+      - Account
+      summary: Query Accounts
+      description: Used to query accounts
+      operationId: queryAccounts
+      parameters:
+      - name: company_id
+        in: query
+        description: If present, return only accounts in the given company
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Account
+    post:
+      tags:
+      - Account
+      summary: Create Account
+      description: Used to create new accounts
+      operationId: createAccount
+      parameters:
+      - name: organizationId
+        in: query
+        description: The primary organization to associate this account with
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: legacy
+        in: query
+        description: Whether to create a legacy billing account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      requestBody:
+        description: The account to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+        required: true
+      responses:
+        '201':
+          description: The account that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Account
+  /accounts/{id}:
+    get:
+      tags:
+      - Account
+      summary: get account details
+      description: Get the details for a given account
+      operationId: getAccount
+      parameters:
+      - name: id
+        in: path
+        description: The id of the account to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Account found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Account
+    delete:
+      tags:
+      - Account
+      summary: Remove Account
+      description: Removes an account and associated workspaces
+      operationId: removeAccount
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the account to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Account successfully removed
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Account
+    patch:
+      tags:
+      - Account
+      summary: update account object
+      description: Update the account object
+      operationId: updateAccount
+      parameters:
+      - name: id
+        in: path
+        description: The id of the account to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The account update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+        required: true
+      responses:
+        '200':
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/{account_id}/workspaces:
+    post:
+      tags:
+      - Account
+      summary: Create workspace under existing account
+      description: Create a new workspace in an existing billing account
+      operationId: createWorkspaceForAccount
+      parameters:
+      - name: account_id
+        in: path
+        description: The ID of the account to create the workspace under
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The workspace to create and associated configuration
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceForAccountRequest'
+        required: true
+      responses:
+        '201':
+          description: The workspace that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Workspace
+  /accounts/{account_id}/features:
+    put:
+      tags:
+      - Account
+      summary: Sets granted and excluded features to the given account
+      description: Sets the granted_features and/or excluded_features fields of the account
+      operationId: setFeatureOverrides
+      parameters:
+      - name: account_id
+        in: path
+        description: The id of the account to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The account update containing the granted/excluded features to set
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/{account_id}/executionLocationPin:
+    put:
+      tags:
+      - Account
+      summary: Pin where the account's test runs execute
+      description: Pins the cloud and region that test runs of this account execute in. A pin on a workspace wins over one on its account, which wins over one on its company. A run whose test type does not execute in the pinned location runs in the default one. Only mabl can set it (global accounts write scope or mabl global admin).
+      operationId: setAccountExecutionLocationPin
+      parameters:
+      - name: account_id
+        in: path
+        description: The ID of the account
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The location to pin
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionLocation'
+        required: true
+      responses:
+        '200':
+          description: The updated account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+    delete:
+      tags:
+      - Account
+      summary: Remove the account's execution location pin
+      description: Removes the account's pin, so its test runs follow the next pin up, or the default location. Same authorization as setting it.
+      operationId: clearAccountExecutionLocationPin
+      parameters:
+      - name: account_id
+        in: path
+        description: The ID of the account
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The pin was removed, or there was none
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/{account_id}/completedAdditionalTrialInfo:
+    put:
+      tags:
+      - Account
+      summary: Sets the has_completed_additional_trial_info with true
+      operationId: setCompletedAdditionalTrialInfo
+      parameters:
+      - name: account_id
+        in: path
+        description: The ID of the account to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Account flag updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/{account_id}/migrations/core:
+    put:
+      tags:
+      - Account
+      summary: Migrate an existing Account to a Core billing Account
+      description: Used to migrate an existing Account to a Core billing Account
+      operationId: migrateAccountToCore
+      parameters:
+      - name: account_id
+        in: path
+        description: The ID of the account to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: trial
+        in: query
+        description: Whether or not to convert the Account to a trial Account. Defaults to whether the existing `account.mabl_plan_type == 'trial'`
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: trial_start_time
+        in: query
+        description: Trial start time. Defaults to the existing trial start time.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: trial_end_time
+        in: query
+        description: Trial end time. Defaults to the existing trial end time.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: start_time
+        in: query
+        description: Subscription start start time. Defaults to the existing subscription start time.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: Subscription end time. Defaults to the existing subscription end time.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '201':
+          description: The Account that was migrated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/{account_id}/executionCreditWeights:
+    put:
+      tags:
+      - Account
+      summary: Sets Account ExecutionCreditWeights with the lastest iteration
+      operationId: updateExecutionCreditWeights
+      parameters:
+      - name: account_id
+        in: path
+        description: The ID of the account to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Updated Account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/{account_id}/billing:
+    put:
+      tags:
+      - Account
+      summary: update account with billing details
+      description: Sets the billing details for an account
+      operationId: setBillingDetails
+      parameters:
+      - name: account_id
+        in: path
+        description: The id of the account to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The billing details for the account
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingDetails'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '402':
+          description: Payment failed (e.g. card declined)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/{account_id}/subscription:
+    put:
+      tags:
+      - Account
+      summary: update account with new subscription details
+      description: Sets the billing details for an account
+      operationId: setSubscriptionDetails
+      parameters:
+      - name: account_id
+        in: path
+        description: The id of the account to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The subscription details for the account
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpdate'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+    delete:
+      tags:
+      - Account
+      summary: Unsubscribe account from all billing plans
+      description: Sets the billing details for an account
+      operationId: unsubscribe
+      parameters:
+      - name: account_id
+        in: path
+        description: The id of the account to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/{account_id}/payment:
+    put:
+      tags:
+      - Account
+      summary: update account with billing details
+      description: Sets the payment details for an account
+      operationId: setPaymentDetails
+      parameters:
+      - name: account_id
+        in: path
+        description: The id of the account to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The billing details for the account
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingDetails'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Account
+  /accounts/plans:
+    get:
+      tags:
+      - Account
+      summary: Query Plans
+      description: Used to query plans
+      operationId: queryPlans
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablPlanQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Account
+  /accounts/products:
+    get:
+      tags:
+      - Account
+      summary: Query Products
+      description: Used to query products
+      operationId: queryProducts
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MablProductQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Account
+  /recover/accounts/{account_id}:
+    post:
+      tags:
+      - Account
+      summary: Recover Account
+      description: Recover tombstoned account and all associated workspaces
+      operationId: recoverAccount
+      parameters:
+      - name: account_id
+        in: path
+        description: The id of the account to recover
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The account that was recoveed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No account to recover
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Recover::Account
+  /accounts/{account_id}/users:
+    get:
+      tags:
+      - Account
+      summary: List account users
+      description: List the users across all workspaces in an account, deduplicated. Each user's roles are scoped to the workspaces within this account. Available to company admins (all users in the account); workspace members or properly permissioned API keys see only the users in their own workspaces.
+      operationId: listAccountUsers
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Maximum number of users to return in a single response. Additional pages of results can be retrieved by passing the cursor (returned in the results) on a subsequent call.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: inactive_users_only
+        in: query
+        description: If true, return only users with no activity in the account within the lookback window.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: lookback_days
+        in: query
+        description: Activity window in days used by the inactive_users_only filter. Defaults to 90.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 365
+          minimum: 1
+          type: integer
+          format: int32
+          default: 90
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Read::User
+  /accounts/{account_id}/users/{id}:
+    get:
+      tags:
+      - Account
+      summary: Get account user
+      description: Retrieve a user's details within the context of an account, including their roles across the account's workspaces. Returns 404 if the user has no role in any of the account's workspaces. Available to company admins; workspace members or properly permissioned API keys see the user only within their own workspaces.
+      operationId: getAccountUser
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: ID of the user to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User is not a member of this account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Read::User
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    Subscription:
+      type: object
+      properties:
+        plan_type:
+          type: string
+          description: The type of plan this subscription is on
+          enum:
+          - journey_executions
+          - executions
+          - monthly
+          - quarterly
+          - technical_account_manager
+          - yearly
+          - annual_executions
+        plan_subtype:
+          type: string
+          enum:
+          - a11y
+          - api
+          - browser
+          - technical_account_manager
+          - performance
+        plan_id:
+          type: string
+          description: The id for the plan subscribed to in stripe
+          readOnly: true
+        subscription_id:
+          type: string
+          description: The id of the subscription in stripe.  A subscription can have multiple subscription items.
+          readOnly: true
+        subscription_items_id:
+          type: string
+          description: The id of the subscription item for this account on this plan.  This is the id we need to bill against.
+      description: A stripe subscription
+    SubscriptionUpdatePricingPlans:
+      type: object
+      properties:
+        plan_type:
+          type: string
+          description: The type of pricing plan.  Each customer can be subscribed to a max one pricing plan of each type.  MONTHLY is a monthly subscription charge.  JOURNEY_RUNS is a per usage plan.
+          enum:
+          - monthly
+          - quarterly
+          - yearly
+          - journey_executions
+          - executions
+          - technical_account_manager
+          - annual_executions
+        plan_subtype:
+          type: string
+          enum:
+          - a11y
+          - api
+          - browser
+          - technical_account_manager
+          - performance
+        pricing_plan_id:
+          type: string
+          description: The id of the pricing plan.  Pricing plan must already exist in stripe.
+      description: The pricing plans to update the customers subscription to.  These should be a complete set of all the pricing plans the customer should be subscribed to
+    CreateWorkspaceForAccountRequest:
+      required:
+      - workspace
+      type: object
+      properties:
+        workspace:
+          $ref: '#/components/schemas/Organization'
+        owner_user_ids:
+          type: array
+          description: User IDs to assign as owners of the new workspace
+          items:
+            type: string
+        credit_allocation:
+          type: integer
+          description: Explicit credit allocation for the workspace
+          format: int64
+        enforce_credit_limit:
+          type: boolean
+          description: 'When true, the workspace''s credit allocation is enforced: new cloud runs are blocked once the allocation is exhausted for the billing period. Requires credit_allocation.
+
+            '
+      description: Request to create a workspace under an existing account
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    MablSubscriptionPeriod:
+      type: string
+      description: The period of the subscription
+      enum:
+      - monthly
+      - quarterly
+      - yearly
+    ExecutionLocation:
+      required:
+      - cloud
+      - region
+      type: object
+      properties:
+        cloud:
+          type: string
+          description: Cloud identifier, e.g. gcp or aws
+        region:
+          type: string
+          description: Region as the cloud names it, e.g. us-south1
+      description: 'Where test runs execute: a cloud and one of that cloud''s regions. A region name means nothing without its cloud, so the two are always set together.'
+    SeatUsage:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Id of the account
+          x-mabl-scope: public
+        interval_start:
+          type: integer
+          description: Start of the period, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        interval_end:
+          type: integer
+          description: End of the period, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        users:
+          type: array
+          description: Per-user seat utilization
+          items:
+            $ref: '#/components/schemas/SeatUsageUser'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results. Null if no more results.
+          x-mabl-scope: public
+      description: Per-user seat utilization for an account
+    LinkAccessConfig:
+      type: object
+      properties:
+        created_time:
+          type: integer
+          description: created time, epoch millis
+          format: int64
+        created_by_id:
+          type: string
+          description: created by user id
+        last_updated_time:
+          type: integer
+          description: last updated time, epoch millis
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: last update by user id
+        enable_link_access_by_support:
+          type: boolean
+          description: 'When true, a mabl support admin may reach the tunnel''s published services, such as the SOCKS proxy and reachability probes. When false they may still reach the tunnel''s control plane — draining a host, inspecting carriers — which is never gated, but no traffic-carrying service.
+
+            '
+        member_access_roles:
+          type: array
+          description: 'Which member roles may reach the tunnel''s published services with their own credentials — the tunnel''s audience. A caller is admitted when they hold at least one role named here, so holding a role is necessary and never sufficient: the owner has to have named it. An empty array admits nobody, which is where every owner starts, and leaves only api keys — cloud execution is unaffected.
+
+
+            Absent and empty both admit nobody; the difference is about the PATCH, not about access. A PATCH omitting this field leaves the audience as it is, and one sending an empty array clears it.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAccessRoleEnum'
+      description: 'Consent settings governing who may reach a Link (mablnet) tunnel owned by this workspace or company. Deliberately separate from support_access_config: not all of this has anything to do with support, and reaching a customer''s network is a distinct decision from seeing their workspace.
+
+
+        This is the set an owner of either kind carries. A workspace additionally carries enable_personal_tunnels — see WorkspaceLinkAccessConfig, which extends this. That flag is meaningless for a company: a personal tunnel belongs to a user, and both halves of the decision it governs are asked of a workspace.
+
+
+        Everything here is opt-in. An absent config, and an absent setting within a present config, both admit nobody. The exception is a workspace on a trial account, which reads each setting its owner has not set as the most permissive value — support may reach the tunnel, every role is admitted, personal tunnels are allowed — and is returned that way. Those defaults are never stored, so they end with the trial. None of this affects api-key access to a tunnel — an `execution` key reaching a tunnel for a cloud test run is unaffected throughout.
+
+        '
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    CoreAddonEnum:
+      type: string
+      description: Core billing addon
+      enum:
+      - a11y
+      - advanced_ai
+      - advanced_content_validation
+      - mobile
+      - performance
+      - tam
+    SeatUsageUser:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: The user's ID
+          x-mabl-scope: public
+        email:
+          type: string
+          description: The user's email address
+          x-mabl-scope: public
+        name:
+          type: string
+          description: The user's full name
+          x-mabl-scope: public
+        classification:
+          type: string
+          description: automator if the user has at least 30 automator events in the month, otherwise participant
+          enum:
+          - automator
+          - participant
+          x-mabl-scope: public
+        events:
+          type: integer
+          description: Number of automator events by this user in the month
+          format: int64
+          x-mabl-scope: public
+        last_active_time:
+          type: integer
+          description: The user's most recent activity in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+      description: A single user's seat utilization
+    UserCompanyRole:
+      required:
+      - company_id
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        company_id:
+          type: string
+          description: The company to which this role applies
+    MablPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the plan
+        amount:
+          type: integer
+          description: Price of plan
+        interval:
+          type: string
+          description: Billing interval of plan
+        name:
+          type: string
+          description: Name of plan
+        product:
+          type: string
+          description: Product ID
+      description: Mabl payment plan
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the organization
+        cloud_safe_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP and Kubernetes safe)
+        created_time:
+          type: integer
+          description: Time at which the organization was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this organization
+        resource_bucket_name:
+          type: string
+          description: Input/output artifact bucket. Null if not yet created.
+        last_updated_time:
+          type: integer
+          description: Time at which the organization was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this organization
+        name:
+          type: string
+          description: The display name of the organization
+        account_id:
+          type: string
+          description: The id of the account this organization is in
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        support_access_config:
+          $ref: '#/components/schemas/WorkspaceSupportAccess'
+        link_access_config:
+          $ref: '#/components/schemas/WorkspaceLinkAccessConfig'
+        onboarded:
+          type: boolean
+          description: flag indicating whether the organization has gone through onboarding
+        allocations:
+          allOf:
+          - $ref: '#/components/schemas/BillingAllocations'
+          x-dao-apply-nulls: true
+        allocated_test_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of test runs allocated to this workspace
+        allocated_api_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of API test runs allocated to this workspace
+        allocated_a11y_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of a11y step runs allocated to this workspace
+        labs_features:
+          type: array
+          description: Set of labs features activated for this workspace
+          items:
+            type: string
+        excluded_features:
+          type: array
+          description: 'Set of features to exclude from this workspace, overriding account-level grants. When a feature appears here, authorization checks against this workspace will deny it even if the parent account has the feature enabled. Admin-only field.
+
+            '
+          items:
+            type: string
+        execution_runner_size:
+          $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+        execution_location_pin:
+          description: Where this workspace's test runs execute, ahead of any pin on its account or company. Set and cleared only by mabl through PUT/DELETE /organizations/{id}/executionLocationPin; ignored by the generic workspace update. A run whose test type does not execute in the pinned location runs in the default one.
+          allOf:
+          - $ref: '#/components/schemas/ExecutionLocation'
+          x-dao-unindexed: true
+        generated_artifact_locale:
+          type: string
+          description: The workspace's locale used to create new artifacts (e.g. test failure summaries, element descriptions). Default is 'en'.
+        test_recovery_agent_mode:
+          $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+        auto_assign_failure_reason_enabled:
+          type: boolean
+          description: 'When true, agent-generated failure analysis assigns its suggested failure reason to the test run automatically. When false, the suggested failure reason is still persisted but is not assigned. New workspaces enable this by default. Manual assignments always take precedence.
+
+            '
+        require_agent_edits_on_branches:
+          type: boolean
+          description: 'When true, agents must save new tests and edits to a branch rather than the main branch. Owner-editable; behind the agentic_test_editing feature flag.
+
+            '
+        recovery_agent_auto_edits:
+          type: boolean
+          description: 'When true, the recovery agent automatically kicks off test edits when it identifies a fix. Owner-editable; behind the agentic_test_editing feature flag.
+
+            '
+        require_cloud_only_credentials:
+          type: boolean
+          description: 'When true, credentials created in this workspace must be cloud credentials, whose secrets can never be read back. Enforced on create for every caller, including API keys, rather than left to whoever creates the credential. Existing non-cloud credentials are unaffected and stay editable. Owner-editable.
+
+            '
+        effective_credit_allocation:
+          type: integer
+          description: 'Computed effective credit allocation for this workspace. Equals allocations.credits if explicitly set, otherwise the workspace''s equal share of remaining account credits.
+
+            '
+          format: int64
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasAccountId
+      - HasName
+    SeatCount:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Allocated seats for this class. Omitted when the account has no subscription or is unlimited.
+          format: int32
+          x-mabl-scope: public
+        used:
+          type: integer
+          description: Seats consumed for the queried month.
+          format: int32
+          x-mabl-scope: public
+        available:
+          type: integer
+          description: max(total - used, 0). Omitted when total is unknown or unlimited.
+          format: int32
+          x-mabl-scope: public
+        unlimited:
+          type: boolean
+          description: True if this seat class has no allocation cap (mabl Core accounts). total and available are omitted when true. Absent, rather than false, on accounts where this doesn't apply.
+          x-mabl-scope: public
+      description: Allocated, used, and available counts for a single seat class
+    UserOnboarding:
+      type: object
+      properties:
+        lang_prompt_shown:
+          type: boolean
+          description: Indicates if the user was ever prompted to change the language.
+        existing_email_domain:
+          type: boolean
+          description: Indicates if the user has an email that matched the registered ones in the CompanyDomain entity, at the moment of the user creation. This is a ReadOnly field that's only filled when the user doesn't have a role in any workspace.
+        should_create_trial_with_existing_email_domain:
+          type: boolean
+          description: Indicates if a trial workspace should be created even when the email domain matches an existing one.
+        guided_test_creation:
+          type: string
+          description: Indicates the status of the browser test creation guided tour
+          enum:
+          - complete
+          - skipped
+          - not_started
+          - not_available
+          - incomplete
+        guided_run_test_results:
+          type: string
+          description: Indicates the status of the browser test run guided tour
+          enum:
+          - complete
+          - skipped
+          - not_started
+          - not_available
+          - incomplete
+        mobile_testing_guide_status:
+          type: string
+          description: Indicates the status of the guided mobile testing experience
+          enum:
+          - complete
+          - skipped
+          - not_started
+          - not_available
+          - incomplete
+      description: An object containing the onboarding information for a specific User.
+    SeatSummary:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Id of the account
+          x-mabl-scope: public
+        interval_start:
+          type: integer
+          description: Start of the period the used counts cover, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        interval_end:
+          type: integer
+          description: End of the period the used counts cover, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        has_subscription:
+          type: boolean
+          description: False for accounts with no subscription; total/available are then omitted.
+          x-mabl-scope: public
+        automators:
+          $ref: '#/components/schemas/SeatCount'
+        participants:
+          $ref: '#/components/schemas/SeatCount'
+      description: Seat allocation and utilization for an account
+    TestRecoveryAgentModeEnum:
+      type: string
+      description: Test Recovery Agent mode. Use `inherit` (plan-level only) to defer to the workspace-level default.
+      enum:
+      - 'off'
+      - fail_at_end
+      - pass
+      - inherit
+    MablStripeSubscriptionType:
+      type: string
+      description: Subscription variant; core and overages Subscription can be separated on different intervals.
+      enum:
+      - core
+      - overages
+    LinkAccessRoleEnum:
+      type: string
+      description: 'A role that may be admitted to a Link (mablnet) tunnel''s published services, as named in member_access_roles.
+
+
+        `company_admin` is the company OWNER: of the owning workspace''s company for a workspace-owned tunnel, of the company itself for a company-owned one. The three workspace roles mean that role in the owning workspace; on a company-owned tunnel they mean that role in any workspace belonging to the company.
+
+        '
+      enum:
+      - company_admin
+      - workspace_owner
+      - workspace_editor
+      - workspace_viewer
+    MablPlanType:
+      type: string
+      description: The plan type this user is currently subscribed to
+      enum:
+      - enterprise
+      - enterprise_5000
+      - enterprise_10000
+      - enterprise_20000
+      - enterprise_50000
+      - essentials
+      - growth
+      - pay_as_you_go
+      - pro
+      - seed
+      - startup
+      - trial
+      - core_migrated
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    UserQueryResult:
+      type: object
+      properties:
+        users:
+          type: array
+          description: All users that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/User'
+          x-mabl-scope: public
+        historic_users:
+          type: array
+          description: All users who had historic activity in the workspace, but are no longer users in that workspace. Only populated if include_historic_users is set to true.
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/User'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+    BillingAllocations:
+      type: object
+      properties:
+        credits:
+          type: integer
+          description: Total number of credits allocated for the billing period
+          format: int64
+        automators:
+          type:
+          - integer
+          - 'null'
+          description: Total number of automators allocated for the billing period. Absent for unlimited (mabl Core accounts).
+          format: int32
+          x-dao-apply-nulls: true
+        participants:
+          type:
+          - integer
+          - 'null'
+          description: Total number of participants allocated for the billing period. Absent for unlimited (mabl Core accounts).
+          format: int32
+          x-dao-apply-nulls: true
+        enforce_limit:
+          type:
+          - boolean
+          - 'null'
+          description: 'When true on a workspace''s allocations, the workspace''s explicit credit allocation is enforced: new cloud runs are blocked once the allocation is exhausted for the billing period. Absent or false, the allocation is informational only. Requires an explicit credits value. Only meaningful on a workspace''s allocations; ignored on an account subscription''s allocations.
+
+            '
+      description: Allocations for the billing period
+    MablPlanQueryResult:
+      type: object
+      properties:
+        plans:
+          type: array
+          description: All plans that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/MablPlan'
+    UserPreferences:
+      type: object
+      properties:
+        default_workspace_id:
+          type: string
+          description: The workspace to start in each new session
+        web_ui_theme:
+          type: string
+          description: The users preferred theme for the web ui
+          enum:
+          - standard
+          - dark
+        page_settings:
+          type: object
+          additionalProperties:
+            type: string
+          description: The settings to load for specified pages
+        trainer_type:
+          type: string
+          description: The users preferred type for the trainer
+          enum:
+          - chrome_extension
+          - electron
+        customer_view_mode:
+          type: string
+          description: When set to customer, hides employee-only features for demo purposes
+          enum:
+          - standard
+          - customer
+        default_workspace_summary_schedule:
+          type: string
+          description: Schedule for the workspace summary email this user is subscribed to when they join a workspace. `none` leaves them unsubscribed. Unset is treated as `weekly`.
+          enum:
+          - none
+          - daily
+          - weekly
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier representing a specific user
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the user was created
+          format: int64
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this user
+        desktop_app_installed:
+          type: boolean
+          description: Flag indicating whether or not the user has installed electron app
+        last_updated_time:
+          type: integer
+          description: Time at which the user was last updated
+          format: int64
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this user
+        email:
+          type: string
+          description: The user's E-Mail address
+          x-mabl-scope: public
+        email_verified:
+          type: boolean
+          description: Flag indicating whether or not the user's e-mail address has been verified
+        name:
+          type: string
+          description: The user's full name
+          x-mabl-scope: public
+        given_name:
+          type: string
+          description: The user's first/given name
+          x-mabl-scope: public
+        family_name:
+          type: string
+          description: The user's surname
+          x-mabl-scope: public
+        nickname:
+          type: string
+          description: The user's nickname
+          x-mabl-scope: public
+        locale:
+          type: string
+          description: The user's locale
+        picture:
+          type: string
+          description: URL of the user's picture
+        roles:
+          type: array
+          description: This user's roles, scoped to the requested workspace or account
+          items:
+            $ref: '#/components/schemas/UserRole'
+          x-mabl-scope: public
+        company_roles:
+          type: array
+          description: This user's company roles
+          items:
+            $ref: '#/components/schemas/UserCompanyRole'
+        firebase_token:
+          type: string
+          description: Token to use for Firebase authentication
+        onboarded:
+          type: boolean
+          description: flag indicating whether the workspace the user has joined has gone through onboarding
+        accepted_invitation:
+          type: boolean
+          description: flag indicating whether the user has ever accepted invitation to any workspace
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+        company:
+          type: string
+          description: The user's company
+          x-mabl-scope: public
+        phone:
+          type: string
+          description: The user's phone number
+        onboarding:
+          $ref: '#/components/schemas/UserOnboarding'
+        type:
+          $ref: '#/components/schemas/UserType'
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+    WorkspaceLinkAccessConfig:
+      description: 'A workspace''s consent flags: everything an owner of either kind carries, plus enable_personal_tunnels, which only a workspace has.
+
+        '
+      allOf:
+      - $ref: '#/components/schemas/LinkAccessConfig'
+      - type: object
+        properties:
+          enable_personal_tunnels:
+            type: boolean
+            description: 'When true, members of this workspace may start personal tunnels, and this workspace may route cloud test traffic to one. A user may start a personal tunnel if any workspace they belong to allows it, since no single workspace owns it; but only a workspace that allows them may send its runs through one.
+
+              '
+    UserType:
+      type: string
+      description: 'Classification of the user. A null/unset value is equivalent to `normal`
+
+        and is the default for existing users. `agent` users are synthetic users
+
+        created to act on behalf of AI agent sessions that were initiated by an
+
+        API key rather than a human user.
+
+        '
+      enum:
+      - agent
+      - normal
+    MablProductQueryResult:
+      type: object
+      properties:
+        products:
+          type: array
+          description: All products that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/MablProduct'
+    WorkspaceSupportAccess:
+      required:
+      - enable_support_access
+      type: object
+      properties:
+        created_time:
+          type: integer
+          description: created time, epoch millis
+          format: int64
+        created_by_id:
+          type: string
+          description: created by user id
+        last_updated_time:
+          type: integer
+          description: last updated time, epoch millis
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: last update by user id
+        enable_support_access:
+          type: boolean
+          description: Enables support access to workspace
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the DailyExecutionUsage
+        disabled:
+          type: boolean
+          description: True if the account has been manually disabled; false/undefined otherwise
+        disabled_last_updated_time:
+          type: integer
+          description: Time at which the disabled flag was last updated
+          format: int64
+        disabled_last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated the disabled flag
+        name:
+          type: string
+          description: The name of the account
+        stripe_customer_details:
+          $ref: '#/components/schemas/StripeCustomerDetails'
+        stripe_customer_id:
+          type: string
+          description: Legacy billing accounts only -- The ID of customer in stripe
+        company_id:
+          type: string
+          description: The id of the company that owns the account
+        customer_name:
+          type: string
+          description: DEPRECATED - The name of the customer
+        subscription:
+          type: object
+          properties:
+            allocations:
+              $ref: '#/components/schemas/BillingAllocations'
+            addons:
+              type: array
+              description: Account addons
+              items:
+                $ref: '#/components/schemas/AccountSubscriptionAddons'
+            execution_credit_weights:
+              $ref: '#/components/schemas/ExecutionCreditWeights'
+            legacy:
+              type: boolean
+              description: Indicator if the account is on the legacy billing system
+            stripe:
+              type: object
+              properties:
+                customer:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: ID of the associated Stripe Customer
+                    name:
+                      type: string
+                      description: Name of the associated Stripe Customer
+                    state:
+                      type: string
+                      description: State, county, province, or region of the associated Stripe Customer
+                    country:
+                      type: string
+                      description: Two letter ISO 3166-1 country code of the associated Stripe Customer
+                  description: Information about the associated Stripe Customer
+                subscriptions:
+                  type: array
+                  description: Array of Stripe Subscriptions as they relate to mabl billing
+                  items:
+                    $ref: '#/components/schemas/MablStripeSubscription'
+              description: Stripe information associated with the account
+            is_trial:
+              type: boolean
+              description: Indicates if the Account subscription is a trial. This does not indicate if the trial is active or expired.
+            trial_start_time:
+              type: integer
+              description: Time free trial started in epoch time
+              format: int64
+            trial_end_time:
+              type: integer
+              description: Time free trial ends in epoch time
+              format: int64
+            start_time:
+              type: integer
+              description: Time the user first subscribed
+              format: int64
+            end_time:
+              type: integer
+              description: Time the user's subscription ends
+              format: int64
+          description: mabl Core billing accounts only -- Subscription related information about the account
+        stripe_subscriptions:
+          type: array
+          description: Legacy billing accounts only -- The plans that a customer is subscribed to
+          items:
+            $ref: '#/components/schemas/Subscription'
+        has_completed_additional_trial_info:
+          type: boolean
+          description: flag indicating wether the user who created this account has completed the additional information required when authenticating with google
+        free_trial_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time free trial started in epoch time
+          format: int64
+        free_trial_end_time:
+          type: integer
+          description: Legacy billing accounts only -- time free trial ends in epoch time
+          format: int64
+        subscription_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user first subscribed
+          format: int64
+        subscription_end_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user's subscription ends
+          format: int64
+        mabl_plan_type:
+          $ref: '#/components/schemas/MablPlanType'
+        mabl_subscription_period:
+          $ref: '#/components/schemas/MablSubscriptionPeriod'
+        allocated_test_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of browser test runs allocated to this account by its subscription
+        allocated_api_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of API test runs allocated to this account by its subscription
+        allocated_a11y_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of a11y step runs allocated to this account by its subscription
+        performance_subscription_start_time:
+          type: integer
+          description: Legacy billing accounts only -- time the user first subscribed to performance testing feature
+          format: int64
+        allocated_performance_minutes:
+          type: integer
+          description: Legacy billing accounts only -- The amount of performance virtual user-minutes allocated to this account by its subscription. This allocation represents the "soft cap" after which overages will be incurred and is purely informational. The performance "hard cap" can be found in the workspace quota under allocations => performance.
+        api_steps_billable:
+          type: boolean
+          description: Legacy billing accounts only -- If true, API steps in browser tests will count toward API overages; otherwise only API test requests will be counted
+        effective_features:
+          type: array
+          description: Computed set of all features that this account has access to
+          readOnly: true
+          items:
+            type: string
+          x-dao-derived: true
+        granted_features:
+          type: array
+          description: Set of additional features that should be included in 'effective_features' regardless of plan type
+          items:
+            type: string
+        excluded_features:
+          type: array
+          description: Set of features that should be excluded from 'effective_features' regardless of plan type; overrides granted_features.
+          items:
+            type: string
+        execution_location_pin:
+          description: Where test runs of this account's workspaces execute, unless a workspace has its own pin; ahead of any pin on the company. Set and cleared only by mabl through PUT/DELETE /accounts/{account_id}/executionLocationPin; ignored by the generic account update.
+          allOf:
+          - $ref: '#/components/schemas/ExecutionLocation'
+          x-dao-unindexed: true
+        created_time:
+          type: integer
+          description: Time at which the account was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this account
+        last_updated_time:
+          type: integer
+          description: Time at which the account was last updated
+          format: int64
+          readOnly: true
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this account
+      description: A billing account
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    UserRole:
+      required:
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        workspace_id:
+          type: string
+          description: The workspace this role applies to. Preferred over `organization_id`. At least one of `workspace_id` or `organization_id` must be present.
+          x-mabl-scope: public
+        organization_id:
+          type: string
+          description: Deprecated alias for `workspace_id`. Retained so legacy callers keep working; new code should use `workspace_id`.
+          deprecated: true
+        acknowledged_status:
+          type: string
+          description: Status marking whether the user has acknowledged the welcome message in the joined workspace
+          enum:
+          - requires_acknowledgement
+          - acknowledged
+    MablStripeBillingPeriod:
+      type: string
+      description: Interval of the Stripe Subscription billing cycle
+      enum:
+      - month
+      - quarter
+      - annual
+    SubscriptionUpdate:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          description: The billing system customer id.  Customer must already exist in stripe
+        charge_automatically:
+          type: boolean
+          description: Should we charge the customer automatically or just send an invoice
+        days_until_due:
+          type: integer
+          description: days until the invoice is due.  Required if charge automatically is false.
+        coupon_code:
+          type: string
+          description: A coupon code to apply to this subscription
+        mabl_plan_type:
+          type: string
+          description: The plan type this user is currently subscribed to
+        mabl_subscription_period:
+          type: string
+          description: The period of the subscription
+        pricing_plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionUpdatePricingPlans'
+        rollover_timing_options:
+          type: string
+          description: Options for when to change billing to the new plan
+          enum:
+          - back_date
+          - immediate
+          - period_end
+          default: period_end
+      description: The details for updating a customers subscription
+    AccountSubscriptionAddons:
+      type: object
+      properties:
+        addon:
+          $ref: '#/components/schemas/CoreAddonEnum'
+        quantity:
+          type: integer
+          description: Quantity of the addon to be applied to the Account.
+          format: int64
+      description: Configuration of Core billing addons
+    MablStripeProductType:
+      type: string
+      description: Product variant
+      enum:
+      - core
+      - credit_overages
+    BillingDetails:
+      type: object
+      properties:
+        company_name:
+          type: string
+          description: The name of the customer
+        cardholder_name:
+          type: string
+          description: The name of the cardholder
+        email:
+          type: string
+          description: The billing email
+        phone:
+          type: string
+          description: The phone number of the customer
+        credit_card_id:
+          type: string
+          description: Identifier for the credit card
+        address1:
+          type: string
+          description: The first line of the address
+        address2:
+          type: string
+          description: The second line of the address
+        city:
+          type: string
+          description: The city
+        state:
+          type: string
+          description: The state/province
+        country:
+          type: string
+          description: The country
+        postal_code:
+          type: string
+          description: The zip/postal code
+        mabl_plan_type:
+          type: string
+          description: The plan type this user is currently subscribed to
+        mabl_subscription_period:
+          type: string
+          description: The period of the subscription
+        coupon_code:
+          type: string
+          description: A coupon code to apply to this subscription
+      description: Billing details for an account
+    MablProduct:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the product
+        active:
+          type: boolean
+          description: Active or inactive product
+        description:
+          type: string
+          description: Description of product
+        name:
+          type: string
+          description: Name of product
+      description: Mabl payment product
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    MablStripeSubscription:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID of the Subscription in Stripe
+        interval:
+          $ref: '#/components/schemas/MablStripeBillingPeriod'
+        billing_cycle_anchor:
+          type: integer
+          description: The reference point in epoch time millis that aligns past, present, and future billing cycle interval start and end times. Note, this can be in the future!
+          format: int64
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID of the Subscription Item in Stripe
+              created_time:
+                type: integer
+                description: The time in epoch millis that this subscription item was created.
+                format: int64
+              price_id:
+                type: string
+                description: ID of the associated Price in Stripe
+              type:
+                $ref: '#/components/schemas/MablStripeProductType'
+            description: Description of a Stripe Subscription Item as it relates to mabl billing
+        type:
+          $ref: '#/components/schemas/MablStripeSubscriptionType'
+      description: Description of a Stripe Subscription as it relates to mabl billing
+    UserRoleEnum:
+      type: string
+      description: The possible values for user role
+      enum:
+      - owner
+      - editor
+      - viewer
+    StripeCustomerDetails:
+      type: object
+      properties:
+        stripe_country:
+          type: string
+          description: Two letter ISO 3166-1 country code
+        stripe_state:
+          type: string
+          description: State, county, province, or region.
+        customer_name:
+          type: string
+          description: The name of the customer
+      description: Details about the customer in stripe
+    ExecutionRunnerSizeEnum:
+      type: string
+      description: available runner sizes
+      enum:
+      - x1
+      - x2
+      - x3
+      - x4
+      - x5
+      - x6
+      - small
+      - medium
+      - large
+      - inherit
+    AccountQueryResult:
+      type: object
+      properties:
+        accounts:
+          type: array
+          description: All accounts that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Account'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ExecutionCreditWeights:
+      type: object
+      properties:
+        adhoc_ai_assertion_batch:
+          type: integer
+          description: Adhoc ai assertion batch size per billable unit
+          format: int32
+        functional_advanced_ai:
+          type: integer
+          description: Defines how many additional credits each functional test will consume due to advanced ai features
+          format: int32
+        functional_api:
+          type: integer
+          description: Defines how many credits each functional api test consume
+          format: int32
+        functional_browser:
+          type: integer
+          description: Defines how many credits each functional browser test consume
+          format: int32
+        functional_mobile:
+          type: integer
+          description: Defines how many credits each functional mobile test consume
+          format: int32
+        performance_api_15vum:
+          type: integer
+          description: Defines how many credits 15 virtual user minutes consume in a performance api test
+          format: int32
+        performance_browser_15vum:
+          type: integer
+          description: Defines how many credits 15 virtual user minutes consume in a performance browser test
+          format: int32
+      description: A mapping used to translate test executions into the equivalent execution credit usage
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

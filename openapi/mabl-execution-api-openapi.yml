@@ -1,0 +1,4419 @@
+openapi: 3.2.0
+info:
+  title: mabl Execution API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Execution
+paths:
+  /execution/runPolicy/{plan_id}/runPolicyExecution:
+    post:
+      tags:
+      - Execution
+      summary: Create a Plan Run
+      description: Creates and schedules an execution of a run policy
+      operationId: createRunPolicyExecution
+      parameters:
+      - name: plan_id
+        in: path
+        description: The plan ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The run policy execution
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRunOptions'
+        required: false
+      responses:
+        '201':
+          description: The run policy execution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanRun'
+        '404':
+          description: Invalid run policy ID was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Run::PlanExecution
+  /execution/runPolicyExecution:
+    get:
+      tags:
+      - Execution
+      summary: Retrieve a set of run policy executions for a given run policy
+      description: Used to query run policy executions
+      operationId: queryRunPolicyExecutions
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization the run policy execution belongs to
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: The run policy execution status
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - queued
+          - pre_execution
+          - scheduling
+          - scheduled
+          - succeeded
+          - failed
+          - cancelled
+          - post_execution
+          - completed
+          - terminated
+      - name: policy_id
+        in: query
+        description: The run policy to query by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of run policy executions matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanRunQueryResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Read::PlanExecution
+  /execution/runPolicyExecution/{id}:
+    get:
+      tags:
+      - Execution
+      summary: Retrieve Run Policy Execution
+      description: Used to retrieve an existing run policy execution
+      operationId: getRunPolicyExecution
+      parameters:
+      - name: id
+        in: path
+        description: The run policy execution ID to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The run policy execution that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanRun'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Read::PlanExecution
+    patch:
+      tags:
+      - Execution
+      summary: Update Run Policy Execution
+      description: Used to update the status of an existing run policy execution
+      operationId: updateRunPolicyExecution
+      parameters:
+      - name: id
+        in: path
+        description: The run policy execution ID to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The run policy execution
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRun'
+        required: true
+      responses:
+        '200':
+          description: The Run Policy Execution was successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanRun'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Edit::PlanExecution
+  /execution/runPolicyExecution/{id}/terminate:
+    post:
+      tags:
+      - Execution
+      summary: Terminate Run Policy Execution
+      description: Used to terminate an ongoing run policy execution
+      operationId: terminateRunPolicyExecution
+      parameters:
+      - name: id
+        in: path
+        description: The run policy execution ID to terminate
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The Run Policy Execution was successfully terminated
+        '404':
+          description: Run Policy Execution not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: The Run Policy Execution cannot be terminated in its current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Edit::PlanExecution
+  /execution/runPolicyExecution/{plan_run_id}/testScriptExecution:
+    get:
+      tags:
+      - Execution
+      summary: Retrieve a test scripts executions for a run policy execution
+      description: Used to query test scripts execution
+      operationId: queryTestScriptExecutions
+      parameters:
+      - name: plan_run_id
+        in: path
+        description: The run policy execution to query by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: A test script execution status to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of test scripts matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunQueryResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Read::PlanExecution
+  /execution/organization/{organization_id}/runPolicy/{run_policy_id}/testScript/{test_script_id}:
+    get:
+      tags:
+      - Execution
+      summary: Retreive Test Script Executions by run policy
+      description: used to query test scripts executions
+      operationId: queryTestScriptExecutionsByRunPolicy
+      parameters:
+      - name: organization_id
+        in: path
+        description: The organization the run policy execution belongs to
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: run_policy_id
+        in: path
+        description: The run policy to filter by.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: test_script_id
+        in: path
+        description: The test script id to filter for.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: The status to limit results to.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - terminated
+          - failed
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of test scripts matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunQueryResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Read::PlanExecution
+  /execution/runPolicyExecution/{plan_run_id}/testScriptExecution/{id}:
+    get:
+      tags:
+      - Execution
+      summary: Retrieve Test Script Execution
+      description: Used to retrieve an existing test script execution
+      operationId: getTestScriptExecution
+      parameters:
+      - name: plan_run_id
+        in: path
+        description: The run policy execution ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: The test script execution ID to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The test script execution that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+        '404':
+          description: Run Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Read::PlanExecution
+    put:
+      tags:
+      - Execution
+      summary: Create/Update Test Script Execution
+      description: Used to put the status of an existing run policy execution
+      operationId: putTestScriptExecution
+      parameters:
+      - name: plan_run_id
+        in: path
+        description: The run policy execution ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: The test script execution ID to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The run policy execution
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestRun'
+        required: true
+      responses:
+        '200':
+          description: The Run Policy Execution was successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+        '404':
+          description: Run Policy Execution not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Edit::PlanExecution
+  /execution/runPolicyExecution/{plan_run_id}/testScriptExecution/{id}/terminate:
+    post:
+      tags:
+      - Execution
+      summary: Terminate Test Script Execution
+      description: Used to terminate a running test script execution
+      operationId: terminateTestScriptExecution
+      parameters:
+      - name: plan_run_id
+        in: path
+        description: The run policy execution ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: The test script execution ID to terminate
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The test script execution that was terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
+        '404':
+          description: Run Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Edit::PlanExecution
+  /execution/runPolicyExecution/{plan_run_id}/testScriptExecution/{id}/insights:
+    get:
+      tags:
+      - Execution
+      summary: Get Insights for Test Execution
+      description: Used to query insights by type and test run
+      operationId: queryInsightsByTypeAndTestExecution
+      parameters:
+      - name: plan_run_id
+        in: path
+        description: Restricts the query to insights associated with the given plan run ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: Restricts the query to insights associated with the given test ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: insight_type
+        in: query
+        description: Restricts the query to insights of the given type
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsightQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Read::PlanExecution
+  /execution/organization/{organization_id}/testScriptExecution:
+    get:
+      tags:
+      - Execution
+      summary: Retrieve Test Script Executions for an Organization
+      description: Used to retrieve all test script executions for an organization
+      operationId: queryTestScriptExecutionsByOrganization
+      parameters:
+      - name: organization_id
+        in: path
+        description: The organization ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: A test script execution status to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of test scripts matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunQueryResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Read::PlanExecution
+components:
+  schemas:
+    SkippedTest:
+      required:
+      - reason
+      - test_id
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The id of the test that was not run
+          x-mabl-scope: public
+        reason:
+          type: string
+          description: Why the test was not run
+          enum:
+          - disabled
+          x-mabl-scope: public
+      description: A test that a selection named but that mabl did not run
+    PerformanceFailureCriteriaOptionalParameters:
+      type: object
+      properties:
+        metric_aggregation:
+          type: string
+          description: The aggregation level of the metric determining failure case
+          enum:
+          - average
+          - percentile
+        metric_percentile:
+          type: integer
+          description: The percentile for the metric we are considering
+          format: int32
+        metric_error_codes:
+          type: array
+          description: Response codes that count as errors for error rate
+          items:
+            type: string
+            enum:
+            - codes_3xx
+            - codes_4xx
+            - codes_5xx
+        metric_step_ids:
+          type: array
+          description: IDs of steps to include in metric calculations
+          items:
+            type: string
+        metric_cwv_measurements:
+          type: array
+          description: Individual CWV measurements' failure criteria configuration
+          items:
+            $ref: '#/components/schemas/PerformanceFailureCriteriaCWVMeasurement'
+      description: Optional parameters related to specific failure criteria
+    TestRunResultOutcomeEnum:
+      type: string
+      enum:
+      - passed
+      - failed
+      - stopped
+    Plan:
+      type: object
+      properties:
+        id:
+          maxLength: 50
+          type: string
+          description: Plan id. Set by system.
+          x-mabl-public: true
+        cloud_safe_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP/email/Kubernetes safe)
+        organization_id:
+          type: string
+          description: DEPRECATED - use workspace_id instead
+        workspace_id:
+          type: string
+          description: The workspace id this plan belongs to
+          x-mabl-public: true
+        plan_type:
+          type: string
+          description: The type of plan
+          enum:
+          - functional
+          - performance
+          x-mabl-public: true
+        plan_source:
+          $ref: '#/components/schemas/TestSource'
+        ref_id:
+          type: string
+          description: Reference id to this plan in another system
+          x-mabl-scope: public
+        deployment_id:
+          type: string
+          description: DEPRECATED - use deployment_ids - The deployment ID associated with this run policy
+        deployment_ids:
+          type: array
+          description: The deployment IDs associated with this run policy
+          items:
+            type: string
+        uri:
+          type: string
+          description: DEPRECATED - Alias for web_url
+        web_url:
+          type: string
+          description: Optional URL override for web deployments
+        api_url:
+          type: string
+          description: Optional URL override for API deployments
+        link_agent_label:
+          type: string
+          description: DEPRECATED - use link_agent_labels
+          deprecated: true
+        link_agent_labels:
+          type: array
+          description: Optional Link Agent Labels override for the deployment
+          items:
+            type: string
+        link_bypass_mabl_proxy:
+          type: boolean
+          description: Optional link_bypass_mabl_proxy override for the deployment (mabl link only)
+        use_personal_link_agent:
+          type: boolean
+          description: 'Route this run''s test traffic through the triggering user''s own personal Link 3.0 tunnels instead of the environment''s configured Link tunnels: when any personal tunnel is used, it is the run''s only Link path. Overrides the deployment''s use_personal_link_agent for this run. The owner is the user who triggers the run, resolved server-side — there is no id to pass. By default the run stripes across every live personal tunnel the user has (e.g. one per machine); set personal_link_tunnel_label to pin it to one. When no personal tunnel can be used, the run proceeds over its normal network path rather than failing.
+
+            '
+        personal_link_tunnel_label:
+          type: string
+          description: 'Restrict use_personal_link_agent to a single personal tunnel by its (server-derived) Link label, instead of striping across all of the user''s live personal tunnels. Ignored when use_personal_link_agent is not set.
+
+            '
+        tcm_bindings:
+          type: array
+          description: The plan's external TCM bindings. Populated at read time on single plan reads when include_tcm_bindings is true; empty if the plan has no bindings; not persisted.
+          items:
+            $ref: '#/components/schemas/XrayEntityBinding'
+          x-dao-derived: true
+        credentials_id:
+          type: string
+          description: Optional ID of the credentials object to use with this run policy
+        credentials_required:
+          type: boolean
+          description: Flag indicating whether or not credentials are required for this run policy
+        http_auth_credentials_id:
+          type: string
+          description: Optional ID of credentials to pass in the HTTP request (as opposed to interactive login credentials)
+        http_auth_credentials_required:
+          type: boolean
+          description: Flag indicating whether or not HTTP auth credentials are required for this run policy
+        http_headers:
+          type: array
+          description: Custom HTTP headers to send with all requests
+          items:
+            $ref: '#/components/schemas/HttpHeader'
+        http_headers_required:
+          type: boolean
+          description: Flag indicating whether or not custom HTTP headers are required for this run policy
+        enabled:
+          type: boolean
+          description: Whether this run policy is currently enabled
+        generated:
+          type: boolean
+          description: Whether this run policy was automatically generated by the platform as opposed to being entered by a user
+        default:
+          type: boolean
+          description: Whether this is the default run policy
+        ephemeral:
+          type: boolean
+          description: Whether this is an ephemeral run policy created for an ad hoc plan run
+        created_time:
+          type: integer
+          description: time the run policy was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this run policy
+        last_updated_time:
+          type: integer
+          description: time the run policy object was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this run policy
+        name:
+          type: string
+          description: The display name of the run policy
+        description:
+          type: string
+          description: Detailed description of this run policy
+        journeys:
+          type: array
+          description: DEPRECATED - use execution_stages
+          items:
+            $ref: '#/components/schemas/TestConfiguration'
+        test_invariant_ids:
+          type: array
+          description: Server-maintained denormalized list of invariant ids of every test referenced anywhere in this plan's execution_stages. Used to index plan-by-test lookups in Datastore (which cannot index doubly-nested array paths). Do not set from clients - any value provided will be overwritten on save.
+          items:
+            type: string
+        page_load_wait:
+          type: string
+          description: The amount of time to wait after page loads, if supported by the runtime.
+          enum:
+          - FAST
+          - NORMAL
+          - SLOW
+          - SLOWER
+          - INHERIT
+          x-force-uppercase: true
+        flow_variants:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+          description: Any specific flow variants that should be used when running the plan.  Any flow variants set here will be used instead of the head version when the given flow is encountered for this plan
+        journeys_ddt_migration_backup:
+          type: array
+          description: Backup of journeys list to prevent data loss in case of failed migration
+          items:
+            $ref: '#/components/schemas/TestConfiguration'
+        parameters:
+          type: array
+          description: Execution parameters that are shared across all Tests in the Plan
+          items:
+            $ref: '#/components/schemas/ExecutionParameter'
+        triggers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trigger'
+        browser_type:
+          type: string
+          description: DEPRECATED - The browser that should be used when executing journeys, use browser_types
+          deprecated: true
+          enum:
+          - chrome
+          - edge
+          - firefox
+          - internet_explorer
+          - safari
+          - webkit
+        browser_types:
+          type: array
+          description: The browser that should be used when executing journeys
+          items:
+            type: string
+        mobile_device_ids:
+          type: array
+          description: Devices to use for mobile testing
+          items:
+            type: string
+        emulation_mode:
+          type: string
+          description: Desktop (default) or mobile device emulation. When mobile is specified, browser_types is ignored in favor of web_emulation_types.
+          enum:
+          - desktop
+          - mobile_web
+          default: desktop
+        web_emulation_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebEmulationConfiguration'
+        execution_runner_type:
+          type: string
+          description: '[Deprecated] Test execution runner to use, optional'
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+        browser_runner_types:
+          $ref: '#/components/schemas/PlanBrowserRunnerTypes'
+        nodejs_runtime_variant:
+          type: string
+          description: Override the Node.js execution runtime variant, if v2 runtime in use
+          enum:
+          - playwright
+          - puppeteer
+        tags:
+          type: array
+          description: Tag objects associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        labels:
+          type: array
+          description: User provided labels
+          items:
+            $ref: '#/components/schemas/Label'
+        run_multiplier:
+          minimum: 1
+          type: integer
+          description: if > 1, will start multiple copies of each journey run when this plan runs
+          format: int32
+        debug_level:
+          type: integer
+          description: The debugging level to use for the test run.  Higher debug levels include more debug information in the run. Default is zero and runs with standard debugging.
+        excluded_action_attributes:
+          type: array
+          description: Exclude action attributes during execution
+          items:
+            $ref: '#/components/schemas/ActionAttributeType'
+        excluded_observers:
+          type: array
+          description: Exclude specific observers during execution
+          items:
+            type: string
+        execution_stages:
+          type: array
+          description: Describes how journey should be executed
+          items:
+            $ref: '#/components/schemas/ExecutionStage'
+        retry_on_failure:
+          type: boolean
+          description: If true, runs of this plan will automatically be retried if any journey run fails
+        retry_failed_journeys_only:
+          type: boolean
+          description: If true, will only retry journeys that had failed journey runs
+        refresh_and_retry_failed_step_mode:
+          description: Runtime Recovery Refresh mode for runs of this plan; off when omitted.
+          allOf:
+          - $ref: '#/components/schemas/RefreshAndRetryFailedStepModeEnum'
+        visual_change_baseline_overwrite:
+          type: object
+          properties:
+            environment_id:
+              type: string
+              description: The ID of the environment that will serve as baseline for visual comparison
+            plan_id:
+              type: string
+              description: The ID of the plan that will serve as baseline for visual comparison
+          description: values used to substitute when looking for the baseline to do visual comparison
+        use_visual_models:
+          type: boolean
+          description: If true, use and maintain models for visual change detection
+        send_mabl_header:
+          type: boolean
+          description: Controls whether or not the x-mabl-agent header is sent on requests (can be overridden by test)
+        execution_runner_size:
+          $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+        test_recovery_agent_mode:
+          description: Test Recovery Agent mode for this plan. An explicit value (off/fail_at_end/pass) overrides the workspace-level default for all runs of this plan. Use `inherit` to clear the override and fall back to the workspace default. Omitting the field on update leaves the stored value unchanged.
+          allOf:
+          - $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+        trace_fidelity:
+          description: How much Chrome trace data to capture for runs of this plan. Use `inherit` to fall back to the runtime default; it is also how you clear a previously stored value, since an update merges into what is persisted and a null therefore leaves the stored value alone. Omitting the field on update also leaves it unchanged. A rerun request can override it for one run.
+          allOf:
+          - $ref: '#/components/schemas/TraceFidelityEnum'
+        trace_retention:
+          description: Whether runs of this plan keep the Chrome trace file. Use `inherit` to fall back to the default, `discard`; it is also how you clear a previously stored value, since an update merges into what is persisted and a null therefore leaves the stored value alone. Omitting the field on update also leaves it unchanged. A rerun request can override it for one run.
+          allOf:
+          - $ref: '#/components/schemas/TraceRetentionEnum'
+        localization_options:
+          type: array
+          description: The localization options to use when executing this plan. It's an array to support potential multi-locale testing within one plan, but for now only the first element is used.
+          items:
+            $ref: '#/components/schemas/LocalizationOptions'
+        mobile_app_file_ids:
+          type: object
+          additionalProperties:
+            type: string
+          description: Optional map of mobile platform => mobile app file ID override
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasName
+    PerformanceFailureCriteria:
+      type: object
+      properties:
+        metric_comparator:
+          type: string
+          description: The comparator determining the failure case
+          enum:
+          - greater_than
+          - less_than
+        metric_threshold:
+          type: number
+          description: The cutoff value determining the failure case
+          format: double
+        metric_type:
+          type: string
+          description: The type of metric determining failure case
+          enum:
+          - response_time
+          - http_error_rate
+          - functional_test_failure_rate
+          - core_web_vitals
+          - step_duration
+        metric_optional_parameters:
+          $ref: '#/components/schemas/PerformanceFailureCriteriaOptionalParameters'
+      description: Definition of failure criteria per workload
+    TestConfiguration:
+      required:
+      - journey_id
+      type: object
+      properties:
+        journey_id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutionParameter'
+      description: Specifies a Test that should be executed as part of a Plan
+    TraceRetentionEnum:
+      type: string
+      description: Whether the Chrome trace file is kept after a run. `keep` makes it available as the `Download step trace` artifact. `discard` publishes the same performance measures when the analysis succeeds; with no file kept there is no fallback, so a failed analysis loses the measure for that step. A run's `inherit` defers to its plan's setting; a plan's `inherit`, like no setting at all, means `discard`.
+      enum:
+      - keep
+      - discard
+      - inherit
+    FileValue:
+      required:
+      - mime_type
+      - name
+      - origin
+      - size
+      type: object
+      properties:
+        origin:
+          type: string
+          description: 'Provenance of the file. `upload` is a durable, reusable FileUpload (see file_upload_id). `download` is a transient file produced by a test run (see download_ref).
+
+            '
+          enum:
+          - upload
+          - download
+        name:
+          type: string
+          description: the base file name
+        mime_type:
+          type: string
+          description: the true MIME type (e.g. application/pdf), not a file extension
+        size:
+          type: integer
+          description: the size of the file in bytes
+          format: int64
+        checksum:
+          type: string
+          description: optional content checksum
+        file_upload_id:
+          type: string
+          description: 'Set when origin == upload; the id of a durable FileUpload (FileUpload.id). This is how a persisted or authored file variable references its file.
+
+            '
+        download_ref:
+          description: Set when origin == download; run-scoped coordinates for a file downloaded during a test run.
+          allOf:
+          - $ref: '#/components/schemas/FileDownloadReference'
+      description: 'A typed file value for a file-typed variable, reconciling field-for-field with the runtime FileValue (mabl-cli mablscript-find). `origin` selects which reference is populated: `upload` uses file_upload_id, `download` uses download_ref. This one-of invariant is NOT enforced by the schema (a oneOf/discriminator would make the generated Java/TS clients polymorphic and diverge from the flat runtime FileValue); it must be enforced by validation on the Flow/Test write path, tracked in MABL-20387, before file variables are consumed (first reader: MABL-20718). Until then a malformed file_value is accepted but unused. The run-local localUri from the runtime shape is intentionally omitted (ephemeral, never persisted).
+
+        '
+    PlanRunOptions:
+      type: object
+      properties:
+        ad_hoc_run_info:
+          $ref: '#/components/schemas/AdHocRunInfo'
+        debug:
+          type: boolean
+          description: If true will capture additional debugging information during execution
+        plan_id:
+          type: string
+          description: The ID of the plan to run
+        notify_on_complete:
+          description: Wakes this agent session when the plan run completes. Only honored when creating a plan run directly, and only for a caller allowed to arm triggers on that session.
+          allOf:
+          - $ref: '#/components/schemas/NotifyOnComplete'
+        run_policy_overrides:
+          $ref: '#/components/schemas/Plan'
+        plan_overrides:
+          $ref: '#/components/schemas/Plan'
+        source_control_tag_override:
+          type: string
+          description: The branch or tag to run this plan against as an override
+        record_video_output:
+          type: boolean
+          description: true if the run should record video
+      description: Options that affect the way a Plan is executed
+    DynamicScenarioSelection:
+      required:
+      - count
+      - query
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - dynamic
+        query:
+          type: string
+          description: The user query prompt
+        count:
+          type: integer
+          description: The estimated count of scenarios
+      description: Dynamic scenario selection parameter argument
+    ApiAuthentication:
+      required:
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          description: The authentication type to use
+          enum:
+          - apikey
+          - basic
+          - bearer
+          - noauth
+          - oauth1
+          - oauth2
+        api_key:
+          $ref: '#/components/schemas/ApiKeyAuthentication'
+        basic:
+          $ref: '#/components/schemas/BasicAuthentication'
+        bearer:
+          $ref: '#/components/schemas/BearerAuthentication'
+        oauth1:
+          $ref: '#/components/schemas/OAuth1Authentication'
+        oauth2:
+          $ref: '#/components/schemas/OAuth2Authentication'
+      description: Configuration for API authentication
+    ActionAttributeType:
+      type: string
+      description: Action Attribute Types
+      enum:
+      - FINDS_BBOX
+      - IS_MUTATING
+      - NEEDS_BBOX
+      - OBSERVABLE
+    TestSource:
+      type: string
+      description: Where the test lives
+      enum:
+      - mabl_cloud
+      - external
+      - mabl_local
+      - mabl_agent
+      x-mabl-scope: public
+    Trigger:
+      type: object
+      properties:
+        trigger_type:
+          type: string
+          description: The type of trigger
+          enum:
+          - timer
+          - event
+          - schedule
+          - insight
+          - plan_execution
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Properties that are specific to the trigger type
+      description: The various triggers that should kick off an execution of a run policy or report
+    MobilePlatformEnum:
+      type: string
+      description: The mobile platform associated with this object
+      enum:
+      - android
+      - ios
+      x-mabl-scope: public
+    PlanBrowserRunnerTypes:
+      type: object
+      properties:
+        chrome:
+          type: string
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+        firefox:
+          type: string
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+        safari:
+          type: string
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+    VariableSource:
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of source that provided this variable value
+          enum:
+          - test_run
+          - environment
+          - credential
+          - data_table
+          - step
+        id:
+          type: string
+          description: The entity ID of the source (e.g. journey run ID, environment ID)
+        name:
+          type: string
+          description: Human-readable name of the source entity
+        step_number:
+          type: string
+          description: Step display number (e.g. "3", "1.2") when type is step
+        step_id:
+          type: string
+          description: Stable step ID when type is step
+        step_run_id:
+          type: string
+          description: Step run ID when type is step
+      description: Metadata about the source of a variable value
+    UserDefinedOutputVariable:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: the fully qualified symbol name of the variable
+    MablEntityTypeEnum:
+      type: string
+      description: Types of mabl entities that can be bound to external TCM.
+      enum:
+      - test
+      - test_case
+      - plan
+      - plan_run
+      x-enum-descriptions:
+      - Binds to a mabl Test using its invariant ID.
+      - DEPRECATED. Binds to a TestCase entity. Use 'test' instead.
+      - Binds to a Plan entity.
+      - Binds to a PlanRun entity.
+    WebEmulationConfiguration:
+      required:
+      - browser_type
+      - device_emulation
+      type: object
+      properties:
+        browser_type:
+          type: string
+          description: Browser engine to be used in this emulation
+          enum:
+          - chrome
+          - firefox
+          - webkit
+        device_emulation:
+          $ref: '#/components/schemas/DeviceEmulation'
+      description: Mobile web device emulation configuration
+    PlanRunQueryResult:
+      type: object
+      properties:
+        run_policy_executions:
+          type: array
+          description: All plan runs that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/PlanRun'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for plan run query results
+    SourceControlBranch:
+      required:
+      - html_url
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: repository unique branch name
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+      description: the SCM branch associated with this object
+    PerformanceFailureCriteriaCWVMeasurement:
+      type: object
+      properties:
+        measurement_type:
+          type: string
+          enum:
+          - first_contentful_paint
+          - largest_contentful_paint
+          - cumulative_layout_shift
+          - time_to_first_byte
+          - dom_content_loaded
+        threshold:
+          type: number
+          format: double
+      description: Individual CWV measurement failure criteria configuration
+    Deployment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the deployment
+        created_time:
+          type: integer
+          description: Time at which the deployment was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this deployment
+        last_updated_time:
+          type: integer
+          description: Time at which the deployment was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this deployment
+        organization_id:
+          type: string
+          description: The ID of the organization associated with this deployment
+        application_id:
+          type: string
+          description: The ID of the application associated with this deployment
+        environment_id:
+          type: string
+          description: The ID of the environment associated with this deployment
+        name:
+          type: string
+          description: The display name of the deployment
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        uri:
+          type: string
+          description: URI of the deployment (empty for mobile_application deployment type)
+        deployment_type:
+          type: string
+          description: The type of the deployment.
+          enum:
+          - web_application
+          - api
+          - mobile_application
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+          description: Variables for this deployment.  Overrides variables with the same name specified in the environment configuration.
+        link_agent_label:
+          type: string
+          description: DEPRECATED - use link_agent_labels
+          deprecated: true
+        link_agent_labels:
+          type: array
+          description: Overrides the link_agent_labels in the associated environment
+          items:
+            type: string
+        link_bypass_mabl_proxy:
+          type: boolean
+          description: Overrides the link_bypass_mabl_proxy in the associated environment (mabl link only)
+        use_personal_link_agent:
+          type: boolean
+          description: 'Route this run''s test traffic through the triggering user''s own personal Link 3.0 tunnels (tunnels whose egress is that user''s machine) instead of the environment''s configured Link tunnels: when any personal tunnel is used, it is the run''s only Link path. The owner is the user who triggers the run, resolved server-side — there is no id to pass. By default the run stripes across every live personal tunnel the user has (e.g. one per machine); set personal_link_tunnel_label to pin it to one. When no personal tunnel can be used (no triggering user, personal tunnels are off for the workspace, or no live personal Link Agent), the run proceeds over its normal network path rather than failing.
+
+            '
+        personal_link_tunnel_label:
+          type: string
+          description: 'Restrict use_personal_link_agent to a single personal tunnel by its Link label (the tunnel-safe machine hostname the user''s `link-agents start --personal` registers under), instead of striping across all of the user''s live personal tunnels. Ignored when use_personal_link_agent is not set.
+
+            '
+        source_control_tag_target:
+          type: string
+          description: Overrides the source_control_tag_target in the associated environment
+        mobile_app_file_id:
+          type: string
+          description: Identifier of mobile app file for this deployment (empty for web_application and api deployment types)
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+      - HasOrganizationId
+    DeviceEmulationConfiguration:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: Emulation configuration display name
+          x-mabl-scope: public
+        preset_type:
+          type: string
+          description: Preset device configuration (optional)
+          enum:
+          - blackberry_playbook
+          - blackberry_z30
+          - galaxy_fold
+          - galaxy_note_3
+          - galaxy_note_ii
+          - galaxy_s5
+          - galaxy_s6
+          - galaxy_s8
+          - galaxy_s21
+          - galaxy_s22
+          - galaxy_s23
+          - galaxy_s_iii
+          - galaxy_tab_s7
+          - ipad
+          - ipad_air_2020
+          - ipad_mini
+          - ipad_mini_4
+          - ipad_pro
+          - ipad_ten_point_two
+          - iphone_11_pro_max
+          - iphone_11
+          - iphone_12
+          - iphone_12_pro_max
+          - iphone_13_mini
+          - iphone_13
+          - iphone_13_pro
+          - iphone_13_pro_max
+          - iphone_14
+          - iphone_14_pro
+          - iphone_14_plus
+          - iphone_14_pro_max
+          - iphone_15
+          - iphone_15_plus
+          - iphone_15_pro
+          - iphone_15_pro_max
+          - iphone_4
+          - iphone_5_se
+          - iphone_6_7_8
+          - iphone_6_7_8_plus
+          - iphone_x
+          - jiophone_2
+          - kindle_fire_hdx
+          - laptop_with_hidpi_screen
+          - laptop_with_mdpi_screen
+          - laptop_with_touch
+          - lg_optimus_l70
+          - microsoft_lumia_550
+          - microsoft_lumia_950
+          - moto_g4
+          - nexus_4
+          - nexus_5
+          - nexus_5x
+          - nexus_6
+          - nexus_6p
+          - nexus_7
+          - nexus_10
+          - nokia_lumia_520
+          - nokia_n9
+          - pixel_2
+          - pixel_2_xl
+          - pixel_6
+          - surface_duo
+          x-mabl-scope: public
+        user_agent:
+          type: string
+          description: Client User Agent string
+          x-mabl-scope: public
+        type:
+          type: string
+          description: General device type
+          enum:
+          - phone
+          - tablet
+          - notebook
+          x-mabl-scope: public
+        capabilities:
+          type: array
+          description: Optional device capabilities
+          items:
+            type: string
+            enum:
+            - touch
+            - mobile
+          x-mabl-scope: public
+        screen:
+          type: object
+          properties:
+            device_pixel_ratio:
+              type: number
+              description: Device pixel ratio (may be decimal)
+              format: double
+              x-mabl-scope: public
+            horizontal:
+              $ref: '#/components/schemas/DeviceScreenDimensions'
+            vertical:
+              $ref: '#/components/schemas/DeviceScreenDimensions'
+          description: Screen configuration
+          x-mabl-scope: public
+      description: Emulation configuration
+    WorkloadConfiguration:
+      type: object
+      properties:
+        test_invariant_id:
+          type: string
+          description: The invariant id of the test (tes) used to generate the workload
+        test_variant_id:
+          type: string
+          description: 'The variant id of the test (tes) used to generate the workload.  Only populated in test runs and can be found in TestRun.tes.performance_configuration.workloads. It is never populated in Test.performance_configuration.workloads.
+
+            '
+        concurrency:
+          type: integer
+          description: Number of threads/users to use for this test
+          format: int64
+        failure_criteria:
+          type: array
+          description: The failure criteria associated with this workload
+          items:
+            $ref: '#/components/schemas/PerformanceFailureCriteria'
+        failure_criteria_evaluate:
+          type: string
+          description: How to combine failure criteria
+          enum:
+          - any
+          - all
+        datatables:
+          type: array
+          description: IDs of data tables to be used for this workload
+          items:
+            type: string
+        credentials_id:
+          type: string
+          description: Optional ID of the credentials object to use with this test
+        http_auth_credentials_id:
+          type: string
+          description: Optional ID of credentials to pass in the HTTP request (as opposed to interactive login credentials)
+      description: Definition of workload for a test
+    TraceFidelityEnum:
+      type: string
+      description: How much Chrome trace data to capture. `full` records the complete category set, and is what the "Download step trace" artifact contains. `metrics` records only the categories the published performance measures are computed from, so a trace downloaded from a `metrics` run carries the film strip and timeline but not the full set of Chrome records. `inherit` defers to the next level down.
+      enum:
+      - full
+      - metrics
+      - inherit
+    ExecutionCreditWeights:
+      type: object
+      properties:
+        adhoc_ai_assertion_batch:
+          type: integer
+          description: Adhoc ai assertion batch size per billable unit
+          format: int32
+        functional_advanced_ai:
+          type: integer
+          description: Defines how many additional credits each functional test will consume due to advanced ai features
+          format: int32
+        functional_api:
+          type: integer
+          description: Defines how many credits each functional api test consume
+          format: int32
+        functional_browser:
+          type: integer
+          description: Defines how many credits each functional browser test consume
+          format: int32
+        functional_mobile:
+          type: integer
+          description: Defines how many credits each functional mobile test consume
+          format: int32
+        performance_api_15vum:
+          type: integer
+          description: Defines how many credits 15 virtual user minutes consume in a performance api test
+          format: int32
+        performance_browser_15vum:
+          type: integer
+          description: Defines how many credits 15 virtual user minutes consume in a performance browser test
+          format: int32
+      description: A mapping used to translate test executions into the equivalent execution credit usage
+    ExternalTestCase:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id associated with this test case
+          x-mabl-scope: public
+      description: External test case
+    TestRun:
+      type: object
+      description: Single test run
+      allOf:
+      - $ref: '#/components/schemas/BaseTestRunResult'
+      - type: object
+        properties:
+          id:
+            type: string
+            description: Object id.  Set by system.
+            x-mabl-scope: public
+          ad_hoc_run_info:
+            $ref: '#/components/schemas/AdHocRunInfo'
+          attempt_count:
+            type: integer
+            description: the number of times this test run was scheduled
+          cloud_safe_id:
+            type: string
+            description: Cloud safe ID representation (e.g. GCP/email/Kubernetes safe)
+          debug:
+            type: boolean
+            description: If true will capture additional debugging information during execution
+          execution_cluster_ipv4:
+            maxLength: 15
+            type: string
+            description: Execution cluster v4 IP address used for runtime type 'container'
+          execution_credit_weights:
+            $ref: '#/components/schemas/ExecutionCreditWeights'
+          execution_cloud:
+            type: string
+            description: Cloud this run is scheduled into (e.g. gcp), paired with `execution_region` and mirrored onto the `cloud` attribute of both the scheduling and the termination message. Written and cleared exactly like `execution_region`. Absent means gcp.
+            x-dao-unindexed: true
+          execution_region:
+            type: string
+            description: Region of `execution_cloud` this run is scheduled into, resolved at schedule time and mirrored onto the `region` attribute of both the scheduling and the termination message. Written by the scheduling path and cleared from caller-supplied update bodies, so write scope on test runs cannot rewrite it or redirect the run's termination. Absent means us-central1, which is what every run predating multi-region execution carries.
+            x-dao-unindexed: true
+          execution_vm_instance_name:
+            type: string
+            description: unique instance name, if runtime type 'virtual_machine'
+          execution_vm_instance_zone:
+            type: string
+            description: instance zone name, if runtime type 'virtual_machine'
+          execution_container_id:
+            type: string
+            description: execution container identifier
+          execution_runtime_id:
+            type: string
+            description: instance of execution runner unique identifier
+          execution_runtime_type:
+            type: string
+            description: execution runtime type
+            enum:
+            - container
+            - virtual_machine
+          execution_runtime_version:
+            type: string
+            description: runtime version used
+          execution_runner_type:
+            type: string
+            description: Test execution runtime to use
+            enum:
+            - cloud_java_v1
+            - cloud_nodejs_v2
+            - cloud_perftest
+          execution_runner_size:
+            $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+          functionally_completed:
+            type: boolean
+            description: Test execution functionally completed regardless of its status
+          variant_id:
+            type: string
+            description: variant id of the test
+          invariant_id:
+            type: string
+            description: invariant id of the test
+          source_control:
+            $ref: '#/components/schemas/SourceControl'
+          termination_reason:
+            type: string
+            enum:
+            - execution_complete
+            - execution_overtime
+            - heartbeat_lost
+            - insufficient_allocation
+            - insufficient_quota
+            - insufficient_resources
+            - invalid_configuration
+            - no_gpus_available
+            - startup_overtime
+            - stop_requested
+            - unknown
+            - usage_quota_exceeded
+          terminated_by_id:
+            type: string
+            description: The ID of the user who terminated this test run
+          browser:
+            type: string
+            description: Browser type that was used during this test run
+          browser_version:
+            type: string
+            description: Specific version of the browser that was used during this test run
+          journey_run_output:
+            $ref: '#/components/schemas/TestRunOutput'
+          parent_execution:
+            type: string
+            description: The id of the parent plan run
+          organization_id:
+            type: string
+            description: (deprecated) The organization that this run belongs to
+          scheduled_time:
+            type: integer
+            description: The time this test run was scheduled for execution
+            format: int64
+          last_scheduled_time:
+            type: integer
+            description: The most recent time this test run was scheduled for execution
+            format: int64
+          created_time:
+            type: integer
+            description: time the test run was created
+            format: int64
+          created_by_id:
+            type: string
+            description: The ID of the user who created this test run
+          last_updated_time:
+            type: integer
+            description: time the test run object was last updated
+            format: int64
+          last_updated_by_id:
+            type: string
+            description: The ID of the user who last updated this test run
+          output_log_uri:
+            type: string
+            description: DEPRECATED, see customer_log_uri. A link to the test output logs
+          runtime_log_uri:
+            type: string
+            description: Detailed runtime logs
+          driver_log_uri:
+            type: string
+            description: Detailed webdriver logs
+          mabldriver_log_uri:
+            type: string
+            description: Detailed Node.js logs
+          mablnet_log_uri:
+            type: string
+            description: Detailed mablnet host worker logs (runs routed over mablnet)
+          video_recording_uri:
+            type: string
+            description: Video output location
+          api_result_uri:
+            type: string
+            description: API output location
+          formatted_api_steps_uri:
+            type: string
+            description: Formatted API steps output location
+          variable_summary_uri:
+            type: string
+            description: Location of variable summary file
+          checked_links:
+            type: integer
+            description: The total number of links checked by this test run
+          broken_links:
+            type: integer
+            description: The total number of broken links found by this test run
+          checked_pages:
+            type: integer
+            description: The total number of pages checked found by this test run
+          journey:
+            $ref: '#/components/schemas/Test'
+          journey_configuration:
+            $ref: '#/components/schemas/TestConfiguration'
+          journey_parameters:
+            $ref: '#/components/schemas/TestParameters'
+          plan_id:
+            type: string
+            description: Plan id
+          link_server_id:
+            type: string
+            description: DEPRECATED - use link_server_ids
+            deprecated: true
+          link_server_ids:
+            type: array
+            description: IDs of the Link Server used during this test run, if any
+            items:
+              type: string
+          run_multiplier_index:
+            minimum: 0
+            type: integer
+            description: Zero-indexed run multiplier index for this run
+            format: int32
+            readOnly: true
+          stage_index:
+            minimum: 0
+            type: integer
+            description: Zero-indexed stage index for this run
+            format: int32
+            readOnly: true
+          journey_run_index:
+            minimum: 0
+            type: integer
+            description: Zero-indexed test run index within its plan run; describes the order in which test runs were created.
+            format: int32
+            readOnly: true
+          retry_of_id:
+            type: string
+            description: On a plan run retry, the ID of the test run from the retried plan run that this run re-runs
+            readOnly: true
+          send_mabl_header:
+            type: boolean
+            description: Controls whether or not the x-mabl-agent header is sent on requests
+          localization_options:
+            $ref: '#/components/schemas/LocalizationOptions'
+          billing_summary:
+            $ref: '#/components/schemas/TestRunBillingSummary'
+          billing_summary_billable_api_minutes:
+            type: integer
+            description: Billable API performance test minutes associated with this run (e.g. 10 min * 5 users = 75 min billable)
+            format: int64
+          billing_summary_billable_api_vuh:
+            type: number
+            description: Billable API performance test virtual user hours associated with this run (e.g. 10 min * 4 users = 1.0 billable VUH)
+            format: double
+          billing_summary_used_api_minutes:
+            type: integer
+            description: API performance test minutes used during this run (e.g. 10 min * 5 users = 50 min used)
+            format: int64
+          billing_summary_billable_browser_minutes:
+            type: integer
+            description: Billable browser performance test minutes associated with this run (e.g. 10 min * 5 users * 2.0 browser multiplier = 150 min billable)
+            format: int64
+          billing_summary_billable_browser_vuh:
+            type: number
+            description: Billable browser performance test virtual user hours associated with this run (e.g. 10 min * 4 users * 2.0 browser multiplier = 2.0 billable VUH)
+            format: double
+          billing_summary_used_browser_minutes:
+            type: integer
+            description: Browser performance test minutes used during this run (e.g. 10 min * 5 users = 50 min used)
+            format: int64
+          runner_id:
+            type: string
+            description: The ExecutionRunner id. This is currently only set by the mobile queue processor.
+          advanced_ai:
+            type: boolean
+            description: This run includes the use of features in the advanced AI package
+          step_features:
+            type: array
+            description: Feature IDs for features used in this test run
+            items:
+              type: string
+          related_agent_sessions:
+            type: array
+            description: Agent sessions associated with this test run (e.g., test recovery sessions)
+            items:
+              $ref: '#/components/schemas/RelatedAgentSession'
+            x-dao-serialize: true
+            x-dao-unindexed: true
+          page_refresh_retry_summary:
+            allOf:
+            - $ref: '#/components/schemas/PageRefreshRetrySummary'
+            x-dao-serialize: true
+            x-dao-unindexed: true
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasWorkspaceId
+    BaseTestRunResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Test run id
+          x-mabl-scope: public
+        test_ref_id:
+          type: string
+          description: reference to this test in another system
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: workspace Id
+          x-mabl-scope: public
+        started_time:
+          type: integer
+          description: Time test run was started, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        completed_time:
+          type: integer
+          description: Time test run was completed, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        journey_id:
+          type: string
+          description: (deprecated, use test_id) Test id
+          readOnly: true
+          x-mabl-scope: public
+        test_id:
+          type: string
+          description: Test id
+          readOnly: true
+          x-mabl-scope: public
+        test_labels:
+          type: array
+          description: Test labels
+          items:
+            type: string
+          x-mabl-scope: public
+        test_name:
+          type: string
+          description: Test name
+          x-mabl-scope: public
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        failure_summary:
+          $ref: '#/components/schemas/TestRunFailureSummary'
+        failure_categorization:
+          $ref: '#/components/schemas/FailureCategorization'
+        test_cases:
+          type: array
+          description: User provided external test cases
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ExternalTestCase'
+          x-mabl-scope: public
+        timing_summary:
+          $ref: '#/components/schemas/TimingSummary'
+        execution_source:
+          $ref: '#/components/schemas/TestSource'
+        status:
+          type: string
+          description: The current status of this test run
+          enum:
+          - awaiting_precondition
+          - skipped
+          - rate_limited
+          - queued
+          - running
+          - completed
+          - failed
+          - terminating
+          - terminated
+          x-mabl-scope: public
+        status_cause:
+          type: string
+          description: Cause for setting given status, such as failure cause. Updated in pairs with Status.
+          x-mabl-scope: public
+        outcome:
+          $ref: '#/components/schemas/TestRunResultOutcomeEnum'
+        customer_log_uri:
+          type: string
+          description: Customer facing output log (formerly output_log_uri)
+      description: Results of a test run
+    ExecutionParameter:
+      required:
+      - type
+      - value
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of this parameter
+          enum:
+          - basic_auth
+          - credentials
+          - ignore_variables
+          - value
+          - variable_row
+          - variables
+        name:
+          type: string
+          description: The name of this parameter
+        value:
+          type: string
+          description: The value of this parameter
+        argument:
+          type: string
+          description: Additional text data for this parameter.
+        argumentObject:
+          description: Additional data for this parameter.
+          oneOf:
+          - $ref: '#/components/schemas/DynamicScenarioSelection'
+          - $ref: '#/components/schemas/StaticScenarioSelection'
+      description: A parameter that is passed during execution of a Plan
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    TimingSummary:
+      type: object
+      properties:
+        find_time_ms:
+          type: integer
+          description: Total time spent in finds for this run
+          format: int64
+        find_extra_wait_time_ms:
+          type: integer
+          description: Extra wait time added by intelligent waiting in finds
+          format: int64
+      description: Sumamry of various timing measures for this run
+    Test:
+      type: object
+      description: Tests represent a single chunk of test logic.
+      allOf:
+      - $ref: '#/components/schemas/TestMetadata'
+      - $ref: '#/components/schemas/TestVersion'
+      - $ref: '#/components/schemas/MergedVariant'
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasWorkspaceId
+      - HasName
+      - HasVersion
+    AdHocRunInfo:
+      type: object
+      properties:
+        is_ad_hoc_run:
+          type: boolean
+          description: true if the run is an ad hoc run
+        use_execution_queue:
+          type: boolean
+          description: 'When true, an ad hoc run is scheduled the way a plan run is: durably, asynchronously, and resolving its tests against the environment''s configured source-control target. Absent or false schedules the run inline in this request, against master. An explicit source_control_tag_override outranks both. Scheduling returns before any test run exists, so the response carries no scripts and the caller polls the plan run by id for its test runs. Ignored unless is_ad_hoc_run is true.'
+      description: Metadata about the run if it is an ad hoc run
+    UserDefinedInputVariable:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: the fully qualified symbol name of the variable
+        default_value:
+          type: string
+          description: the value to use when the variable is not otherwise defined
+        value_type:
+          type: string
+          description: 'The kind of value this variable carries. Absent implies `string` for backward compatibility; existing string variables are unaffected.
+
+            '
+          enum:
+          - string
+          - file
+        file_value:
+          description: The file value; present only when value_type == file. Additive and optional, so string variables serialize unchanged.
+          allOf:
+          - $ref: '#/components/schemas/FileValue'
+    TestRecoveryAgentModeEnum:
+      type: string
+      description: Test Recovery Agent mode. Use `inherit` (plan-level only) to defer to the workspace-level default.
+      enum:
+      - 'off'
+      - fail_at_end
+      - pass
+      - inherit
+    TcmSyncTargetRun:
+      required:
+      - run_id
+      type: object
+      properties:
+        run_id:
+          maxLength: 64
+          type: string
+          description: The platform's run identifier (TestRail run id; Xray Test Execution key; Zephyr test cycle key).
+        url:
+          maxLength: 500
+          type: string
+          description: Deep link into the platform, built from the host the results were recorded against. Omitted rather than truncated when it would exceed the cap.
+        project_id:
+          maxLength: 64
+          type: string
+        suite_id:
+          maxLength: 64
+          type: string
+        created:
+          type: boolean
+          description: True when this sync created the run; false when it reused one from an earlier sync.
+        workspace_integration_id:
+          maxLength: 64
+          type: string
+          description: The integration the run belongs to, for workspaces with more than one.
+      description: An external run holding results from this plan run.
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    RetryTestRunParameters:
+      type: object
+      properties:
+        execution_stage_index:
+          type: integer
+          description: The index of the execution stage containing the journey to be retried
+          format: int32
+        journey_id:
+          type: string
+          description: The variant ID of the journey in the TestConfiguration to be retried
+        test_run_status:
+          type: string
+          description: The status of the test run to be retried, whether it was failed or skipped
+          enum:
+          - skipped
+          - failed
+        journey_parameters:
+          $ref: '#/components/schemas/TestParameters'
+      description: For a failed or skipped journey run in a plan run, this describes the location of the journey to be retried within the plan, and the TestParameters for that run. Generated journey runs on a retry will be filtered to those matching these parameters.
+    ExecutableSnippet:
+      type: object
+      properties:
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        description:
+          type: string
+          description: Summary of the Snippet
+        name:
+          type: string
+          description: The display name of the Snippet
+        body:
+          type: string
+          description: the base64 encoded body of the Snippet
+        snippet_type:
+          $ref: '#/components/schemas/SnippetTypeEnum'
+        reusable:
+          type: boolean
+          description: Indicates whether the snippet is reusable
+        workspace_id:
+          type: string
+          description: The ID of the workspace that this Snippet belongs to
+      description: Fields necessary to execute a snippet in a test or flow
+    DeviceEmulation:
+      required:
+      - device_config
+      - orientation
+      type: object
+      properties:
+        device_config:
+          $ref: '#/components/schemas/DeviceEmulationConfiguration'
+        orientation:
+          type: string
+          description: Fixed device orientation
+          enum:
+          - portrait_primary
+          - portrait_secondary
+          - landscape_primary
+          - landscape_secondary
+          x-mabl-scope: public
+      description: Emulation configuration
+    SelectedTestCredentials:
+      required:
+      - credentials_id
+      - test_id
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The id of a test in test_ids
+          x-mabl-scope: public
+        credentials_id:
+          maxLength: 64
+          type: string
+          description: The id of the login credentials the test runs with
+          x-mabl-scope: public
+      description: The login credentials one selected test runs with
+    PageRefreshRetrySummary:
+      type: object
+      properties:
+        recovered_step_count:
+          type: integer
+          description: Steps whose re-run passed, in either `pass` or `fail_at_end` mode
+          format: int32
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageRefreshRetryStep'
+      description: Runtime Recovery Refresh outcomes for a test run, written by the execution engine when the run completes. Absent when no step was reloaded.
+    Insight:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the insight
+        organization_id:
+          type: string
+          description: DEPRECATED - The ID of the organization to which this insight applies
+        workspace_id:
+          type: string
+          description: The ID of the workspace to which this insight applies
+        environment_id:
+          type: string
+          description: The ID of the environment to which this insight applies
+        application_id:
+          type: string
+          description: The ID of the application to which this insight applies
+        deployment_id:
+          type: string
+          description: The ID of the deployment to which this insight applies
+        credentials_id:
+          type: string
+          description: The ID of the credentials to which this insight applies
+        run_policy_id:
+          type: string
+          description: DEPRECATED - The ID of the run policy to which this insight applies
+        plan_id:
+          type: string
+          description: The ID of the plan to which this insight applies
+        test_script_id:
+          type: string
+          description: DEPRECATED - The ID of the test script to which this insight applies
+        branch_name:
+          type: string
+          description: The branch this insight applies to
+        journey_id:
+          type: string
+          description: The ID of the journey to which this insight applies
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        flow_id:
+          type: string
+          description: The ID of the flow, if any, to which this insight applies
+        flow_invariant_id:
+          type: string
+          description: The invariant ID of the flow, if any, to which this insight applies
+        step_id_in_journey:
+          type: string
+          description: The ID of the step within a specific journey that may repeat flows, if any, to which this insight applies
+        step_id_in_flow:
+          type: string
+          description: The ID of the step within its flow, if any, to which this insight applies
+        step_run_id:
+          type: string
+          description: The ID of a single execution of the step, if any, to which this insight applies
+        created_time:
+          type: integer
+          description: Time at which the insight was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this insight
+        last_updated_time:
+          type: integer
+          description: time the insight was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this insight
+        model_id:
+          type: string
+          description: The ID of the state detection model that triggered this insight
+        model_version:
+          type: string
+          description: The version of the state detection model that triggered this insight
+        state_detection_group_id:
+          type: string
+          description: The ID of the group of state detections used to generate this insight
+        type:
+          type: string
+          description: The type of the insight
+        current_state:
+          type: string
+          description: The current state of the insight
+        status:
+          type: string
+          description: the state
+          enum:
+          - alert
+          - warning
+          - ok
+          - improvement
+          - info
+        category:
+          type: string
+          description: the category of the insight
+        resource:
+          type: string
+          description: the resource this insight relates to
+        features:
+          type: array
+          description: Features that resulted in this insight
+          items:
+            type: string
+        grouping_fields:
+          type: array
+          description: Measurement fields that were used to calculate the state_detection_group_id of this insight
+          items:
+            type: string
+        context:
+          type: object
+          additionalProperties:
+            type: string
+          description: The context used to generate this insight (key-value pairs)
+        last_status_times:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+          description: Map from status to the last time we observed this insight type with that status
+        window_start_time:
+          type: integer
+          description: Time associated with an upstream journey execution or system event (epoch milliseconds)
+          format: int64
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        archived:
+          type: boolean
+          description: Archived insight true/false
+        useful:
+          type: boolean
+          description: Flag indicating whether or not the insight was useful to the user
+        correct:
+          type: boolean
+          description: Flag indicating whether or not the user considers the insight to be correct
+        run_policy_execution_id:
+          type: string
+          description: DEPRECATED - The ID of the run policy execution that triggered this insight
+        plan_run_id:
+          type: string
+          description: The ID of the plan run that triggered this insight
+        journey_run_id:
+          type: string
+          description: The ID of the journey run that triggered this insight
+        execution_runner_version:
+          type: string
+          description: the version of the runner the execution occured on
+        emulation_mode:
+          type: string
+          description: Desktop or mobile web emulation to which this insight applies
+        device_emulation_id:
+          type: string
+          description: Device ID to which this insight applies
+        device_emulation_preset_type:
+          type: string
+          description: Device preset type to which this insight applies
+        triggering_state_detection_id:
+          type: string
+          description: The ID of the state detection that triggered this insight
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasWorkspaceId
+    SourceControlPullRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique pull request identifier (immutable)
+          x-mabl-scope: public
+        number:
+          type: integer
+          description: the number associated with the pull request (repository unique)
+          x-mabl-scope: public
+        title:
+          type: string
+          description: the title of the pull request
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view pull request object
+          x-mabl-scope: public
+      description: the pull request associated with this object
+    FailureCategorization:
+      type: object
+      properties:
+        failure_category_id:
+          type: string
+          description: A failure category id
+        failure_synopsis:
+          type: string
+          description: DEPRECATED -- Now persisted as FailureAnalysis -- A synopsis of the failure summary
+          deprecated: true
+        failure_summary_text:
+          type: string
+          description: A summary describing the test run failure and potential root cause
+        is_failure_category_generated:
+          type: boolean
+          description: Indicates if the failure category was generated by AI
+        is_failure_summary_generated:
+          type: boolean
+          description: Indicates if the failure summary was generated by AI
+        suggested_failure_category_id:
+          type: string
+          description: Failure category ID suggested by automated analysis. Server-managed; client-supplied values are ignored on write.
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who updated the categorization of this failure
+          readOnly: true
+        last_updated_time:
+          type: integer
+          description: time the failure categorization was last updated
+          format: int64
+          readOnly: true
+        failure_reason_assignment_source:
+          type: string
+          description: How the failure reason was assigned to this test run. Server-managed; client-supplied values are ignored on write.
+          enum:
+          - manual
+          - auto
+        failure_reason_assigned_by_id:
+          type: string
+          description: The ID of the user or system that assigned the failure reason. Server-managed; client-supplied values are ignored on write.
+        failure_reason_assigned_time:
+          type: integer
+          description: Timestamp in epoch milliseconds when the failure reason was assigned. Server-managed; client-supplied values are ignored on write.
+          format: int64
+      description: Information describing the cause of a test run failure
+    ExecutionStage:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of this stage
+        concurrency:
+          type: string
+          description: How journeys should be executed
+          enum:
+          - sequential
+          - parallel
+        concurrency_limit:
+          type: integer
+          description: The maximum number of concurrent test runs for this stage. Only used with parallel execution
+          format: int32
+        always_run_stage:
+          type: boolean
+          description: if true this stage will always run regardless of whether previous stages have passed
+        always_run_journeys:
+          type: boolean
+          description: if true all journeys within this stage will be run even if a preceding journey has failed
+        journeys:
+          type: array
+          description: The journeys included in this stage; if concurrency is sequential they will be executed in this order
+          items:
+            $ref: '#/components/schemas/TestConfiguration'
+        browser_types_override:
+          type: array
+          items:
+            type: string
+        use_browser_types_override:
+          type: boolean
+          description: If true, the browser types in this stage will be used instead of the browser types from the plan
+        run_multiplier_override:
+          minimum: 1
+          type: integer
+          format: int32
+        use_run_multiplier_override:
+          type: boolean
+          description: If true, the run multiplier in this stage will be used instead of the run multiplier from the plan
+        ignore_datatables:
+          type: boolean
+          description: If true, the data tables specified in the journeys in this stage will be ignored
+      description: Describes a stage of plan execution
+    BasicAuthentication:
+      type: object
+      properties:
+        username:
+          type: string
+          description: The username to use for authentication
+        password:
+          type: string
+          description: The password to use for authentication
+      description: Configuration for basic authentication
+    RelatedAgentSession:
+      required:
+      - agent_session_id
+      - agent_type
+      type: object
+      properties:
+        agent_type:
+          $ref: '#/components/schemas/AgentType'
+        agent_session_id:
+          type: string
+          description: The ID of the agent session
+        recovery_session_properties:
+          $ref: '#/components/schemas/RecoverySessionProperties'
+        repair_notes_session_properties:
+          $ref: '#/components/schemas/RepairNotesSessionProperties'
+      description: A reference linking an entity to a related agent session
+    NotifyOnComplete:
+      required:
+      - agent_session_id
+      type: object
+      properties:
+        agent_session_id:
+          type: string
+          description: The session to wake.
+        ttl_seconds:
+          maximum: 86400
+          minimum: 60
+          type: integer
+          description: How long to wait. Defaults to two hours.
+          format: int32
+      description: Arms a trigger in the same call that starts the work, so the session is woken when the work completes and no completion can land before the trigger exists.
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    MergedVariant:
+      type: object
+      properties:
+        variant_last_updated_time:
+          type: integer
+          description: Time the variant was last updated
+          format: int64
+          x-mabl-scope: public
+        variant_last_updated_by_id:
+          type: string
+          description: ID of the user who last updated the variant
+          x-mabl-scope: public
+        cloud_safe_invariant_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP/email/Kubernetes safe)
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+    SourceControlAuthor:
+      required:
+      - avatar_url
+      - html_url
+      - id
+      - user_name
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique author id (invariant)
+          x-mabl-scope: public
+        user_name:
+          type: string
+          description: author username name (mutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: author full name (mutable)
+          x-mabl-scope: public
+        email:
+          type: string
+          description: author email
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view author
+          x-mabl-scope: public
+        avatar_url:
+          type: string
+          description: author avatar image URL
+          x-mabl-scope: public
+        user_type:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+      description: the SCM author associated with this object
+    TestTypeEnum:
+      type: string
+      description: Type of test
+      enum:
+      - api
+      - browser
+      - performance
+      - mobile
+      - desktop
+      x-mabl-scope: public
+    AndroidDeviceConfiguration:
+      type: object
+      properties:
+        api_level:
+          type: string
+          description: Version of API this device is running (34, 33).
+        abi:
+          type: string
+          description: Application boundary interface identifies combination of CPU and instruction set (x86, x86_64)
+      description: Android specific options
+    TestParameters:
+      type: object
+      properties:
+        browser_type:
+          type: string
+          description: The browser used during this test run
+          readOnly: true
+        device_emulation:
+          $ref: '#/components/schemas/DeviceEmulation'
+        mobile_device:
+          $ref: '#/components/schemas/MobileDeviceConfiguration'
+        imported_variables:
+          description: The variables that are imported from prior test run(s)
+          readOnly: true
+          x-dao-serialize: true
+          x-dao-compress: true
+        imported_variable_sources:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/VariableSource'
+          description: Source metadata for imported variables, keyed by variable name
+          x-dao-serialize: true
+          x-dao-compress: true
+        user_variables:
+          $ref: '#/components/schemas/VariableRow'
+        scenario_ids:
+          type: array
+          description: Specific scenario IDs to run, instead of running all of the scenarios defined in the user_variables.
+          items:
+            type: string
+            description: The ID of the selected scenario
+        credentials_id:
+          type: string
+          description: the id of the credentials used when creating the test version
+        http_auth_credentials_id:
+          type: string
+          description: the id of the HTTP basic auth credentials used when creating the test version
+        deployment:
+          $ref: '#/components/schemas/Deployment'
+        related_deployments:
+          type: array
+          description: Deployments related to this run.  For example, when executing a browser test there may be a related API deployment.
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Deployment'
+        source_control_tag:
+          type: string
+          description: The source control tag associated with this test run
+        page_load_wait:
+          type: string
+          description: The amount of time to wait after page loads, if supported by the runtime.
+          enum:
+          - FAST
+          - NORMAL
+          - SLOW
+          - SLOWER
+          x-force-uppercase: true
+      description: The parameters that differentiate this test run from another run of the same test within the same plan
+    ExecutionRunnerSizeEnum:
+      type: string
+      description: available runner sizes
+      enum:
+      - x1
+      - x2
+      - x3
+      - x4
+      - x5
+      - x6
+      - small
+      - medium
+      - large
+      - inherit
+    SnippetTypeEnum:
+      type: string
+      enum:
+      - css
+      - javascript
+      - xpath
+      - sql
+      - postman
+    TestSelection:
+      required:
+      - source
+      - test_ids
+      type: object
+      properties:
+        test_ids:
+          maxItems: 50
+          minItems: 1
+          type: array
+          description: The ids of the tests to run, at most 50 entries. An id repeated in the list runs once
+          items:
+            type: string
+          x-mabl-scope: public
+        impact_session_id:
+          maxLength: 64
+          type: string
+          description: Optional id of the test impact analysis session that chose these tests. It must be a test impact session in this workspace that recorded the tests it returned, and every entry in test_ids must be one of them; otherwise the event is rejected with a 400 and nothing runs. The deployment event is recorded onto the session so the analysis and what it triggered stay linked; if that record cannot be written, link_warning says so and the event and its runs are unaffected
+          x-mabl-scope: public
+        source:
+          type: string
+          description: Whether a person chose this set of tests or software did. Which software is recorded by impact_session_id, which names the session rather than a category
+          enum:
+          - agent
+          - user
+          x-mabl-scope: public
+        name:
+          maxLength: 120
+          type: string
+          description: Optional display name for the synthesized plan
+          x-mabl-scope: public
+        retry_failed_tests:
+          type: boolean
+          description: When true, if any test in the selection fails, mabl reruns only the failed tests, once, on the same deployment event. The event's succeeded is true if the rerun passes; succeeded_first_attempt stays false so a pass on the second attempt is still visible. The rerun resolves each test's branch again, so it runs the latest version there. Each rerun test counts as a test run. Off when omitted
+          x-mabl-scope: public
+        credentials:
+          maxItems: 50
+          type: array
+          description: Optional login credentials for individual selected tests, such as the plan_credentials_id a test impact analysis reports for each test. A listed test logs in with its credentials_id instead of plan_overrides.credentials_id, and a test not listed runs with plan_overrides as usual. Each test_id must be in test_ids and listed once, and each credentials_id must be credentials in this workspace; otherwise the whole event is refused and nothing runs
+          items:
+            $ref: '#/components/schemas/SelectedTestCredentials'
+          x-mabl-scope: public
+        skipped_tests:
+          type: array
+          description: Tests that were accepted but not run, with the reason. Set by mabl
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/SkippedTest'
+          x-mabl-scope: public
+        resolved_tests:
+          type: array
+          description: The version each test resolved to, and the mabl branch that version came from. Set by mabl
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ResolvedTest'
+          x-mabl-scope: public
+      description: 'An explicit set of tests to run for a deployment, in place of matching stored plans by label. mabl runs them as one synthesized plan whose identity is scoped to the event, so the runs appear on the deployment results page like any other deployment run. Supports browser or API tests, without mixing types. Each test runs at its version on the selection''s mabl branch, falling back to master when it has none there. That branch is the event''s branch (or source_control_tag), else the deployment''s branch, else the snapshot action''s from, else the environment''s branch, else master, and must be the same for every deployment that can run the selected test type. A branch mabl does not have is not an error: every test runs at master, and resolved_tests shows it. The snapshot action''s from is the exception and must name an existing branch. A test with no version on the branch or master is refused. An environment''s snapshot branch has no master fallback, so a test missing from the snapshot is refused. Each enabled test requires a compatible deployment. The first run runs the versions in resolved_tests. Retries, from retry_failed_tests or a manual rerun, resolve the branch again and run any later edit. Flows are not pinned; they resolve on the branch when each test starts.'
+    AsynchronousJob:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the TestCase
+        workspace_id:
+          type: string
+          description: Unique identifier for the associated Workspace
+        job_type:
+          type: string
+          description: Type of AsynchronousJob
+          enum:
+          - xray_sync
+          - testrail_sync
+          - zephyr_sync
+          - workspace_copy
+        status:
+          type: string
+          description: Current status of the AsynchronousJob
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+        associated_entities:
+          type: array
+          description: Type of Entity this AsynchronousJob is associated with
+          items:
+            $ref: '#/components/schemas/AsynchronousJobAssociatedEntity'
+        created_time:
+          type: integer
+          description: Time the AsynchronousJob was created
+          format: int64
+        created_by_id:
+          type: string
+          description: Identifier of the user who created the AsynchronousJob
+        last_updated_time:
+          type: integer
+          description: Time the AsynchronousJob was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: Identifier of the user who last updated the AsynchronousJob
+        error_message:
+          type: string
+          description: If failed, an optional error message associated with the failure
+        job_source:
+          type: string
+          description: What triggered this job
+          enum:
+          - test_run
+          - plan_run
+        completion_details:
+          description: Structured outcome of a test case management sync, written by the consumer with the terminal status. Absent on jobs of other types and on jobs completed before the consumer recorded it. Replaced whole on every write.
+          allOf:
+          - $ref: '#/components/schemas/TcmSyncCompletionDetails'
+          x-dao-serialize: true
+      description: An AsynchronousJob to track and provide insight into long-running background job
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+    AsynchronousJobAssociatedEntity:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of Entity this AsynchronousJob is associated with
+          enum:
+          - workspace
+          - plan_run
+        id:
+          type: string
+          description: Unique identifier for the associated Entity
+      description: Represent an entity that is associated with an AsynchronousJob
+    Label:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: name
+          x-mabl-scope: public
+        color:
+          type: string
+          description: color
+    TestRunBillingSummary:
+      type: object
+      properties:
+        billable_api_minutes:
+          type: integer
+          description: Billable API performance test minutes associated with this run (e.g. 10 min * 5 users = 75 min billable)
+          format: int64
+        billable_api_vuh:
+          type: number
+          description: Billable API performance test virtual user hours associated with this run (e.g. 10 min * 4 users = 1.0 billable VUH)
+          format: double
+        used_api_minutes:
+          type: integer
+          description: API performance test minutes used during this run (e.g. 10 min * 5 users = 50 min used)
+          format: int64
+        billable_browser_minutes:
+          type: integer
+          description: Billable browser performance test minutes associated with this run (e.g. 10 min * 5 users * 2.0 browser multiplier = 150 min billable)
+          format: int64
+        billable_browser_vuh:
+          type: number
+          description: Billable browser performance test virtual user hours associated with this run (e.g. 10 min * 4 users * 2.0 browser multiplier = 2.0 billable VUH)
+          format: double
+        used_browser_minutes:
+          type: integer
+          description: Browser performance test minutes used during this run (e.g. 10 min * 5 users = 50 min used)
+          format: int64
+      description: Summary of usage associated with this run for billing purposes
+    FileDownloadReference:
+      required:
+      - object_key
+      - test_run_id
+      type: object
+      properties:
+        id:
+          type: string
+          description: stable logical handle for this downloaded file within the producing run
+        test_run_id:
+          type: string
+          description: the id of the test run that produced this download
+        object_key:
+          type: string
+          description: 'Bucket-relative storage key (e.g. execution-output/<nonce>/downloads/<run>/<step>/<name>). Excludes the bucket name; the backend prepends the workspace bucket at resolution time.
+
+            '
+      description: 'Run-scoped coordinates locating a file downloaded during a test run. The backend derives the workspace from test_run_id and reconstructs the artifact location from object_key server-side; the bucket name is never stored here or returned to clients. Valid only within the producing run''s artifact-retention window.
+
+        '
+    OAuth2Authentication:
+      required:
+      - access_token_url
+      - client_credentials_location
+      - client_id
+      - client_secret
+      - grant_type
+      - token_variable
+      type: object
+      properties:
+        access_token_url:
+          type: string
+        client_credentials_location:
+          type: string
+          enum:
+          - basic_auth_header
+          - body
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        grant_type:
+          type: string
+          enum:
+          - client_credentials
+        scope:
+          type: string
+        token_variable:
+          type: string
+          description: The OAuth token will be stored to this variable
+      description: Configuration for OAuth 2.0 authentication
+    PerformanceConfiguration:
+      type: object
+      properties:
+        runtime:
+          type: object
+          properties:
+            duration_mins:
+              type: integer
+              description: Test duration in minutes
+              format: int64
+            ramp_up_seconds:
+              type: integer
+              description: Test ramp up time in seconds
+              format: int64
+          description: Overall duration of the performance test.
+        workloads:
+          type: array
+          description: Workloads included in this performance test
+          items:
+            $ref: '#/components/schemas/WorkloadConfiguration'
+      description: Configuration of the performance test type.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    PlanRun:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Object id.  Set by system.
+        notify_trigger_id:
+          type: string
+          description: The trigger armed by notify_on_complete. Present only on the response that created this plan run, never stored.
+        cloud_safe_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP/email/Kubernetes safe)
+        execution_stages:
+          type: array
+          description: Describes how the plan run should be executed
+          items:
+            $ref: '#/components/schemas/PlanRunExecutionStage'
+        run_policy_id:
+          type: string
+          description: Object id.  Set by system.
+        organization_id:
+          type: string
+          description: The organization that this run belongs to
+        application_id:
+          type: string
+          description: DEPRECATED - The application that this run is for
+        environment_id:
+          type: string
+          description: DEPRECATED - The environment that this run is against
+        deployment_id:
+          type: string
+          description: DEPRECATED - The deployment that this run is for
+        deployment_ids:
+          type: array
+          description: The deployment IDs associated with this run
+          items:
+            type: string
+        debug:
+          type: boolean
+          description: If true will capture additional debugging information during execution
+        status:
+          type: string
+          description: Current status of the job
+          enum:
+          - queued
+          - pre_execution
+          - scheduling
+          - scheduled
+          - succeeded
+          - failed
+          - cancelled
+          - post_execution
+          - completed
+          - terminated
+        status_cause:
+          maxLength: 1024
+          type: string
+          description: Cause for setting given status, such as failure cause. Updated in pairs with Status.
+        execution_cloud_override:
+          type: string
+          description: Cloud of `execution_region_override`. Absent means gcp. Written and stripped exactly like `execution_region_override`.
+          x-dao-unindexed: true
+        execution_region_override:
+          type: string
+          description: 'Runs every test of this plan run in a named region of `execution_cloud_override`, ahead of any execution location pinned on the workspace, account or company. Writable only through the global-admin rerun endpoint: it is stripped from plan run update bodies and is not carried over when a plan run is re-run manually, so write scope on plan runs or on integrations cannot choose a location.'
+          x-dao-unindexed: true
+        target_runtime_version:
+          type: string
+          description: Target execution test runner image tag to execute
+        target_orchestration_version:
+          type: string
+          description: Optional orchestration runtime version to use, if applicable. Otherwise use default orchestration version.
+        runtime_api_image:
+          type: string
+          description: Preview API image to use
+          x-dao-unindexed: true
+        test_recovery_agent_mode_override:
+          $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+        trace_fidelity_override:
+          $ref: '#/components/schemas/TraceFidelityEnum'
+        trace_retention_override:
+          description: Whether every test run in this plan run keeps the Chrome trace file, overriding the plan's setting. `inherit` or null defers to the plan.
+          allOf:
+          - $ref: '#/components/schemas/TraceRetentionEnum'
+        execution_source:
+          $ref: '#/components/schemas/TestSource'
+        ref_id:
+          type: string
+          description: Reference id to this plan in another system
+        plan_ref_id:
+          type: string
+          description: Reference id to this plan in another system
+        execution_runner_type:
+          type: string
+          description: '[Deprecated] Test execution runner to use, optional'
+          enum:
+          - cloud_java_v1
+          - cloud_nodejs_v2
+        browser_runner_types:
+          $ref: '#/components/schemas/PlanBrowserRunnerTypes'
+        terminated_by_id:
+          type: string
+          description: The ID of the user who terminated this plan run
+        scheduler_id:
+          type: string
+          description: the id of process that scheduled this plan run
+        trigger_type:
+          type: string
+          description: the type of trigger scheduling this plan run
+          enum:
+          - manual
+          - retry
+          - schedule
+          - customer_event
+          - insight
+          - external
+        triggering_resource_id:
+          type: string
+          description: the id of the entity that triggered the plan run
+        triggering_resource_type:
+          type: string
+          description: the type of the entity that triggered the plan run
+        triggering_resource_is_support:
+          type: boolean
+          description: this plan run was triggered by a mabl support team member
+        source_control:
+          $ref: '#/components/schemas/SourceControl'
+        source_control_tag_override:
+          type: string
+          description: The source control tag override that was used for this plan run, if any
+        created_time:
+          type: integer
+          description: time the plan run was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this plan run
+        schedule_time:
+          type: integer
+          description: time the plan run was scheduled
+          format: int64
+        completed_time:
+          type: integer
+          description: time the plan run completed
+          format: int64
+        last_updated_time:
+          type: integer
+          description: time the plan run object was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this plan run
+        scripts:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/PlanRunScripts'
+          x-dao-unindexed: true
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        ad_hoc_run_info:
+          $ref: '#/components/schemas/AdHocRunInfo'
+        test_selection:
+          description: 'The explicit test selection this run executed, copied from the deployment event that created it. Present only on runs created from a test_selection, and preserved across reruns, duplicates and automatic retries as provenance. It records what was selected, not what this particular run executed: a failed-tests-only rerun executes a subset while this field still lists the original selection. execution_stages is the record of what ran.'
+          allOf:
+          - $ref: '#/components/schemas/TestSelection'
+          x-dao-unindexed: true
+        run_policy:
+          $ref: '#/components/schemas/Plan'
+        deployment:
+          $ref: '#/components/schemas/Deployment'
+        deployments:
+          type: array
+          description: Copy of the associated Deployments at the time this run was created
+          items:
+            $ref: '#/components/schemas/Deployment'
+        execution_graph:
+          type: string
+          description: DEPRECATED - Graph describing how the journey runs in this plan run will execute
+        retry_count:
+          minimum: 0
+          type: integer
+          description: Indicates the retry count for this plan run (0 = initial run, 1 = first retry, etc.)
+          format: int32
+          readOnly: true
+        retry_of_id:
+          type: string
+          description: The ID of the plan run that triggered this retry
+          readOnly: true
+        retry_type:
+          type: string
+          description: If this is a retry, whether to retry all tests, failed tests only, or failed and skipped tests
+          enum:
+          - all
+          - failed
+          - failed_and_skipped
+        retry_journey_run_parameters:
+          type: array
+          description: Populated only on retries. List of journey run parameters on failed and (and possibly skipped) journey runs that the scheduler will filter newly generated runs on.
+          items:
+            $ref: '#/components/schemas/RetryTestRunParameters'
+        will_retry:
+          type: boolean
+          description: Whether or not the plan will retry
+          readOnly: true
+        latest_xray_sync_job:
+          description: The run's latest Xray sync job. Present only when include_latest_xray_sync is true and the run has at least one sync job.
+          allOf:
+          - $ref: '#/components/schemas/AsynchronousJob'
+          x-dao-derived: true
+      description: A single run of a plan
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      x-dao-unindexed: true
+    XrayEntityBinding:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/ExternalTcmBinding'
+      - type: object
+        properties:
+          external_entity_key:
+            type: string
+            description: 'Unique key for the associated entity in Xray. NOTE: This is not persisted to the DB. It is a convenience method for the UI.'
+      x-discriminator-existing-property: true
+    VariableRow:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the VariableRow
+        table_id:
+          type: string
+          description: The ID of the VariableRow's parent table
+        row:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variable'
+        created_time:
+          type: integer
+          description: Time at which the VariableRow was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this VariableRow
+        last_updated_time:
+          type: integer
+          description: Time at which the VariableRow was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this VariableRow
+        organization_id:
+          type: string
+          description: The ID of the organization associated with this VariableRow
+        scenario_id:
+          type: string
+          description: The ID of the particular scenario to differentiate between rows in a VariableTable
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+    TcmSyncSkippedCase:
+      required:
+      - link
+      - reason
+      type: object
+      properties:
+        link:
+          maxLength: 64
+          type: string
+          description: 'Display value: the case link as it appears on the mabl test, trimmed and clipped to 64 characters. Not guaranteed to be the exact original when the original is longer.'
+        reason:
+          $ref: '#/components/schemas/TcmSyncSkipReasonEnum'
+        detail:
+          maxLength: 200
+          type: string
+          description: The platform's own message when it has one. Never required to render.
+        test_run_id:
+          maxLength: 64
+          type: string
+          description: The mabl test run the link was read from, for link-shape skips.
+        workspace_integration_id:
+          maxLength: 64
+          type: string
+          description: Set for platform-side skips; absent for link-shape skips, which apply to every integration.
+      description: A case link that produced no result on the external platform.
+    ExternalTcmBinding:
+      type: object
+      properties:
+        external_tcm_binding_id:
+          type: string
+          description: Unique identifier for the binding
+        workspace_id:
+          type: string
+          description: Unique identifier for the associated Workspace
+        workspace_integration_id:
+          type: string
+          description: Unique identifier for the associated WorkspaceIntegration
+        external_tcm_platform:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        external_entity_id:
+          type: string
+          description: Unique identifier for the associated entity in the external test case management solution
+        mabl_entity_type:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+        mabl_entity_id:
+          type: string
+          description: Unique identifier for the associated mabl entity
+        created_time:
+          type: integer
+          description: Time at which the binding was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this binding
+        auto_sync_enabled:
+          type: boolean
+          description: Per-binding automatic result synchronization setting
+          default: false
+      description: Represents an association between an entity in an external test-case management solution, and a mabl entity
+      discriminator:
+        propertyName: external_tcm_platform
+        mapping:
+          xray: '#/components/schemas/XrayEntityBinding'
+      x-discriminator-existing-property: true
+    PageRefreshRetryOutcomeEnum:
+      type: string
+      description: What happened when Runtime Recovery Refresh reloaded the page and re-ran a failed step. `recovered` means the re-run passed and the step passed with it. `recovered_fail_at_end` means the re-run passed but the plan runs in `fail_at_end` mode, so the step kept its failure. `failed` means the re-run failed too. `reload_failed` means the page could not be reloaded. `cancelled` means the run was stopped before the re-run finished.
+      enum:
+      - recovered
+      - recovered_fail_at_end
+      - failed
+      - reload_failed
+      - cancelled
+    BearerAuthentication:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The token to use for authentication
+      description: Configuration for bearer authentication
+    OAuth1Authentication:
+      type: object
+      properties:
+        add_parameters_to_header:
+          type: boolean
+        add_empty_parameters_to_signature:
+          type: boolean
+        callback_url:
+          type: string
+        consumer_key:
+          type: string
+        consumer_secret:
+          type: string
+        include_body_hash:
+          type: boolean
+        nonce:
+          type: string
+        realm:
+          type: string
+        signature_method:
+          type: string
+          enum:
+          - HMAC-SHA1
+          - HMAC-SHA256
+          - HMAC-SHA512
+          - RSA-SHA1
+          - RSA-SHA256
+          - RSA-SHA512
+          - PLAINTEXT
+        timestamp:
+          type: string
+        token:
+          type: string
+        token_secret:
+          type: string
+        verifier:
+          type: string
+        version:
+          type: string
+      description: Configuration for OAuth 1.0 authentication
+    FlowRole:
+      type: string
+      description: The role this flow plays in the test. A teardown flow always runs at the end of the test, even if an earlier flow failed. Teardown flows must form a contiguous block at the end of the test's flow list. Defaults to normal.
+      enum:
+      - normal
+      - teardown
+      default: normal
+    Invariant:
+      type: object
+      properties:
+        id:
+          maxLength: 50
+          type: string
+          description: Unique identifier
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this test
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time the test was last updated in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this test
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time the test was created in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        revision_history:
+          type: string
+          description: Serialized graph describing the test's version history. Managed by mabl API only.
+          x-dao-unindexed: true
+        version_tags:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+          description: Mapping of version tags to version numbers that the tag is currently applied to
+          x-dao-unindexed: true
+        latest_version:
+          type: integer
+          description: The latest numeric version of this test
+          format: int64
+        organization_id:
+          type: string
+          description: (deprecated) The ID of the organization that this journey belongs to
+        workspace_id:
+          type: string
+          description: Workspace Id
+          x-mabl-scope: public
+      x-implements-interface:
+      - IsInvariant
+    SourceControlRepository:
+      required:
+      - html_url
+      - id
+      - name
+      - owner_name
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique repository id (immutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        full_name:
+          type: string
+          description: vendor unique name to identify this repo across all vendor's repos
+          x-mabl-scope: public
+        owner_name:
+          type: string
+          description: repository name unique within owner scope
+        owner:
+          $ref: '#/components/schemas/SourceControlRepositoryOwner'
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+        is_public:
+          type: boolean
+          description: true if repository publicly visible
+          x-mabl-scope: public
+        checkout_url:
+          type: string
+          description: SCM remote checkout path
+          x-mabl-scope: public
+      description: the SCM repository associated with this object
+    TestRunOutput:
+      type: object
+      properties:
+        exported_variables:
+          description: The variables that have been exported from the test run
+          x-dao-serialize: true
+          x-dao-compress: true
+        exported_variable_sources:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/VariableSource'
+          description: Step source metadata for each exported variable, keyed by variable name
+          x-dao-serialize: true
+          x-dao-compress: true
+        live_video_output:
+          $ref: '#/components/schemas/LiveVideoOutput'
+      description: Contains exported items from the results of the test run
+    ResolvedTest:
+      required:
+      - branch
+      - test_id
+      - test_variant_id
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The id of the selected test
+          x-mabl-scope: public
+        test_variant_id:
+          type: string
+          description: The id of the resolved test version, in the form test_id:version. Test runs in the deployment results report it as their test_id
+          x-mabl-scope: public
+        branch:
+          type: string
+          description: The mabl branch the version came from, which is the selection's mabl branch, or master when the test has no version there
+          x-mabl-scope: public
+      description: The version a selected test resolved to when mabl accepted the event
+    LiveVideoOutput:
+      required:
+      - password
+      - url
+      - username
+      type: object
+      properties:
+        url:
+          type: string
+          description: Source URL, fully populated with protocol, host, port
+        username:
+          type: string
+          description: Username for access
+        password:
+          type: string
+          description: Password for access
+      description: Information about live test run output
+    IterationConfiguration:
+      type: object
+      properties:
+        iteration_type:
+          type: string
+          description: The type of iteration
+          enum:
+          - fixed
+          - variable
+          - list
+          - elements
+          - variable_array
+          - condition
+          - none
+        iteration_value:
+          type: string
+          description: A number, the name of the variable containing the number, a range of values to iterate over, a CSS query whose matching elements are iterated over (one iteration per matched element when iteration_type is elements), or the name of a variable whose array value is iterated over (one iteration per array element when iteration_type is variable_array; a non-array value iterates once). Not used when iteration_type is condition, which carries its condition in iteration_condition instead.
+        iteration_condition:
+          description: 'Required when iteration_type is condition. A single step in the json_steps format, keyed If, in the same shape a conditional step group uses - for example {"If": {"target": {...}, "condition": {...}, "actionCode": "conditional_if"}}. It is evaluated before each iteration and the loop runs for as long as it holds, so a condition that is false to begin with runs the flow zero times. See iteration_limit for what happens when the loop hits its cap.'
+          x-dao-serialize: true
+        iteration_count_variable:
+          type: string
+          description: Optional variable name (elements iteration only). When set, the number of elements the loop iterated over is written to a variable with this name once the loop completes, so later steps can reference it.
+        iteration_limit:
+          type: integer
+          description: Optional maximum number of iterations (elements, variable_array, and condition iteration only). When set, the loop runs at most this many iterations even if more elements match or the array is longer. Capped at the system maximum of 500. Elements and variable_array loops stop quietly on reaching it; a condition loop whose condition still holds at the cap fails the step.
+        prefetch:
+          type: boolean
+          description: Optional (elements iteration only). When true, the loop counts all matching elements once at the start and iterates by index, which is navigation-safe; use it when the loop body navigates away from or reloads the page (for example clicking each matching row to open a detail page and then returning). When false or unset, the loop marks the matched DOM elements and revisits them each iteration, which is faster but breaks if the page changes between iterations.
+      description: Configuration for iterations on a flow
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    TcmSyncCompletionDetails:
+      required:
+      - external_tcm_platform
+      - recorded_case_count
+      - skipped_case_count
+      type: object
+      properties:
+        external_tcm_platform:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        recorded_case_count:
+          type: integer
+          description: Distinct (integration, case) pairs holding a result from this plan run, recorded by this sync or confirmed from an earlier one.
+        skipped_case_count:
+          type: integer
+          description: Distinct skipped entries, excluding other_platform links, which belong to another system; skipped_cases lists at most the first 50 entries of either kind.
+        skipped_cases:
+          maxItems: 50
+          type: array
+          items:
+            $ref: '#/components/schemas/TcmSyncSkippedCase'
+        run_count:
+          type: integer
+          description: External runs that received results; runs lists at most the first 20.
+        runs:
+          maxItems: 20
+          type: array
+          items:
+            $ref: '#/components/schemas/TcmSyncTargetRun'
+      description: What a test case management sync did, so the UI can report it without parsing text. Counts are always the full totals; the lists are capped and may be shorter than their count.
+    TcmSyncSkipReasonEnum:
+      type: string
+      description: 'Why a case link produced no result. not_a_case_id: blank, or not a case id shape for the platform. unknown_case: the platform reports no such case. unresolvable_suite: the case exists but its suite or project could not be resolved. not_in_run: the reused run does not include the case and could not be widened. platform_rejected: a per-case rejection fitting none of the above. no_outcome: every contributing mabl test run was stopped or skipped and the platform has no status for that. project_not_configured: the case belongs to a project the integration is not configured to write to. other_platform: the link belongs to another system (for example a Jira key in the shared Test Case ID field); listed for context, not counted in skipped_case_count.'
+      enum:
+      - not_a_case_id
+      - unknown_case
+      - unresolvable_suite
+      - not_in_run
+      - platform_rejected
+      - no_outcome
+      - project_not_configured
+      - other_platform
+    StepSessionProperties:
+      type: object
+      properties:
+        step_id:
+          type: string
+          description: The ID of the step the session acted on
+        step_run_id:
+          type: string
+          description: The run ID of the step the session acted on
+        step_number:
+          type: string
+          description: The step number within the flow
+      description: The step an agent session acted on
+    TestRunFailureSummary:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          description: ID of the flow in which the failure occurred
+          x-mabl-scope: public
+        flow_name:
+          type: string
+          description: Name of the flow in which the failure occurred, if any
+          x-mabl-scope: public
+        step_number:
+          type: integer
+          description: Step number within the flow where the failure occurred
+          format: int32
+          x-mabl-scope: public
+        step_id:
+          type: string
+          description: ID of the step (with respect to the flow) where the failure occurred
+          x-mabl-scope: public
+        step_id_in_test:
+          type: string
+          description: ID of the step (with respect to the test) where the failure occurred
+          x-mabl-scope: public
+        step_display_number:
+          type: string
+          description: Display number of the failing step in nested dotted notation (e.g. "2.7" or "2.7.3"). Null when unavailable; only populated for runs executed after this field shipped (not present on backfilled historical runs).
+        error:
+          type: string
+          description: Unexpected error or formatted assertion failure that was recorded
+          x-mabl-scope: public
+        image_uri:
+          type: string
+          description: URL of an image showing the error
+          x-mabl-scope: public
+        image_href:
+          type: string
+          description: URL of an image showing the error
+          x-mabl-scope: public
+        image_artifact_url:
+          type: string
+          description: API url of the image that will redirect to a newly signed image url
+          x-mabl-scope: public
+        assert_failure:
+          $ref: '#/components/schemas/AssertFailure'
+      description: Information useful for diagnosing test run failures
+    TestRunQueryResult:
+      type: object
+      properties:
+        test_script_executions:
+          type: array
+          description: All test runs that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestRun'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for test run query results
+    ExternalTcmPlatformTypeEnum:
+      type: string
+      description: Supported external test case management platforms
+      enum:
+      - xray
+      - testrail
+      - zephyr
+    MobileDeviceConfiguration:
+      required:
+      - device_manufacturer
+      - device_name
+      - os_version
+      - platform
+      - screen_dimensions
+      type: object
+      properties:
+        created_by_id:
+          type: string
+          description: The ID of the user who created this configuration
+        created_time:
+          type: integer
+          description: The time at which this configuration was created
+          format: int64
+        cloud_training_hot_pool_support:
+          type: boolean
+          description: Device is included in the cloud training hot pool
+        cloud_runner_hot_pool_support:
+          type: boolean
+          description: Device is included in the cloud runner hot pool
+          default: false
+        cloud_training_support:
+          type: boolean
+          description: Device supports cloud training
+        id:
+          maxLength: 50
+          type: string
+          description: The unique ID for this configuration entity
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this configuration
+        last_updated_time:
+          type: integer
+          description: The time at which this configuration was last updated
+          format: int64
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        device_manufacturer:
+          type: string
+          description: Device manufacturer (Apple, Google, Samsung)
+        device_name:
+          type: string
+          description: Device display name (iPhone 14, Pixel 7 Pro)
+        device_id:
+          type: string
+          description: Vendor unique device id (pixel_7_pro)
+        screen_dimensions:
+          $ref: '#/components/schemas/DeviceScreenDimensions'
+        os_version:
+          type: string
+          description: OS version (16.6.1, Oreo, 12.0)
+        retired:
+          type: boolean
+          description: The configuration is no longer supported for new runs. Retired configurations are still returned so that plans and tests already referencing them can be displayed, but they cannot be selected or executed.
+          default: false
+        android_configuration:
+          $ref: '#/components/schemas/AndroidDeviceConfiguration'
+      description: Represents a mobile device configuration (model, OS version) for executing mobile tests
+      x-implements-interface:
+      - HasId
+      - HasCreatedActivity
+    Variant:
+      type: object
+      properties:
+        id:
+          maxLength: 50
+          type: string
+          description: Unique identifier
+          x-mabl-scope: public
+        is_latest:
+          type: boolean
+          description: Indicates whether this was the latest variant when retrieved
+        version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        previous_version:
+          type: integer
+          description: The generation number of the variant that was edited to create this variant (if applicable)
+          format: int64
+        merged_version:
+          type: integer
+          description: The generation number of the variant that was merged with the previous version to create this variant (if applicable)
+          format: int64
+        merged_from_branch:
+          type: string
+          description: Name of the source branch whose version was merged to create this variant (if applicable)
+        created_on_branch:
+          type: string
+          description: Branch name the test was created on
+        change_description:
+          type: string
+          description: Description of the change between this variant and the previous variant
+        created_by_id:
+          type: string
+          description: The ID of the user who created this test
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time the test was created in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+      x-implements-interface:
+      - IsVariant
+    TestVersion:
+      type: object
+      description: A single test version
+      allOf:
+      - $ref: '#/components/schemas/Variant'
+      - type: object
+        properties:
+          manual_steps:
+            type: string
+            description: Test steps outline, used for manual tests
+          flows:
+            type: array
+            description: Array of flow IDs for flows to execute during test
+            items:
+              type: string
+          flow_configuration:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/FlowConfiguration'
+            description: Configuration for specific flow instances
+          iterations:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/IterationConfiguration'
+            description: Iteration configurations keyed by flow index (as string)
+          performance_configuration:
+            $ref: '#/components/schemas/PerformanceConfiguration'
+          api_url:
+            type: string
+            description: the API URL associated with the test
+          api_configuration:
+            $ref: '#/components/schemas/ApiConfiguration'
+          url:
+            type: string
+            description: the URL used when creating the test version
+          credentials_id:
+            type: string
+            description: the id of the credentials used when creating the test version
+          application_id:
+            type: string
+            description: the id of the application used when creating the test version
+          environment_id:
+            type: string
+            description: the id of the environment used when creating the test version
+          datatable_row_id:
+            type: string
+            description: the id of the DataTable row used when creating the test version
+          variables:
+            $ref: '#/components/schemas/UserDefinedVariables'
+          mobile_training_info:
+            $ref: '#/components/schemas/MobileTrainingInfo'
+          training_session_id:
+            type: string
+            description: the id of the training session used when creating the test version
+          agent_session_id:
+            type: string
+            description: the id of the agent session that authored this test version, if any
+          objective:
+            description: Retired; use test_objective. Ignored on every write and never returned.
+            deprecated: true
+            allOf:
+            - $ref: '#/components/schemas/TestObjective'
+          test_objective:
+            $ref: '#/components/schemas/TestObjective'
+      x-implements-interface:
+      - IsVariant
+      - HasVersion
+    StaticScenarioSelection:
+      required:
+      - count
+      - scenario_ids
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - static
+        scenario_ids:
+          type: array
+          description: The selection scenario IDs
+          items:
+            type: string
+        count:
+          type: integer
+          description: The estimated count of scenarios
+      description: Static scenario selection parameter argument
+    AgentType:
+      type: string
+      enum:
+      - test_authoring
+      - flow_authoring
+      - test_creation_planning
+      - test_planning
+      - agent_review
+      - app_summary
+      - test_run_analysis
+      - test_recovery
+      - runtime_recovery_summary_agent
+      - plan_run_analysis
+      - deployment_analysis
+      - workspace_results_analysis
+      - results_auto_analysis
+      - workspace_assistant
+      - app_modeling
+      - app_modeling_run
+      - file_assertion
+      - test_impact
+      - test_impact_shadow
+      - repair_notes
+      - external_agent
+      - exploratory_qa
+    SourceControl:
+      type: object
+      properties:
+        revision:
+          type: string
+          description: the primary source revision associated with this object
+          x-mabl-scope: public
+        revisions:
+          type: array
+          description: all source revision ids associated with this object
+          items:
+            type: string
+          x-mabl-scope: public
+        commit_username:
+          type: string
+          description: the username of the user who committed the revision associated with this object
+        branch_name:
+          type: string
+          description: the branch associated with this object
+        branches:
+          type: array
+          description: Related branches
+          items:
+            $ref: '#/components/schemas/SourceControlBranch'
+          x-mabl-scope: public
+        pull_request:
+          $ref: '#/components/schemas/SourceControlPullRequest'
+        pull_requests:
+          type: array
+          description: Related pull requests
+          items:
+            $ref: '#/components/schemas/SourceControlPullRequest'
+          x-mabl-scope: public
+        authors:
+          type: array
+          description: Related authors. Should be at least one
+          items:
+            $ref: '#/components/schemas/SourceControlAuthor'
+          x-mabl-scope: public
+        repository_url:
+          type: string
+          description: the url of the repository associated with this object
+        repository_name:
+          type: string
+          description: the name of the repository associated with this object
+        repository:
+          $ref: '#/components/schemas/SourceControlRepository'
+    ApiKeyAuthentication:
+      type: object
+      properties:
+        location:
+          type: string
+          description: The location of the API key
+          enum:
+          - header
+          - query
+        key:
+          type: string
+          description: The key to use for authentication
+        value:
+          type: string
+          description: The value to use for authentication
+      description: Configuration for API key authentication
+    RefreshAndRetryFailedStepModeEnum:
+      type: string
+      description: How a plan uses Runtime Recovery Refresh, which reloads the page and re-runs a failed browser step once. `pass` lets the test pass when the re-run passes. `fail_at_end` keeps running from the refreshed page but the step keeps its failure, so the test still fails. `off` never reloads.
+      enum:
+      - 'off'
+      - fail_at_end
+      - pass
+    TestMetadata:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Invariant'
+      - type: object
+        properties:
+          enabled:
+            type: boolean
+            description: If test is enabled to execute
+            x-mabl-scope: public
+          name:
+            type: string
+            description: The display name of the test
+            x-mabl-scope: public
+          description:
+            type: string
+            description: Brief description the test
+            x-mabl-scope: public
+          device_emulation:
+            $ref: '#/components/schemas/DeviceEmulation'
+          device_emulations:
+            type: array
+            description: List of browser device emulation configurations. Empty list means configured for desktop
+            items:
+              $ref: '#/components/schemas/DeviceEmulation'
+            x-mabl-scope: public
+          tags:
+            type: array
+            description: Tag objects associated with this test
+            items:
+              $ref: '#/components/schemas/Tag'
+          default:
+            type: boolean
+            description: Whether this test is a default test generated for all customers from a template
+          labels:
+            type: array
+            description: User provided labels
+            items:
+              $ref: '#/components/schemas/Label'
+            x-mabl-scope: public
+          datatables:
+            type: array
+            description: Array of datatable IDs for datatables that satisfy the parameter requirements of the test
+            items:
+              type: string
+            x-mabl-scope: public
+          export_variables:
+            type: boolean
+            description: Whether this test should export variables
+            x-mabl-scope: public
+          source_control_tags:
+            type: object
+            additionalProperties:
+              type: integer
+              format: int64
+            description: (deprecated, use versionTags) mapping of source control tags to version numbers the tag is currently applied to
+          ref_id:
+            type: string
+            description: Reference id to this test in another system
+            x-mobile-scope: public
+          test_type:
+            $ref: '#/components/schemas/TestTypeEnum'
+          test_source:
+            $ref: '#/components/schemas/TestSource'
+          test_cases:
+            type: array
+            description: User provided external test cases (limit 20)
+            items:
+              $ref: '#/components/schemas/ExternalTestCase'
+            x-mabl-scope: public
+          send_mabl_header:
+            type: boolean
+            description: Controls whether or not the x-mabl-agent header is sent on requests
+            x-mabl-scope: public
+          execution_runner_size:
+            $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+          mobile_platform:
+            $ref: '#/components/schemas/MobilePlatformEnum'
+          intent:
+            type: string
+            description: The intent of the test as natural language
+          test_case_id:
+            type: string
+            description: Unique identifier of the associated TestCase
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+      - HasOrganizationId
+      - HasName
+      - IsInvariant
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    InsightQueryResult:
+      type: object
+      properties:
+        insights:
+          type: array
+          description: All insights that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Insight'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    TestObjectiveState:
+      type: string
+      description: 'Whether the steps of this test version have been checked against the objective summary, and what the check found. unverified means the summary has not been checked against these steps; aligned means it was checked and the steps satisfy it; drifted means it was checked and the steps fall short, with the difference in gap; accepted_gap means the user saw that gap and chose to keep it.
+
+        Scoped to the step list stored on this version. Steps reached through a referenced flow are not covered: a flow is held by ID and resolved to a version at run time, and that resolution depends on the branch, so editing a referenced flow, or reading this version from a branch that resolves it differently, can leave the state describing steps the check never saw.'
+      enum:
+      - unverified
+      - aligned
+      - drifted
+      - accepted_gap
+    RepairNotesSessionProperties:
+      type: object
+      description: Additional properties specific to runtime repair notes agent sessions
+      allOf:
+      - $ref: '#/components/schemas/StepSessionProperties'
+    ApiConfiguration:
+      type: object
+      properties:
+        authentication:
+          $ref: '#/components/schemas/ApiAuthentication'
+        pre_request_snippets:
+          type: array
+          description: Snippets to execute before the request
+          items:
+            $ref: '#/components/schemas/ExecutableSnippet'
+        post_request_snippets:
+          type: array
+          description: Snippets to execute after the request
+          items:
+            $ref: '#/components/schemas/ExecutableSnippet'
+      description: Configuration of the API test type.
+    TestObjectiveSource:
+      type: string
+      description: Who authored the objective summary.
+      enum:
+      - user
+      - agent
+    RecoverySessionProperties:
+      type: object
+      properties:
+        decision:
+          type: string
+          description: The recovery decision; present only for test_recovery sessions
+          enum:
+          - fail
+          - resume
+      description: Additional properties specific to test recovery agent sessions
+      allOf:
+      - $ref: '#/components/schemas/StepSessionProperties'
+    UserDefinedVariables:
+      type: object
+      properties:
+        inputs:
+          type: array
+          description: the input variables for the flow/test (used before they are defined) with set semantics on name
+          items:
+            $ref: '#/components/schemas/UserDefinedInputVariable'
+        outputs:
+          type: array
+          description: the variables defined by this script with set semantics. this is not used by the test.
+          items:
+            $ref: '#/components/schemas/UserDefinedOutputVariable'
+    PageRefreshRetryStep:
+      type: object
+      properties:
+        step_id:
+          type: string
+        step_run_id:
+          type: string
+        step_number:
+          type: string
+          description: The step's display number in the run output, for example `1.3`
+        outcome:
+          $ref: '#/components/schemas/PageRefreshRetryOutcomeEnum'
+      description: One step that Runtime Recovery Refresh reloaded the page for during a test run.
+    MobileTrainingInfo:
+      type: object
+      properties:
+        device_name:
+          type: string
+          description: The name of the mobile device
+        device_api_level:
+          type: string
+          description: The API level of the mobile device
+        device_os_version:
+          type: string
+          description: The OS version of the mobile device
+        screen_dimensions:
+          $ref: '#/components/schemas/DeviceScreenDimensions'
+        is_cloud_training:
+          type: boolean
+          description: Whether the training took place on a cloud device or local device
+        is_real_device:
+          type: boolean
+          description: Whether the training took place on a real device or an emulator/simulator
+        app_file_name:
+          type: string
+          description: The mobile app file name (only present for local training)
+        app_file_id:
+          type: string
+          description: The file id of the mobile app (only present for cloud training)
+    AssertFailure:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Assert failure description without expected/found values to eliminate the need for parsing downstream
+          x-mabl-scope: public
+        expected:
+          type: string
+          description: Expected value where applicable
+          x-mabl-scope: public
+        found:
+          type: string
+          description: Value actually found during test execution
+          x-mabl-scope: public
+      description: Details about assert failure
+    SourceControlRepositoryOwner:
+      required:
+      - html_url
+      - id
+      - name
+      - owner_type
+      type: object
+      properties:
+        id:
+          type: string
+          description: vendor unique repository id (immutable)
+          x-mabl-scope: public
+        name:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        owner_type:
+          type: string
+          description: repository name unique within owner scope
+          x-mabl-scope: public
+        html_url:
+          type: string
+          description: HTML page url to view branch tree
+          x-mabl-scope: public
+        avatar_url:
+          type: string
+          description: owner avatar image URL
+          x-mabl-scope: public
+      description: the SCM repository associated with this object
+    LocalizationOptions:
+      type: object
+      properties:
+        locale:
+          type: string
+          description: The language locale identifier to run the test with, e.g. en-US, jp, etc.
+        timezone_identifier:
+          type: string
+          description: The timezone identifier to run the test with, e.g. America/Los_Angeles, etc.
+      description: Localization-related settings to apply on the browser in browser tests, e.g. timezone, locale. When not specified, cloud tests run with UTC timezone and default locale for the region of the cloud runs. Local runs use the timezone and locale of the machine running the test.
+    TestObjective:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: A natural language summary of what this test version does. Omitting it on a save keeps the stored one; sending it empty removes the objective outright, since source, state, and gap all describe a summary.
+        source:
+          $ref: '#/components/schemas/TestObjectiveSource'
+        state:
+          $ref: '#/components/schemas/TestObjectiveState'
+        gap:
+          type: string
+          description: 'When state is drifted or accepted_gap, how the steps of this version fall short of the summary. Retained after the user accepts the gap so the accepted difference stays readable. Unindexed: free prose nothing queries, and long enough to exceed Datastore''s 1500-byte ceiling on an indexed string.'
+          x-dao-unindexed: true
+      description: 'What this test version is trying to accomplish, in natural language. Version-scoped, so each version records the objective it was authored against rather than sharing one across the whole test''s history. Saved through test_objective: a full save may set it alongside steps as one version, and omitting it keeps the stored one. A field_mask=test_objective write may only record state and gap; changing summary or source that way is refused, so use a full save.'
+    PlanRunScripts:
+      type: object
+      properties:
+        id:
+          type: string
+          description: id of the journey run
+        journey_id:
+          type: string
+          description: id of the journey
+        deployment:
+          $ref: '#/components/schemas/Deployment'
+        status:
+          type: string
+          description: The current status of this journey run; valid values are the same as those of the journey run status enum
+        started_time:
+          type: integer
+          description: The time this jourey run was started
+          format: int64
+        completed_time:
+          type: integer
+          description: The time this journey run was completed
+          format: int64
+        terminated_by_id:
+          type: string
+          description: The ID of the user who terminated this journey run
+        termination_reason:
+          type: string
+          description: Why this journey run was terminated, when it was
+        status_cause:
+          type: string
+          description: Explains the current status, e.g. why a terminated run never executed
+        browser_type:
+          type: string
+          description: The browser used during this journey run
+        browser_version:
+          type: string
+          description: Specific version of the browser that was used during this journey run
+        device_emulation:
+          $ref: '#/components/schemas/DeviceEmulation'
+        stage_index:
+          minimum: 0
+          type: integer
+          description: Zero-indexed stage index for this journey run
+          format: int32
+          readOnly: true
+        journey_run_index:
+          minimum: 0
+          type: integer
+          description: Zero-indexed journey run index for this jorney run within its plan run
+          format: int32
+          readOnly: true
+        retry_of_id:
+          type: string
+          description: On a plan run retry, the ID of the journey run from the retried plan run that this run re-runs
+          readOnly: true
+        run_multiplier_index:
+          minimum: 0
+          type: integer
+          description: Zero-indexed run multiplier index for this journey run
+          format: int32
+          readOnly: true
+        variable_row_id:
+          type: string
+          description: The ID of the data table row injected into this journey run, if any
+          readOnly: true
+        source_control_tag:
+          type: string
+          description: The source control tag associated with this journey run
+    PlanRunExecutionStage:
+      type: object
+      properties:
+        concurrency:
+          type: string
+          description: How journeys should be executed
+          enum:
+          - sequential
+          - parallel
+        always_run_stage:
+          type: boolean
+          description: if true this stage will always run regardless of whether previous stages have passed
+        always_run_journeys:
+          type: boolean
+          description: if true all journeys within this stage will be run even if a preceding journey has failed
+        concurrency_limit:
+          type: integer
+          description: The maximum number of concurrent test runs for this stage. Only used with parallel execution
+          format: int32
+        execution_stats:
+          type: object
+          properties:
+            running:
+              type: integer
+              description: The number of running tests
+              format: int32
+            completed:
+              type: integer
+              description: The number of completed/successful tests
+              format: int32
+            terminated:
+              type: integer
+              description: The number of terminated tests
+              format: int32
+            failed:
+              type: integer
+              description: The number of failed tests
+              format: int32
+            total:
+              type: integer
+              description: The total number of tests
+              format: int32
+          description: Stage level execution stats
+        stage_index:
+          type: integer
+          description: The index of this stage
+          format: int32
+      description: A single execution stage of a plan run
+    Variable:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The variable name
+          x-mabl-scope: public
+        value:
+          type: string
+          description: The value associated with the variable defined in the "name" field
+          x-mabl-scope: public
+      x-mabl-scope: public
+      x-implements-interface:
+      - HasName
+    HttpHeader:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the header
+          x-mabl-scope: public
+        value:
+          type: string
+          description: The value of the header
+          x-mabl-scope: public
+        log_header_value:
+          type: boolean
+          description: Log the header value in the execution log, if not true only the header name is logged.
+          x-mabl-scope: public
+      description: An HTTP header
+    DeviceScreenDimensions:
+      required:
+      - height
+      - width
+      type: object
+      properties:
+        height:
+          type: integer
+          description: Height (pixels)
+          format: int32
+          x-mabl-scope: public
+        width:
+          type: integer
+          description: Width (pixels)
+          format: int32
+          x-mabl-scope: public
+    FlowConfiguration:
+      type: object
+      properties:
+        iterations:
+          $ref: '#/components/schemas/IterationConfiguration'
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+          description: The parameter values to pass into the flow
+        role:
+          $ref: '#/components/schemas/FlowRole'
+      description: Configuration for a flow instance
+  responses:
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

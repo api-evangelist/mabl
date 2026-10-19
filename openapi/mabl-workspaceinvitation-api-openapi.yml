@@ -1,0 +1,674 @@
+openapi: 3.2.0
+info:
+  title: mabl Workspace Invitation API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: WorkspaceInvitation
+paths:
+  /workspaces/invitations:
+    get:
+      tags:
+      - WorkspaceInvitation
+      summary: Query Organization Invitations
+      description: Used to query organization invitations
+      operationId: queryOrganizationInvitations
+      parameters:
+      - name: organization_id
+        in: query
+        description: The ID of the organization whose invitations should be retrieved
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: invitation_type
+        in: query
+        description: The type of invitation
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - email
+          - link
+      - name: invitee_email
+        in: query
+        description: The e-mail address of the invitee - applies to EMAIL or LINK invite types
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The query result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationInvitationQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::WorkspaceInvitation
+    post:
+      tags:
+      - WorkspaceInvitation
+      summary: Invite user to workspace
+      description: Create link or email based workspace invite. For email invites, invite emails are sent to the invited users.
+      operationId: createOrganizationInvitation
+      requestBody:
+        description: The workspace invitation created
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationInvitationRequest'
+        required: true
+      responses:
+        '201':
+          description: The created invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationInvitation'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          description: Invitation already exists for the specified e-mail address and workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::WorkspaceInvitation
+      x-mabl-scope: public
+  /workspaces/invitations/{id}:
+    get:
+      tags:
+      - WorkspaceInvitation
+      summary: Get Organization Invitation
+      description: Used to retrieve an organization invitation
+      operationId: getOrganizationInvitation
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization invitation to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: with_secret
+        in: query
+        description: If true, decrypt and include the accept_uri for link-type invitations. Returns 403 for email-type.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: The organization invitation with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationInvitation'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Orgainzation invitation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::WorkspaceInvitation
+    delete:
+      tags:
+      - WorkspaceInvitation
+      summary: Remove organization invitation
+      description: Used to remove an existing organization invitation
+      operationId: removeOrganizationInvitation
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization invitation to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The organization invitation that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationInvitation'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::WorkspaceInvitation
+  /workspaces/invitations/{id}/accept:
+    post:
+      tags:
+      - WorkspaceInvitation
+      summary: Accept Organization Invitation
+      description: Used to accept an organization invitation
+      operationId: acceptOrganizationInvitation
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization invitation to accept
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The user's roles after accepting the invitation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::WorkspaceInvitation
+  /workspaces/invitations/{id}/resend:
+    post:
+      tags:
+      - WorkspaceInvitation
+      summary: Resend Organization Invitation
+      description: Used to resend an organization invitation
+      operationId: resendOrganizationInvitation
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization invitation to resend
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The organization invitation that was resent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationInvitation'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Orgainzation invitation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::WorkspaceInvitation
+    patch:
+      tags:
+      - WorkspaceInvitation
+      summary: Resend Organization Invitation with Updated Accept URI
+      description: Used to resend an organization invitation after updating its accept URI
+      operationId: updateAcceptUriAndResendOrganizationInvitation
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the organization invitation to resend
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Optional overrides for the resent invitation (hostname, invitee email). If omitted, the server-default URL is used.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendInvitationOptions'
+        required: false
+      responses:
+        '200':
+          description: The organization invitation that was resent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationInvitation'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Orgainzation invitation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::WorkspaceInvitation
+components:
+  schemas:
+    ResendInvitationOptions:
+      type: object
+      properties:
+        app_host:
+          type: string
+          description: Mabl app site host. Defaults to current app.
+        accept_uri_template:
+          $ref: '#/components/schemas/InvitationAcceptUriTemplate'
+      description: Options for resending an existing invitation. Resend is idempotent at the recipient level — it re-emails the same invitee that the invitation was originally created for. To change recipient, cancel the invitation and create a new one.
+    InvitationAcceptUriTemplate:
+      required:
+      - invitation_id_variable
+      - template
+      type: object
+      properties:
+        template:
+          type: string
+          description: The URI template containing variables that will be substituted by the server
+        invitation_id_variable:
+          type: string
+          description: The variable in the template into which the invitation ID should be substituted
+      description: Deprecated. Use the top-level `app_host` field instead. Retained for backward compatibility.
+      deprecated: true
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    UserRoles:
+      required:
+      - roles
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+          x-mabl-scope: public
+    OrganizationInvitationQueryResult:
+      type: object
+      properties:
+        organization_invitations:
+          type: array
+          description: All Organization Invitations that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/OrganizationInvitation'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    UserRole:
+      required:
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        workspace_id:
+          type: string
+          description: The workspace this role applies to. Preferred over `organization_id`. At least one of `workspace_id` or `organization_id` must be present.
+          x-mabl-scope: public
+        organization_id:
+          type: string
+          description: Deprecated alias for `workspace_id`. Retained so legacy callers keep working; new code should use `workspace_id`.
+          deprecated: true
+        acknowledged_status:
+          type: string
+          description: Status marking whether the user has acknowledged the welcome message in the joined workspace
+          enum:
+          - requires_acknowledgement
+          - acknowledged
+    CreateOrganizationInvitationRequest:
+      required:
+      - invitee_role
+      type: object
+      properties:
+        invitee_email:
+          type: string
+          description: The e-mail address allowed to accept a EMAIL based invitation. Required for EMAIL based invitations.
+          x-mabl-scope: public
+        allow_list_emails:
+          type: array
+          description: The e-mail addresses allowed to accept a LINK based invitation. Required for LINK based invitations.
+          items:
+            type: string
+          x-mabl-scope: public
+        validity_seconds:
+          maximum: 604800
+          minimum: 360
+          type: integer
+          description: The number of seconds this invite should be valid for
+          x-mabl-scope: public
+        invitee_role:
+          $ref: '#/components/schemas/UserRole'
+        app_host:
+          type: string
+          description: Mabl app site host. Defaults to current app.
+        accept_uri_template:
+          $ref: '#/components/schemas/InvitationAcceptUriTemplate'
+        invite_type:
+          type: string
+          enum:
+          - email
+          - link
+          default: email
+          x-mabl-scope: public
+    OrganizationInvitation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the organization invitation
+          readOnly: true
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the organization invitation was created
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this organization invitation
+          readOnly: true
+          x-mabl-scope: public
+        last_replayed_time:
+          type: integer
+          description: Time at which the organization invitation was last replayed (re-sent)
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time at which the organization invitation was last updated
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this organization invitation
+          readOnly: true
+          x-mabl-scope: public
+        invitee_email:
+          type: string
+          description: The e-mail address to which the invitation should be sent (singular recipient)
+          x-mabl-scope: public
+        invite_type:
+          type: string
+          enum:
+          - email
+          - link
+          x-mabl-scope: public
+        allow_list_emails:
+          type: array
+          description: The e-mail addresses that are allowed to accept this invitation (when invite supports multiple invitees)
+          items:
+            type: string
+          x-mabl-scope: public
+        expiration_time:
+          type: integer
+          description: The timestamp that this invitation is valid until (max 7 days)
+          format: int64
+          x-mabl-scope: public
+        invitee_role:
+          $ref: '#/components/schemas/UserRole'
+        acceptance_api_key_id:
+          type: string
+          description: ID of key that backs this invite.
+        accepted_by_emails:
+          type: array
+          description: Email addresses that have accepted this invitation (link-type only)
+          items:
+            type: string
+          x-mabl-scope: public
+        accept_uri:
+          type: string
+          description: The URI that the user should request in order to accept the invitation. Only returned upon creation for Link type invites, otherwise passed via invite email.
+          x-mabl-scope: public
+        accept_uri_host:
+          type: string
+          description: Mabl app site host. Defaults to current app.
+          x-dao-unindexed: true
+        accept_uri_query_string:
+          type: string
+          description: Non-secret query parameters chosen at creation to populate the invite link.
+          x-dao-unindexed: true
+        is_expired:
+          type: boolean
+          description: Whether this invitation has effectively expired (server-resolved)
+          x-mabl-scope: public
+        created_by_name:
+          type: string
+          description: Display name of the user who created this invitation (server-resolved)
+          x-mabl-scope: public
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    UserRoleEnum:
+      type: string
+      description: The possible values for user role
+      enum:
+      - owner
+      - editor
+      - viewer
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

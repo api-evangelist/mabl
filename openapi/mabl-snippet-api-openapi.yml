@@ -1,0 +1,1273 @@
+openapi: 3.2.0
+info:
+  title: mabl Snippet API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Snippet
+paths:
+  /snippets/{id}/version:
+    get:
+      tags:
+      - Snippet
+      summary: Retrieve snippet versions
+      description: Used to retrieve a list of snippet versions
+      operationId: listVersions
+      parameters:
+      - name: id
+        in: path
+        description: The snippet invariant or variant ID.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The snippet variant versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariantVersionQueryResult'
+        '404':
+          description: Snippet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Snippet
+  /snippets:
+    get:
+      tags:
+      - Snippet
+      summary: Retrieve a set of Snippets by query
+      description: Used to query Snippets
+      operationId: querySnippets
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: snippet_type
+        in: query
+        description: filter on snippet_type
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/SnippetTypeEnum'
+      - name: includeNonReusable
+        in: query
+        description: Optional flag to include non-reusable snippets
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of Snippets matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnippetQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Snippet
+    post:
+      tags:
+      - Snippet
+      summary: Create a Snippet
+      description: Snippet to create
+      operationId: createSnippet
+      requestBody:
+        description: The snippet to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Snippet'
+        required: true
+      responses:
+        '201':
+          description: The complete Snippet that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Snippet'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Snippet
+  /snippets/{id}:
+    get:
+      tags:
+      - Snippet
+      summary: Retrieve Snippet
+      description: Used to retrieve an existing Snippet
+      operationId: getSnippet
+      parameters:
+      - name: id
+        in: path
+        description: The Snippet ID.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: preferLatestIfReusable
+        in: query
+        description: Optional flag to retrieve the latest version if retrieving a reusable snippet
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: The Snippet that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Snippet'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Snippet
+    delete:
+      tags:
+      - Snippet
+      summary: Remove Snippet
+      description: Used to remove existing Snippets
+      operationId: removeSnippet
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the Snippet to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Confirms the Snippet does not exist
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Snippet
+    patch:
+      tags:
+      - Snippet
+      summary: Update Snippet
+      description: Creates a new version of the Snippet
+      operationId: updateSnippet
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the Snippet to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: force
+        in: query
+        description: Force an update to occur, even if no changes have been made
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      requestBody:
+        description: The Snippet fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Snippet'
+        required: true
+      responses:
+        '200':
+          description: The updated Snippet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Snippet'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Snippet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Snippet
+  /snippets/{id}/usedBy:
+    get:
+      tags:
+      - Snippet
+      summary: Retrieve tests and flows that use this snippet
+      description: Used to retrieve tests and flows that use a specific snippet
+      operationId: getSnippetUsedBy
+      parameters:
+      - name: id
+        in: path
+        description: The snippet ID to find used-by entities for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated results of tests and flows that use the snippet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnippetUsedByQueryResult'
+        '404':
+          description: Snippet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Snippet
+  /snippets/usedBy/batch:
+    post:
+      tags:
+      - Snippet
+      summary: Retrieve tests and flows that use any of the provided snippets
+      description: Used to retrieve tests and flows that use any of the provided snippets in a single request
+      operationId: getSnippetUsedByBatch
+      parameters:
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: The snippet IDs to find used-by entities for
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnippetUsedByBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: Paginated results of tests and flows that use any of the provided snippets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnippetUsedByBatchQueryResult'
+        '400':
+          description: Invalid request - too many snippet IDs or invalid IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Snippet
+  /recover/snippet/{id}:
+    post:
+      tags:
+      - Snippet
+      summary: Recover Snippet
+      description: Used to undelete a snippet
+      operationId: recoverSnippet
+      parameters:
+      - name: id
+        in: path
+        description: The Snippet ID.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The Snippet that was recovered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Snippet'
+        '404':
+          description: Snippet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Recover::Snippet
+  /snippets/generated:
+    post:
+      tags:
+      - Snippet
+      summary: Generates code for a Snippet
+      operationId: generateCode
+      requestBody:
+        description: Code request metadata
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateCodeRequest'
+        required: true
+      responses:
+        '201':
+          description: The prompt result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateCodeResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::AiGeneration
+  /snippets/search/ids:
+    post:
+      tags:
+      - Snippet
+      summary: Search for snippet IDs by task
+      description: Used to query snippets by task using snippet search references for most recent version
+      operationId: querySnippetIdsByTask
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace associated with this query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant snippets.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryEntityByTaskParameters'
+        required: true
+      responses:
+        '200':
+          description: Snippet IDs matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityIdQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Snippet
+  /snippets/search:
+    post:
+      tags:
+      - Snippet
+      summary: Search active reusable snippet references by full-text token query
+      description: 'Token-based full-text search across snippet name, task summary, and body
+
+        using the Spanner SEARCH() function and `idx_snippet_search_reference_search`.
+
+        Returns rich per-snippet rows ordered by SCORE() descending.
+
+
+        The `query` follows Spanner search syntax — multi-token queries default to AND.
+
+        Callers can join keywords with " OR " for broader recall, or quote phrases.'
+      operationId: searchSnippetReferences
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace to search in.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnippetSearchTextRequest'
+        required: true
+      responses:
+        '200':
+          description: Search results ordered by relevance score (descending).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnippetSearchTextResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Snippet
+components:
+  schemas:
+    MobileTrainingInfo:
+      type: object
+      properties:
+        device_name:
+          type: string
+          description: The name of the mobile device
+        device_api_level:
+          type: string
+          description: The API level of the mobile device
+        device_os_version:
+          type: string
+          description: The OS version of the mobile device
+        screen_dimensions:
+          $ref: '#/components/schemas/DeviceScreenDimensions'
+        is_cloud_training:
+          type: boolean
+          description: Whether the training took place on a cloud device or local device
+        is_real_device:
+          type: boolean
+          description: Whether the training took place on a real device or an emulator/simulator
+        app_file_name:
+          type: string
+          description: The mobile app file name (only present for local training)
+        app_file_id:
+          type: string
+          description: The file id of the mobile app (only present for cloud training)
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    VariantVersion:
+      type: object
+      properties:
+        variant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        previous_version:
+          type: integer
+          description: The generation number of the variant that was edited to create this variant (if applicable)
+          format: int64
+        merged_version:
+          type: integer
+          description: The generation number of the variant that was merged with the previous version to create this variant (if applicable)
+          format: int64
+        next_versions:
+          type: array
+          description: An array of generation numbers for the variants that were edited over this variant (if applicable)
+          items:
+            type: integer
+            format: int64
+        created_on_branch:
+          type: string
+          description: Name of the branch the variant was created on
+        change_description:
+          type: string
+          description: Description of the change between this variant and the previous variant
+        source_control_tags:
+          type: array
+          description: An array of source control tags that apply to this variant version
+          items:
+            type: string
+        created_time:
+          type: integer
+          description: Time at which the variant was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this variant
+        agent_session_id:
+          type: string
+          description: The ID of the agent session that authored this variant, if any. Not set for snippets.
+        mobile_training_info:
+          description: Device and app details recorded when a mobile variant was trained. Not set for snippets or non-mobile variants.
+          allOf:
+          - $ref: '#/components/schemas/MobileTrainingInfo'
+      x-implements-interface:
+      - HasCreatedActivity
+    VariantVersionQueryResult:
+      type: object
+      properties:
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        latest_version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        versions:
+          type: array
+          description: The versions for this entity.
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/VariantVersion'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    DeviceScreenDimensions:
+      required:
+      - height
+      - width
+      type: object
+      properties:
+        height:
+          type: integer
+          description: Height (pixels)
+          format: int32
+          x-mabl-scope: public
+        width:
+          type: integer
+          description: Width (pixels)
+          format: int32
+          x-mabl-scope: public
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    GenerateCodeResult:
+      type: object
+      properties:
+        body:
+          type: string
+          description: The code generated by the AI model
+        description:
+          type: string
+          description: An optional extended description field for the generated result
+        prompt_id:
+          type: string
+          description: The id of the prompt request
+        session_id:
+          type: string
+          description: The session id for the prompt
+        success:
+          type: boolean
+          description: Indicates if the code generation was successful
+        title:
+          type: string
+          description: A brief description of the generated code result
+        user_id:
+          type: string
+          description: The id of the user asking for the prompt
+        workspace_id:
+          type: string
+          description: The workspace id
+      description: Code generator result
+    FlowTypeEnum:
+      type: string
+      description: the type of flow
+      enum:
+      - validate_page
+      - login
+      - verify_url
+      - mablscript
+      - check_links
+      - visual_page_validation
+      - api
+      - mobile
+      - desktop
+      x-mobile-scope: public
+    Label:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: name
+          x-mabl-scope: public
+        color:
+          type: string
+          description: color
+    SnippetUsedByBatchQueryResult:
+      type: object
+      properties:
+        entities:
+          type: array
+          description: Combined list of tests and flows that use any of the provided snippets, ordered by snippet ID and then entity invariant ID
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/UsedByEntity'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for batch snippet used-by query results
+    SnippetUsedByQueryResult:
+      type: object
+      properties:
+        entities:
+          type: array
+          description: Combined list of tests and flows that use the snippet, ordered by entity invariant ID
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/UsedByEntity'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for snippet used-by query results
+    Snippet:
+      type: object
+      description: Snippets represent a single snippet for use in journeys
+      allOf:
+      - $ref: '#/components/schemas/ExecutableSnippet'
+      - type: object
+        properties:
+          id:
+            maxLength: 50
+            type: string
+            description: Object id.  Set by system.
+          is_latest:
+            type: boolean
+            description: Indicates whether this was the latest variant when retrieved
+          version:
+            type: integer
+            description: The generation number of this variant
+            format: int64
+          previous_version:
+            type: integer
+            description: The generation number of the variant that was edited to create this variant (if applicable)
+            format: int64
+          merged_version:
+            type: integer
+            description: The generation number of the variant that was merged with the previous version to create this variant (if applicable)
+            format: int64
+          created_on_branch:
+            type: string
+            description: Name of the branch the snippet's variant was created on
+          change_description:
+            type: string
+            description: Description of the change between this variant and the previous variant
+          last_updated_time:
+            type: integer
+            description: time the Snippet object was last updated
+            format: int64
+          last_updated_by_id:
+            type: string
+            description: The ID of the user who last updated this Snippet
+          variant_last_updated_time:
+            type: integer
+            description: time the Snippet's variant was last updated
+            format: int64
+          variant_last_updated_by_id:
+            type: string
+            description: The ID of the user who last updated this Snippet's variant
+          created_time:
+            type: integer
+            description: time the Snippet was created
+            format: int64
+          created_by_id:
+            type: string
+            description: The ID of the user who created this Snippet
+          labels:
+            type: array
+            description: User provided labels
+            items:
+              $ref: '#/components/schemas/Label'
+          parameters:
+            type: array
+            description: Snippet parameters supplied to the snippet
+            items:
+              $ref: '#/components/schemas/SnippetParameter'
+          revision_history:
+            type: string
+            description: Graph describing the snippet's version history
+          database_connection_id:
+            type: string
+            description: If the snippet is a SQL snippet, the database connection id.
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+      - HasName
+      - HasVersion
+    UsedByEntity:
+      type: object
+      properties:
+        resource_id:
+          type: string
+          description: The ID of the resource used by this entity
+        entity_invariant_id:
+          type: string
+          description: The invariant ID of the entity
+        entity_type:
+          type: string
+          description: The type of entity (test or flow)
+          enum:
+          - test
+          - flow
+        entity_name:
+          type: string
+          description: The name of the entity
+        workspace_id:
+          type: string
+          description: The workspace ID of the entity
+        created_time:
+          type: integer
+          description: When the entity was created
+          format: int64
+        last_updated_time:
+          type: integer
+          description: When the entity was last updated
+          format: int64
+        branches:
+          type: array
+          description: Branches of the test or flow that use this resource
+          items:
+            type: string
+          default: []
+      description: A description of an entity (test or flow) that uses a resource (file upload, etc.)
+    SnippetParameter:
+      required:
+      - id
+      - name
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the parameter
+        name:
+          type: string
+          description: The name of the parameter
+        description:
+          type: string
+          description: The description of the parameter
+        default_value:
+          type: string
+          description: The default value of the parameter
+      description: A parameter passed to the snippet as an argument
+    GenerateCodeRequest:
+      required:
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The ID of the workspace that is requesting the code generation
+        snippet_type:
+          $ref: '#/components/schemas/SnippetTypeEnum'
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        name:
+          type: string
+          description: The name of the snippet
+        prompt:
+          type: string
+          description: Client provided prompt for code snippet generation
+        additional_context:
+          type: string
+          description: Additional context for the code generation request
+        parameters:
+          type: array
+          description: Snippet parameters supplied to the snippet
+          items:
+            $ref: '#/components/schemas/SnippetParameter'
+        current_snippet:
+          type: string
+          description: The current snippet body for the code generation request
+        session_id:
+          type: string
+          description: The session id for the prompt
+        override:
+          $ref: '#/components/schemas/GenAiOverrideOptions'
+      description: Codegen request configurations
+      x-implements-interface:
+      - HasWorkspaceId
+    QueryEntityParameters:
+      required:
+      - limit
+      type: object
+      properties:
+        application_id:
+          type: string
+          description: Restricts the query to entities of a given application ID
+        database_connection_id:
+          type: string
+          description: Restricts the query to entities with the given database connection ID (only used for Snippet queries)
+        flow_type:
+          $ref: '#/components/schemas/FlowTypeEnum'
+        limit:
+          minimum: 1
+          type: integer
+          description: The max results to return
+          format: int32
+          default: 10
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        reusable:
+          type: boolean
+          description: If specified, will only return entities with the given reusable flag
+        snippet_types:
+          type: array
+          description: Restricts the query to entities with the given snippet type (only used for Snippet queries)
+          items:
+            $ref: '#/components/schemas/SnippetTypeEnum'
+    EntityIdQueryResult:
+      required:
+      - ids
+      type: object
+      properties:
+        ids:
+          minItems: 0
+          type: array
+          items:
+            type: string
+    MobilePlatformEnum:
+      type: string
+      description: The mobile platform associated with this object
+      enum:
+      - android
+      - ios
+      x-mabl-scope: public
+    ExecutableSnippet:
+      type: object
+      properties:
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        description:
+          type: string
+          description: Summary of the Snippet
+        name:
+          type: string
+          description: The display name of the Snippet
+        body:
+          type: string
+          description: the base64 encoded body of the Snippet
+        snippet_type:
+          $ref: '#/components/schemas/SnippetTypeEnum'
+        reusable:
+          type: boolean
+          description: Indicates whether the snippet is reusable
+        workspace_id:
+          type: string
+          description: The ID of the workspace that this Snippet belongs to
+      description: Fields necessary to execute a snippet in a test or flow
+    SnippetSearchTextResult:
+      required:
+      - matches
+      - truncated
+      type: object
+      properties:
+        matches:
+          type: array
+          description: Matches ordered by score descending.
+          items:
+            $ref: '#/components/schemas/SnippetSearchTextMatch'
+        truncated:
+          type: boolean
+          description: True if any match had its body truncated.
+      description: Result envelope for snippet text search.
+    GenAiOverrideOptions:
+      type: object
+      properties:
+        model_id:
+          type: string
+          description: The model ID to use instead of the default model used by the endpoint
+          readOnly: true
+        meta_prompt:
+          type: string
+          description: The meta-prompt to use instead of the default used by the endpoint
+          readOnly: true
+        temperature:
+          type: number
+          description: The temperature to use instead of the default used by the endpoint
+          format: float
+          readOnly: true
+    SnippetSearchTextMatch:
+      required:
+      - invariant_id
+      - matched_field
+      - score
+      type: object
+      properties:
+        invariant_id:
+          type: string
+          description: The invariant id of the snippet.
+        name:
+          type: string
+          description: The display name of the snippet.
+        description:
+          type: string
+          description: Description of the snippet.
+        task_summary:
+          type: string
+          description: AI-generated summary of what the snippet does.
+        labels:
+          type: array
+          description: Labels attached to this snippet.
+          items:
+            type: string
+        snippet_type:
+          $ref: '#/components/schemas/SnippetSearchTypeEnum'
+        last_updated_time:
+          type: string
+          description: When the snippet was last edited.
+          format: date-time
+        body_text:
+          type: string
+          description: Decoded body text, capped at 8000 characters server-side.
+        body_truncated:
+          type: boolean
+          description: True if the body was truncated at the server-side cap.
+        score:
+          type: number
+          description: SCORE() value from Spanner full-text search.
+          format: double
+        matched_field:
+          type: string
+          description: Which search field was used.
+          enum:
+          - combined
+          - name
+          - task_summary
+          - body
+      description: A single full-text search match.
+    QueryEntityByTaskParameters:
+      required:
+      - limit
+      - task_description
+      type: object
+      description: Parameters for querying entities by task description
+      allOf:
+      - $ref: '#/components/schemas/QueryEntityParameters'
+      - type: object
+        properties:
+          session_id:
+            type: string
+            description: The id of the mabl AI session, if any
+          task_description:
+            type: string
+            description: The task description
+          rerank_with_llm:
+            type: boolean
+            description: 'When true (default), the candidate list is LLM-reranked against the task
+
+              description before the top `limit` are returned. When false, the LLM rerank
+
+              is skipped and the raw datastore-ordered candidates (ASC by `COSINE_DISTANCE`)
+
+              are returned. Either way the response honors `limit`; the internal candidate
+
+              widening multiplier varies by endpoint (endpoints that group results after the
+
+              fetch keep the widened set so grouping does not underfill `limit`).
+
+              '
+            default: true
+    SnippetSearchTypeEnum:
+      type: string
+      enum:
+      - javascript
+      - sql
+      - postman
+    SnippetSearchTextRequest:
+      required:
+      - query
+      type: object
+      properties:
+        query:
+          maxLength: 2000
+          minLength: 1
+          type: string
+          description: Full-text search query in Spanner search syntax. Whitespace-only queries return zero results.
+        search_field:
+          type: string
+          description: Which tokenlist column to search. Defaults to combined.
+          enum:
+          - combined
+          - name
+          - task_summary
+          - body
+          default: combined
+        snippet_types:
+          type: array
+          description: Optional filter restricting results to the listed snippet types.
+          items:
+            $ref: '#/components/schemas/SnippetSearchTypeEnum'
+        updated_after:
+          type: string
+          description: Only return snippets last updated at or after this timestamp.
+          format: date-time
+        limit:
+          maximum: 200
+          minimum: 1
+          type: integer
+          description: Maximum number of results to return.
+          default: 20
+      description: Request body for snippet full-text search.
+    TestTypeEnum:
+      type: string
+      description: Type of test
+      enum:
+      - api
+      - browser
+      - performance
+      - mobile
+      - desktop
+      x-mabl-scope: public
+    SnippetUsedByBatchRequest:
+      required:
+      - snippet_ids
+      type: object
+      properties:
+        snippet_ids:
+          maxItems: 100
+          minItems: 1
+          type: array
+          description: Array of snippet IDs to find used-by entities for
+          items:
+            type: string
+      description: Request body for batch snippet used-by query
+    SnippetQueryResult:
+      type: object
+      properties:
+        snippets:
+          type: array
+          description: All Snippets that matched the query
+          items:
+            $ref: '#/components/schemas/Snippet'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+      description: result envelope for Snippet query results
+    SnippetTypeEnum:
+      type: string
+      enum:
+      - css
+      - javascript
+      - xpath
+      - sql
+      - postman
+  responses:
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

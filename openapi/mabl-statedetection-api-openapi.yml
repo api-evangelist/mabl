@@ -1,0 +1,689 @@
+openapi: 3.2.0
+info:
+  title: mabl State Detection API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: StateDetection
+paths:
+  /stateDetections:
+    post:
+      tags:
+      - StateDetection
+      summary: Create StateDetection
+      description: Used to create new state detections
+      operationId: createStateDetection
+      requestBody:
+        description: The state detection to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateDetection'
+        required: true
+      responses:
+        '201':
+          description: The state detection that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateDetection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::StateDetection
+  /stateDetections/{id}:
+    get:
+      tags:
+      - StateDetection
+      summary: Get state detection
+      description: Used to retrieve a state detection by ID
+      operationId: getStateDetection
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the state detection to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The state detection with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateDetection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Insight not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::StateDetection
+    put:
+      tags:
+      - StateDetection
+      summary: Put StateDetection
+      description: Used to create or set a state detection
+      operationId: putStateDetection
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the state detection to put
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The state detection to put
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateDetection'
+        required: true
+      responses:
+        '200':
+          description: The updated state detection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateDetection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::StateDetection
+    delete:
+      tags:
+      - StateDetection
+      summary: Remove StateDetection
+      description: Used to remove a state detection
+      operationId: removeStateDetection
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the state detection to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The state detection was successfully removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateDetection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::StateDetection
+    patch:
+      tags:
+      - StateDetection
+      summary: Update StateDetection
+      description: Used to update existing state detections
+      operationId: updateStateDetection
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the state detection to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateDetection'
+        required: true
+      responses:
+        '200':
+          description: The updated state detection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateDetection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: StateDetection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::StateDetection
+  /stateDetections/workspace/{workspace_id}:
+    get:
+      tags:
+      - StateDetection
+      summary: Query StateDetections
+      description: Used to query state detections
+      operationId: queryStateDetectionsByCategory
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Restricts the query to state detections associated with the given run policy execution ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: category
+        in: query
+        description: Restricts the query to state detections for the given category
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: group_id
+        in: query
+        description: Restricts the query to state detections with the given group ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: start
+        in: query
+        description: The start of the time range to restrict results to
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end
+        in: query
+        description: The end of the time range to restrict results to
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateDetectionQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::StateDetection
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    StateDetectionQueryResult:
+      type: object
+      properties:
+        stateDetections:
+          type: array
+          description: All state detections that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/StateDetection'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    StateDetectionUserMetadata:
+      type: object
+      properties:
+        review_status:
+          type: string
+          description: Current user review status
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    TestTypeEnum:
+      type: string
+      description: Type of test
+      enum:
+      - api
+      - browser
+      - performance
+      - mobile
+      - desktop
+      x-mabl-scope: public
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    StateDetection:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the state detection
+        organization_id:
+          type: string
+          description: DEPRECATED - The ID of the organization to which this state detection applies - see workspace_id
+        workspace_id:
+          type: string
+          description: The ID of the workspace to which this state detection applies
+        environment_id:
+          type: string
+          description: The ID of the environment to which this state detection applies
+        application_id:
+          type: string
+          description: The ID of the application to which this state detection applies
+        deployment_id:
+          type: string
+          description: The ID of the deployment to which this state detection applies
+        credentials_id:
+          type: string
+          description: The ID of the credentials to which this state detection applies
+        run_policy_id:
+          type: string
+          description: DEPRECATED - The ID of the run policy to which this state detection applies - see plan_id
+          x-dao-unindexed: true
+        plan_id:
+          type: string
+          description: The ID of the plan to which this state detection applies
+        created_time:
+          type: integer
+          description: Time at which the state detection was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this state detection
+        last_updated_time:
+          type: integer
+          description: time the state detection was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this state detection
+        expire_datetime:
+          type: string
+          description: Date time entity will be automatically purged from storage
+          format: date-time
+          x-dao-unindexed: true
+        run_policy_execution_id:
+          type: string
+          description: DEPRECATED - The ID of the run policy execution to which this state detection applies - see plan_run_id
+          x-dao-unindexed: true
+        plan_run_id:
+          type: string
+          description: The ID of the run policy execution to which this state detection applies
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        journey_run_id:
+          type: string
+          description: The ID of the journey run to which this state detection applies
+        test_script_id:
+          type: string
+          description: DEPRECATED - The ID of the journey to which this state detection applies - see journey_id
+          x-dao-unindexed: true
+        journey_id:
+          type: string
+          description: The ID of the journey to which this state detection applies
+        journey_invariant_id:
+          type: string
+          description: The invariant ID of the journey to which this state detection applies
+        operation_id:
+          type: string
+          description: The ID of the operation_id to which this state detection applies
+        flow_id:
+          type: string
+          description: The ID of the flow to which this state detection applies
+        flow_invariant_id:
+          type: string
+          description: The invariant ID of the flow to which this state detection applies
+        action_code:
+          type: string
+          description: The code (type) of the action to which this state detection applies
+        action_index:
+          type: integer
+          description: DEPRECATED - The index of the executed action (with respect to the execution of the journey) to which this state detection applies
+          format: int64
+          x-dao-unindexed: true
+        flow_step_index:
+          type: integer
+          description: DEPRECATED - The index of the step (with respect to the flow) to which this state detection applies
+          format: int64
+          x-dao-unindexed: true
+        flow_source_index_in_journey:
+          type: integer
+          description: The index of the flow source within the journey
+          format: int64
+          x-dao-unindexed: true
+        step_source_index_in_flow:
+          type: integer
+          description: The index of the step source within its respective flow source
+          format: int64
+          x-dao-unindexed: true
+        action_source_index_in_step:
+          type: integer
+          description: The index of the action source within its respective step source
+          format: int64
+          x-dao-unindexed: true
+        cumulative_action_source_index_in_flow:
+          type: integer
+          description: The index of the action source within its respective flow source
+          format: int64
+          x-dao-unindexed: true
+        flow_run_index_in_journey:
+          type: integer
+          description: The index of the executed flow within the journey
+          format: int64
+          x-dao-unindexed: true
+        step_run_index_in_flow:
+          type: integer
+          description: The index of the executed step within its respective executing flow
+          format: int64
+          x-dao-unindexed: true
+        action_run_index_in_step:
+          type: integer
+          description: The index of the executed action within its respective executing step
+          format: int64
+          x-dao-unindexed: true
+        cumulative_action_run_index_in_flow:
+          type: integer
+          description: The index of the executed action within its respective executing flow
+          format: int64
+          x-dao-unindexed: true
+        step_id_in_journey:
+          type: string
+          description: The ID of the step within a specific journey that may repeat flows, if any, to which this state detection applies
+          x-dao-unindexed: true
+        step_id_in_flow:
+          type: string
+          description: The ID of the step within its flow, if any, to which this state detection applies
+          x-dao-unindexed: true
+        step_run_id:
+          type: string
+          description: The ID of a single execution of the step, if any, to which this state detection applies
+          x-dao-unindexed: true
+        group_id:
+          type: string
+          description: The ID of the group of state detections to which this one belongs
+        model_id:
+          type: string
+          description: The ID of the state detection model that created this state detection
+        model_version:
+          type: string
+          description: The version of the state detection model that created this state detection
+        resource:
+          type: string
+          description: The resource under test to which this state detection applies
+        category:
+          type: string
+          description: The category of the state detection indicating what aspect of system state this represents
+        current_state:
+          type: string
+          description: The current state detected (for its corresponding category) in this state detection
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: The additional properties describing this state detection (key-value pairs)
+          x-dao-unindexed: true
+        features_used:
+          type: array
+          description: Features that resulted in this state detection
+          items:
+            type: string
+          x-dao-unindexed: true
+        grouping_fields:
+          type: array
+          description: Measurement fields that were used to calculate the group_id of this state detection
+          items:
+            type: string
+          x-dao-unindexed: true
+        is_ad_hoc_run:
+          type: boolean
+          description: Flag indicating if this state detection was from an ad-hoc run
+          x-dao-unindexed: true
+        is_transient:
+          type: boolean
+          description: Flag indicating whether state detection is considered potentially transient
+          x-dao-unindexed: true
+        is_indeterminate:
+          type: boolean
+          description: Flag indicating whether state detection is considered indeterminate
+          x-dao-unindexed: true
+        should_retry:
+          type: boolean
+          description: Flag indicating whether run policy execution corresponding to this state detection will be retried to gather further state information
+          x-dao-unindexed: true
+        branch_name:
+          type: string
+          description: The branch, if any, associated with this state detection
+        browser:
+          type: string
+          description: The browser that this state detection is measuring against
+        browser_version:
+          type: string
+          description: The browser version that this state detection is measuring against
+        execution_runner_version:
+          type: string
+          description: the version of the runner the execution occured on
+        emulation_mode:
+          type: string
+          description: Desktop or mobile web emulation to which this state detection applies
+        device_emulation_id:
+          type: string
+          description: Device ID to which this state detection applies
+        device_emulation_preset_type:
+          type: string
+          description: Device preset type to which this state detection applies
+        window_start_time:
+          type: integer
+          description: Time associated with an upstream journey execution or system event (epoch milliseconds)
+          format: int64
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+          x-dao-unindexed: true
+        useful:
+          type: boolean
+          description: Flag indicating whether or not the state detection was useful to the user
+        correct:
+          type: boolean
+          description: Flag indicating whether or not the user considers the state detection to be correct
+        user_metadata:
+          $ref: '#/components/schemas/StateDetectionUserMetadata'
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasWorkspaceId
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

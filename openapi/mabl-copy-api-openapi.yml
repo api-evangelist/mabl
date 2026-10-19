@@ -1,0 +1,288 @@
+openapi: 3.2.0
+info:
+  title: mabl Copy API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Copy
+paths:
+  /copy/organizations:
+    post:
+      tags:
+      - Copy
+      summary: Copy Organization
+      description: DEPRECATED - Use copyWorkspace instead. Used to copy the contents of one organization to another. This is not idempotent - multiple calls will create multiple copies in the destination.
+      operationId: copyOrganization
+      parameters:
+      - name: source_workspace_id
+        in: query
+        description: The ID of the organization from which to copy content
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: destination_workspace_id
+        in: query
+        description: The id of the destination workspace
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: include_defaults
+        in: query
+        description: 'Include default tests during copy; defaults to false.
+
+          If this parameter is provided, the "tests" scope will be implicitly included to the copy operation
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: included_tests
+        in: query
+        description: "A list of the tests to copy. If empty, all tests that are not in the excluded_list will be copied. \nIf this parameter is provided, the \"tests\" scope will be implicitly included to the copy operation\n"
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: excluded_tests
+        in: query
+        description: 'A list of ids of tests to exclude from the copy.
+
+          If this parameter is provided, the "tests" scope will be implicitly included to the copy operation
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceCopyEntityScopeBody'
+      responses:
+        '200':
+          description: Operation was successful
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      deprecated: true
+      x-mabl-action: Create::Workspace
+  /copy/workspaces:
+    post:
+      tags:
+      - Copy
+      summary: Copy Workspace
+      description: Used to copy the contents of one workspace to another. This is not idempotent - multiple calls will create multiple copies in the destination. Both workspaces must be in the same account or company.
+      operationId: copyWorkspace
+      requestBody:
+        description: Copy workspace request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CopyWorkspaceRequest'
+        required: true
+      responses:
+        '200':
+          description: Operation was successful
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Workspace
+components:
+  schemas:
+    WorkspaceCopyEntityScope:
+      type: string
+      description: An entity type supported by workspace copy
+      enum:
+      - snippets
+      - flows
+      - tests
+    CopyWorkspaceRequest:
+      required:
+      - destination_workspace_id
+      - source_workspace_id
+      type: object
+      properties:
+        source_workspace_id:
+          type: string
+          description: The id of the workspace from which to copy
+        destination_workspace_id:
+          type: string
+          description: The id of the destination workspace
+        include_defaults:
+          type: boolean
+          description: 'Include default tests during copy; defaults to false.
+
+            If this parameter is provided, the "tests" scope will be implicitly included to the copy operation
+
+            '
+        included_tests:
+          type: array
+          description: "A list of the tests to copy. If empty, all tests that are not in the excluded_list will be copied. \nIf this parameter is provided, the \"tests\" scope will be implicitly included to the copy operation\n"
+          items:
+            type: string
+        excluded_tests:
+          type: array
+          description: 'A list of ids of tests to exclude from the copy.
+
+            If this parameter is provided, the "tests" scope will be implicitly included to the copy operation
+
+            '
+          items:
+            type: string
+        entity_scopes:
+          type: array
+          description: "A list of entity types to include in the copy, if nothing is provided all supported entity types will be copied. \nSome entities of the excluded types may need to be created due to entity dependencies.\n"
+          items:
+            $ref: '#/components/schemas/WorkspaceCopyEntityScope'
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    WorkspaceCopyEntityScopeBody:
+      type: object
+      properties:
+        entity_scopes:
+          type: array
+          description: "A list of entity types to include in the copy, if nothing is provided all supported entity types will be copied. \nSome entities of the excluded types may need to be created due to entity dependencies.\n"
+          items:
+            $ref: '#/components/schemas/WorkspaceCopyEntityScope'
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

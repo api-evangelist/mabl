@@ -1,0 +1,518 @@
+openapi: 3.2.0
+info:
+  title: mabl Validation Policy API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: ValidationPolicy
+paths:
+  /validationPolicy/resolve:
+    post:
+      tags:
+      - ValidationPolicy
+      summary: Check a validation policy file and resolve its stages
+      description: Parses a validation policy written as YAML, checks it, and returns it with every default filled and the settings each application uses at each stage. An invalid policy is a 200 with valid false and its errors. Reads and stores nothing.
+      operationId: resolveValidationPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationPolicyResolveRequest'
+        required: true
+      responses:
+        '200':
+          description: The policy's errors, or the policy and its resolved stages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationPolicyResolution'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Validation
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    ValidationPolicyRequirement:
+      required:
+      - kind
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/ValidationPolicyRequirementKindEnum'
+        suite:
+          type: string
+          description: The suite whose plans run. Suite only, required
+        run:
+          type: boolean
+          description: Whether impacted tests run, or are only reported. Impacted only, default true
+        retry_failed:
+          type: boolean
+          description: Whether a failed test runs once more. Impacted only, default true in a required stage
+        budget_minutes:
+          maximum: 120
+          minimum: 10
+          type: integer
+          description: Minutes the requirement may take. Suite 10 to 120, default 30; impacted 30 to 120, default 50
+        when_nothing_ran:
+          $ref: '#/components/schemas/ValidationPolicyNothingRanEnum'
+        waiver:
+          $ref: '#/components/schemas/ValidationPolicyWaiver'
+      description: One requirement of a stage. suite takes suite, budget_minutes and waiver; impacted takes run, retry_failed, budget_minutes, when_nothing_ran and waiver
+    ValidationPolicyApplication:
+      required:
+      - mabl_application
+      type: object
+      properties:
+        mabl_application:
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+          type: string
+          description: The mabl application id
+        trigger_paths:
+          minItems: 1
+          type: array
+          description: Globs of the files whose change makes this application's checks run. Absent is the whole repository
+          items:
+            type: string
+        analysis_roots:
+          minItems: 1
+          type: array
+          description: Pathspecs of the files the impact analysis reads. Absent is the whole repository
+          items:
+            type: string
+        target:
+          $ref: '#/components/schemas/ValidationPolicyTarget'
+        stages:
+          $ref: '#/components/schemas/ValidationPolicyStages'
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    ValidationPolicyStageSettings:
+      type: object
+      properties:
+        mabl_application:
+          type: string
+        trigger_paths:
+          type: array
+          items:
+            type: string
+        analysis_roots:
+          type: array
+          items:
+            type: string
+        target:
+          description: The stage's target over the application's, field by field
+          allOf:
+          - $ref: '#/components/schemas/ValidationPolicyTarget'
+        enforce:
+          $ref: '#/components/schemas/ValidationPolicyEnforceEnum'
+        mabl_branch:
+          $ref: '#/components/schemas/ValidationPolicyMablBranchEnum'
+        author_gaps:
+          $ref: '#/components/schemas/ValidationPolicyAuthorGaps'
+        suite_checks:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ValidationPolicySuiteCheck'
+          description: One check per suite requirement, by suite name
+        impacted:
+          $ref: '#/components/schemas/ValidationPolicyImpactedSettings'
+        suite_labels:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Plan labels of every suite the stage names, through its suite requirements or its impacted requirement's include.suites and logins_from
+      description: What one run at one stage uses. A setting left out is null
+    ValidationPolicyImpactedInclude:
+      type: object
+      properties:
+        suites:
+          type: array
+          description: Only tests in these suites' plans run. Empty or absent means no suite restriction
+          items:
+            type: string
+    ValidationPolicyWaiver:
+      required:
+      - label
+      type: object
+      properties:
+        label:
+          maxLength: 100
+          minLength: 1
+          type: string
+        needs:
+          $ref: '#/components/schemas/ValidationPolicyWaiverNeedsEnum'
+      description: A PR label that waives the requirement
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ValidationPolicySuite:
+      required:
+      - plan_labels
+      type: object
+      properties:
+        plan_labels:
+          minItems: 1
+          type: array
+          description: The suite runs every enabled plan carrying one of these labels
+          items:
+            type: string
+    ValidationPolicyWaiverNeedsEnum:
+      type: string
+      description: In a merge group, whether this PR or every PR in the group needs the label. Default this-pr
+      enum:
+      - this-pr
+      - every-pr-in-group
+    ValidationPolicyAuthorGapsWhenEnum:
+      type: string
+      description: When tests are authored for changes no test covers. Default never
+      enum:
+      - never
+      - on-request
+    ValidationPolicyOthersEnum:
+      type: string
+      description: Which other tests run. write-free, the default, runs a test only when none of its steps write
+      enum:
+      - write-free
+    ValidationPolicyAuthorGaps:
+      type: object
+      properties:
+        when:
+          $ref: '#/components/schemas/ValidationPolicyAuthorGapsWhenEnum'
+    ValidationPolicyImpactedTrusted:
+      type: object
+      properties:
+        test_labels:
+          type: array
+          description: Tests carrying these labels run without a step read. Default empty
+          items:
+            type: string
+    ValidationPolicy:
+      required:
+      - applications
+      - version
+      type: object
+      properties:
+        version:
+          maximum: 1
+          minimum: 1
+          type: integer
+          description: Must be 1
+        suites:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ValidationPolicySuite'
+          description: Named sets of plans, by suite name. Default empty
+        impacted:
+          $ref: '#/components/schemas/ValidationPolicyImpactedRules'
+        applications:
+          minProperties: 1
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ValidationPolicyApplication'
+          description: The repository's applications, by name
+      description: Which mabl tests a repository's changes must pass, per application and stage
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    ValidationPolicyImpactedSettings:
+      type: object
+      properties:
+        run:
+          type: boolean
+        retry_failed:
+          type: boolean
+        budget_minutes:
+          type: integer
+        when_nothing_ran:
+          $ref: '#/components/schemas/ValidationPolicyNothingRanEnum'
+        waiver:
+          $ref: '#/components/schemas/ValidationPolicyWaiver'
+        include:
+          $ref: '#/components/schemas/ValidationPolicyImpactedInclude'
+        exclude:
+          $ref: '#/components/schemas/ValidationPolicyImpactedExclude'
+        trusted:
+          $ref: '#/components/schemas/ValidationPolicyImpactedTrusted'
+        logins_from:
+          type: array
+          items:
+            type: string
+        others:
+          $ref: '#/components/schemas/ValidationPolicyOthersEnum'
+      description: The stage's impacted requirement with the policy's impacted rules
+    ValidationPolicyMablBranchEnum:
+      type: string
+      description: 'The mabl branch tests run from: match-pr, the default, uses the PR''s mabl branch when there is one'
+      enum:
+      - match-pr
+      - master
+    ValidationPolicyStage:
+      type: object
+      properties:
+        enforce:
+          $ref: '#/components/schemas/ValidationPolicyEnforceEnum'
+        mabl_branch:
+          $ref: '#/components/schemas/ValidationPolicyMablBranchEnum'
+        target:
+          description: Replaces the application's target field by field. Default empty
+          allOf:
+          - $ref: '#/components/schemas/ValidationPolicyTarget'
+        author_gaps:
+          $ref: '#/components/schemas/ValidationPolicyAuthorGaps'
+        require:
+          type: array
+          description: 'What must pass: suite requirements and at most one impacted requirement, each suite named once. Default empty'
+          items:
+            $ref: '#/components/schemas/ValidationPolicyRequirement'
+    ValidationPolicyStages:
+      type: object
+      properties:
+        pull_request:
+          $ref: '#/components/schemas/ValidationPolicyStage'
+        merge_queue:
+          $ref: '#/components/schemas/ValidationPolicyStage'
+        release:
+          $ref: '#/components/schemas/ValidationPolicyStage'
+      description: The checks at each stage. A stage left out has no check
+    ValidationPolicyError:
+      required:
+      - column
+      - line
+      - message
+      - path
+      type: object
+      properties:
+        path:
+          type: string
+          description: Where in the policy, as applications.web.stages.merge_queue.require[1].kind; empty for the file
+        message:
+          type: string
+        line:
+          type: integer
+          description: 1-based line of the nearest key or list item on the path
+        column:
+          type: integer
+          description: 1-based column of the nearest key or list item on the path
+    ValidationPolicyResolution:
+      required:
+      - errors
+      - valid
+      type: object
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          description: The first 100 errors in file order; empty when valid
+          items:
+            $ref: '#/components/schemas/ValidationPolicyError'
+        policy:
+          description: The policy with every default filled. Valid only
+          allOf:
+          - $ref: '#/components/schemas/ValidationPolicy'
+        stages:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ValidationPolicyResolvedStages'
+          description: The settings each application uses at each of its stages, by application name. Valid only; an application with no stages is left out
+    ValidationPolicyTarget:
+      type: object
+      properties:
+        url:
+          type: string
+          description: An https URL; {sha7} is replaced with the commit's short SHA
+        environment:
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+          type: string
+          description: The mabl environment id
+        credentials:
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+          type: string
+          description: The mabl credentials id
+      description: Where tests run. A field left out is passed by the caller
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    ValidationPolicyNothingRanEnum:
+      type: string
+      description: The outcome when no impacted test ran. Impacted only, default clear
+      enum:
+      - clear
+    ValidationPolicyEnforceEnum:
+      type: string
+      description: advisory, the default, reports; required fails the check
+      enum:
+      - advisory
+      - required
+    ValidationPolicySuiteCheck:
+      type: object
+      properties:
+        budget_minutes:
+          type: integer
+        waiver:
+          $ref: '#/components/schemas/ValidationPolicyWaiver'
+    ValidationPolicyImpactedRules:
+      type: object
+      properties:
+        include:
+          $ref: '#/components/schemas/ValidationPolicyImpactedInclude'
+        exclude:
+          $ref: '#/components/schemas/ValidationPolicyImpactedExclude'
+        trusted:
+          $ref: '#/components/schemas/ValidationPolicyImpactedTrusted'
+        logins_from:
+          type: array
+          description: Suites whose plans' logins an impacted test runs with. Default empty
+          items:
+            type: string
+        others:
+          $ref: '#/components/schemas/ValidationPolicyOthersEnum'
+      description: The rules every impacted requirement uses
+    ValidationPolicyResolveRequest:
+      required:
+      - yaml
+      type: object
+      properties:
+        yaml:
+          maxLength: 65536
+          type: string
+          description: The policy file's text, YAML 1.1 without aliases, tags or a second document
+    ValidationPolicyImpactedExclude:
+      type: object
+      properties:
+        median_minutes_over:
+          maximum: 120
+          minimum: 0
+          type: integer
+          description: A test whose median passed run is longer than this is not run; 0 is off. Default 10
+    ValidationPolicyRequirementKindEnum:
+      type: string
+      enum:
+      - suite
+      - impacted
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    ValidationPolicyResolvedStages:
+      type: object
+      properties:
+        pull_request:
+          $ref: '#/components/schemas/ValidationPolicyStageSettings'
+        merge_queue:
+          $ref: '#/components/schemas/ValidationPolicyStageSettings'
+        release:
+          $ref: '#/components/schemas/ValidationPolicyStageSettings'
+      description: An application's resolved stages. A stage left out has no check
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

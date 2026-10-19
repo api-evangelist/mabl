@@ -1,0 +1,556 @@
+openapi: 3.2.0
+info:
+  title: mabl Mobile App File API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: MobileAppFile
+paths:
+  /mobile/apps/files/queryFiles:
+    post:
+      tags:
+      - MobileAppFile
+      summary: Queries and returns matching mobile app files
+      description: Used to query mobile app files, POST operation to allow passing in query options in the body.
+      operationId: queryMobileAppFiles
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination (default is 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Options for getting the relevant requests
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileAppFileQueryOptions'
+      responses:
+        '200':
+          description: Array of mobile app files matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAppFileQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::MobileAppFile
+  /mobile/apps/files:
+    post:
+      tags:
+      - MobileAppFile
+      summary: Create/store the metadata for a previously uploaded mobile app file
+      operationId: createMobileAppFile
+      requestBody:
+        description: The mobile app file to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileAppFile'
+        required: true
+      responses:
+        '201':
+          description: The complete mobile app file that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAppFile'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::MobileAppFile
+  /mobile/apps/files/{id}:
+    get:
+      tags:
+      - MobileAppFile
+      summary: Get a mobile app file
+      operationId: getMobileAppFile
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the mobile app file
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: sign
+        in: query
+        description: true to generate a signed URL that can be used to download the mobile app file
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: The mobile app file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAppFile'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::MobileAppFile
+    delete:
+      tags:
+      - MobileAppFile
+      summary: Remove mobile app file including its backing file
+      operationId: removeMobileAppFile
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the mobile app file
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The mobile app file that was removed
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: mobile app file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::MobileAppFile
+    patch:
+      tags:
+      - MobileAppFile
+      summary: Update mutable properties of this mobile app file
+      operationId: updateMobileAppFile
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the mobile app file
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileAppFile'
+      responses:
+        '200':
+          description: The updated mobile app file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAppFile'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: mobile app file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::MobileAppFile
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse409:
+      description: Conflicts with the current state of the resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    SortDirectionEnum:
+      type: string
+      description: Direction of sort when ordering query results
+      enum:
+      - ASC
+      - DESC
+      x-mabl-scope: public
+    MobileAppFileSortColumn:
+      required:
+      - column_name
+      - sort_direction
+      type: object
+      properties:
+        column_name:
+          type: string
+          description: Column name to sort by
+          enum:
+          - created_time
+          - name
+          - platform
+          - size
+          - version
+          x-mabl-scope: public
+        sort_direction:
+          $ref: '#/components/schemas/SortDirectionEnum'
+    MobileAppFileQueryResult:
+      type: object
+      properties:
+        mobile_app_files:
+          type: array
+          description: All mobile app files that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/MobileAppFile'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+      description: result envelope for mobile qpp query results
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    MobileAppFile:
+      type: object
+      properties:
+        branch:
+          type: string
+          description: The branch from which this mobile app file was built
+          x-mabl-scope: public
+        content_type:
+          type: string
+          description: The content type of the mobile app file file
+          x-mabl-scope: public
+        crc32c_hex:
+          type: string
+          description: The CRC32C checksum for this mobile app file, encoded as a hex string
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this mobile app file
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: The time at which this mobile app file was created
+          format: int64
+          x-mabl-scope: public
+        download_url:
+          type: string
+          description: Signed URL used to download this mobile app file
+          x-mabl-scope: public
+        extension:
+          type: string
+          description: 'The file extension, defined as all characters of the name following (but not including) the last "." , e.g. "apk" or "app"
+
+            The specific extension is important in the case of mobile because the emulators/simulators/devices validate
+
+            that the app file is the expected type by inspecting the extension.  Some platforms, like ios, use multiple
+
+            extensions, so it is not always possible to infer the extension from the platform.
+
+            '
+          x-mabl-scope: public
+        id:
+          maxLength: 50
+          type: string
+          description: The unique ID for this mobile app file
+          x-mabl-scope: public
+        labels:
+          type: array
+          description: Labels associated with this mobile app file
+          items:
+            type: string
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this mobile app file
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: The time at which this mobile app file was last updated
+          format: int64
+          x-mabl-scope: public
+        name:
+          type: string
+          description: The name of the mobile app file file, e.g. mabl-v1.2.3.apk
+          x-mabl-scope: public
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        size:
+          type: integer
+          description: The size of the mobile app file file in bytes
+          format: int64
+          x-mabl-scope: public
+        uri:
+          type: string
+          description: The URI of the mobile app file indicating its path in cloud storage
+        version:
+          type: string
+          description: The version of the mobile app file, e.g. 1.4.5 or a git hash
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: The ID of the workspace that this mobile app file belongs to
+          x-mabl-scope: public
+      description: Represents a mobile app file build file to be used for training or executing mobile tests
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+      - HasWorkspaceId
+    BaseFilterCondition:
+      required:
+      - comparator
+      type: object
+      properties:
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        numeric_value:
+          type: integer
+          description: Numeric value for comparison
+          format: int64
+          x-mabl-scope: public
+        string_value:
+          type: string
+          description: String value for comparison
+          x-mabl-scope: public
+        string_values:
+          type: array
+          description: Array of string values for comparison (only 'in' comparator makes sense when array is used)
+          items:
+            type: string
+          x-mabl-scope: public
+    MobilePlatformEnum:
+      type: string
+      description: The mobile platform associated with this object
+      enum:
+      - android
+      - ios
+      x-mabl-scope: public
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    ComparatorEnum:
+      type: string
+      description: Comparator operators used in filtering conditions
+      enum:
+      - contains
+      - equal
+      - greater_than
+      - greater_than_or_equal
+      - in
+      - less_than
+      - less_than_or_equal
+      x-mabl-scope: public
+    MobileAppFileFilterCondition:
+      required:
+      - column_name
+      - comparator
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/BaseFilterCondition'
+      - type: object
+        properties:
+          column_name:
+            type: string
+            description: Column name to apply the constraint to
+            enum:
+            - created_by_id
+            - created_time
+            - name
+            - platform
+            - version
+            x-mabl-scope: public
+    MobileAppFileQueryOptions:
+      type: object
+      properties:
+        filter_conditions:
+          type: array
+          description: Filters to get the relevant mobile app files
+          items:
+            $ref: '#/components/schemas/MobileAppFileFilterCondition'
+          x-mabl-scope: public
+        sort_columns:
+          type: array
+          description: Options to sort the relevant mobile app files by
+          items:
+            $ref: '#/components/schemas/MobileAppFileSortColumn'
+          x-mabl-scope: public
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

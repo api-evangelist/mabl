@@ -1,0 +1,2267 @@
+openapi: 3.2.0
+info:
+  title: mabl Test Case Management API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: TestCaseManagement
+paths:
+  /tcm/external/sync/executions/planRun:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Create synchronization request for a plan run
+      description: Manually publishes a synchronization request for a plan run with job source tracking. Returns 409 if the plan run has not finished, was cancelled or terminated, or already has a sync in flight.
+      operationId: createXraySyncRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/XraySyncRequest'
+        required: true
+      responses:
+        '201':
+          description: Synchronization request created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsynchronousJob'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        '501':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::TestCaseManagement
+  /tcm/external/sync/executions/planRun/{workspace_id}/status:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Get latest Xray sync status for a batch of plan runs
+      description: Returns the most recent Xray sync AsynchronousJob for each requested plan run, keyed by plan_run_id. Plan runs with no sync job are omitted from the result.
+      operationId: getLatestXraySyncStatusesByPlanRun
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The plan run IDs to find the latest Xray sync status for
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRunXraySyncStatusBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: Latest Xray sync status per plan run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanRunXraySyncStatusQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/sync/executions/plan/{workspace_id}/status:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Get latest Xray sync status for a batch of plans
+      description: Returns the most recent Xray sync AsynchronousJob for each requested plan's latest plan run, keyed by plan_id. Plans with no such run, and plans whose latest run has no sync job, are omitted from the result. Unlike a plan-run-keyed lookup this resolves the latest run server-side, so a plan whose last run was up to 400 days ago still reports its sync outcome. Latest-run resolution sees completed runs only and is updated asynchronously, so shortly after a run finishes this may still report the previous run — each status carries the plan_run_id its job belongs to.
+      operationId: getLatestXraySyncStatusesByPlan
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The plan IDs to find the latest Xray sync status for
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanXraySyncStatusBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: Latest Xray sync status per plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanXraySyncStatusQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/bindings:
+    get:
+      tags:
+      - TestCaseManagement
+      summary: Query external TCM bindings
+      description: Queries external test case management bindings
+      operationId: queryExternalTcmBindings
+      parameters:
+      - name: workspace_integration_id
+        in: query
+        description: Unique identifier for the associated WorkspaceIntegration
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: external_tcm_platform
+        in: query
+        description: The associated external test case management solution
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+      - name: external_entity_id
+        in: query
+        description: Unique identifier for the associated entity in the external test case management solution
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: mabl_entity_type
+        in: query
+        description: The entity type for the associated mabl entity
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+      - name: mabl_entity_id
+        in: query
+        description: Unique identifier for the associated mabl entity
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        '200':
+          description: External TCM bindings matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalTcmBindingQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Creates external TCM binding
+      description: Creates a new external test case management binding
+      operationId: createExternalTcmBinding
+      requestBody:
+        description: External TCM binding to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalTcmBindingRequest'
+        required: true
+      responses:
+        '201':
+          description: Created external TCM binding
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalTcmBinding'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::TestCaseManagement
+  /tcm/external/bindings/xray/{mabl_entity_type}/{mabl_entity_id}:
+    get:
+      tags:
+      - TestCaseManagement
+      summary: Gets a TCM binding
+      description: Gets a specific xray test case management binding
+      operationId: getXrayTcmBinding
+      parameters:
+      - name: mabl_entity_type
+        in: path
+        description: The entity type for the associated mabl entity
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+      - name: mabl_entity_id
+        in: path
+        description: Unique identifier for the associated mabl entity
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Xray TCM binding
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XrayEntityBinding'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+    patch:
+      tags:
+      - TestCaseManagement
+      summary: Update a TCM binding
+      description: Partially updates a specific xray test case management binding. Only fields present in the request are changed; omitted fields are left unchanged.
+      operationId: updateXrayTcmBinding
+      parameters:
+      - name: mabl_entity_type
+        in: path
+        description: The entity type for the associated mabl entity
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+      - name: mabl_entity_id
+        in: path
+        description: Unique identifier for the associated mabl entity
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The binding fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/XrayEntityBindingUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Updated Xray TCM binding
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XrayEntityBinding'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::TestCaseManagement
+  /tcm/external/bindings/xray/{workspace_id}/{mabl_entity_type}/batch:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Get TCM bindings batch
+      description: Gets multiple xray test case management bindings for a list of entity IDs
+      operationId: getXrayTcmBindingsBatch
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: mabl_entity_type
+        in: path
+        description: The entity type for the associated mabl entities (test or plan)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 50
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: The mabl entity IDs to find bindings for
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/XrayTcmBindingBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: Paginated Xray TCM bindings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XrayTcmBindingBatchQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/bindings/bulk:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Create external TCM bindings in bulk
+      description: Creates multiple external test case management bindings in a single operation
+      operationId: createExternalTcmBindingsBulk
+      requestBody:
+        description: Bulk external TCM binding request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkExternalTcmBindingOperationRequest'
+        required: true
+      responses:
+        '200':
+          description: Bulk create results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkExternalTcmBindingOperationResults'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::TestCaseManagement
+    delete:
+      tags:
+      - TestCaseManagement
+      summary: Delete external TCM bindings in bulk
+      description: Deletes multiple external test case management bindings in a single operation
+      operationId: deleteExternalTcmBindingsBulk
+      requestBody:
+        description: Bulk external TCM binding delete request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkExternalTcmBindingOperationRequest'
+        required: true
+      responses:
+        '200':
+          description: Bulk delete results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkExternalTcmBindingDeleteOperationResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::TestCaseManagement
+  /tcm/external/bindings/{external_tcm_platform}/{mabl_entity_type}/{mabl_entity_id}:
+    delete:
+      tags:
+      - TestCaseManagement
+      summary: Deletes external TCM binding
+      description: Deletes a specific external test case management binding
+      operationId: deleteExternalTcmBinding
+      parameters:
+      - name: external_tcm_platform
+        in: path
+        description: The associated external test case management solution
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+      - name: mabl_entity_type
+        in: path
+        description: The entity type for the associated mabl entity
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+      - name: mabl_entity_id
+        in: path
+        description: Unique identifier for the associated mabl entity
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Deleted external TCM binding successfully, no content to return.
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::TestCaseManagement
+  /tcm/external/testrail/validateCredentials/{workspace_id}:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Validate TestRail credentials
+      description: Validates the supplied TestRail credentials against the live TestRail instance and returns the projects and required result fields visible to the credentialed user. Credentials are taken from the request body rather than a saved integration, so a workspace can test them before creating or updating an integration.
+      operationId: validateTestRailCredentials
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The TestRail credentials to validate
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestRailCredentialValidationRequest'
+        required: true
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRailValidationResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/testrail/integrations/{workspace_integration_id}/validateCredentials:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Re-validate the credentials stored in a TestRail integration
+      description: Validates the credentials stored in the given TestRail workspace integration against the live TestRail instance and returns the projects and required result fields visible to the credentialed user. The TestRail API key is write-only and never returned by the API, so this is how an existing integration is re-checked without the caller possessing the key. The response never includes the key.
+      operationId: validateTestRailIntegrationCredentials
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        description: Unique identifier for the TestRail workspace integration to validate
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRailValidationResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/testrail/integrations/{workspace_integration_id}/testrail/metadata:
+    get:
+      tags:
+      - TestCaseManagement
+      summary: TestRail project and suites behind an integration
+      description: The integration's configured project (with its suite mode), the suites in that project, and the configured suite when there is one. Read-only against TestRail with the integration's stored credentials; lets a reader scope a case search without integration-write permission.
+      operationId: getTestRailIntegrationMetadata
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Project and suites
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRailIntegrationMetadata'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/testrail/integrations/{workspace_integration_id}/cases:
+    get:
+      tags:
+      - TestCaseManagement
+      summary: Search TestRail cases behind an integration
+      description: One page of cases in the integration's project, scoped to its configured suite (or the requested suite when none is configured). A query that looks like a case id (digits, optionally prefixed with C) resolves that case and returns it only if it lies inside the same scope; any other query filters titles. Results are read live from TestRail; nothing is cached.
+      operationId: searchTestRailCases
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: query
+        in: query
+        description: Case id or title text. Omitted lists the scope from the offset.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 200
+          type: string
+      - name: suite_id
+        in: query
+        description: Suite to search when the integration configures none (required then for multi-suite projects). Must equal the configured suite when there is one.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: section_id
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: offset
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 0
+          type: integer
+          format: int32
+          default: 0
+      - name: limit
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 50
+      responses:
+        '200':
+          description: One page of cases
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRailCaseSearchResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/testrail/workspaces/{workspace_id}/cases:content:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Read the content of TestRail cases for use as a test-generation specification
+      description: 'Returns what each case actually specifies -- preconditions, steps, expected results -- normalised so the caller sees one structure whatever template the case uses. Unlike the lookup, which searches every enabled integration in the workspace, this names one: the integration must belong to this workspace and be enabled, and each case must lie inside its configured project and suite. Only fields on a fixed readable set are returned, because an instance may define text fields holding anything and this content is intended for a model. A case whose content lies entirely outside that set is reported no_readable_content rather than returned empty.'
+      operationId: getTestRailCaseContent
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestRailCaseContentRequest'
+        required: true
+      responses:
+        '200':
+          description: One entry per requested link, in request order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRailCaseContentResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/testrail/workspaces/{workspace_id}/cases:lookup:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Resolve a test's case links against the workspace's TestRail integrations
+      description: Classifies each link by shape and, for TestRail-shaped ones, asks every enabled TestRail integration in the workspace in a fixed order until one knows the case. A link is unknown_case only when every reachable integration rejected it; unavailable when none knew it and at least one could not be asked. Links that belong to another system (Jira keys, Zephyr case keys) are reported as other_platform without contacting TestRail.
+      operationId: lookupTestRailCases
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestRailCaseLookupRequest'
+        required: true
+      responses:
+        '200':
+          description: One entry per requested link, in request order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRailCaseLookupResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/zephyr/validateCredentials/{workspace_id}:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Validate Zephyr credentials and settings
+      description: Validates the supplied Zephyr API token and settings against Zephyr Cloud and returns, for each project the token can read, the test execution statuses available to map outcomes to. Credentials are taken from the request body rather than a saved integration, so a workspace can check them before creating an integration.
+      operationId: validateZephyrCredentials
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The Zephyr token and settings to validate
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZephyrCredentialValidationRequest'
+        required: true
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZephyrValidationResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/zephyr/integrations/{workspace_integration_id}/validateCredentials:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Re-validate a saved Zephyr integration
+      description: Validates the token stored in the given Zephyr integration, with its saved settings or the settings supplied in the body, against Zephyr Cloud. The token is write-only and never returned by the API, so this is how a saved integration is re-checked, or an edit is checked before saving, without the caller possessing the token. The response never includes the token.
+      operationId: validateZephyrIntegrationCredentials
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        description: Unique identifier for the Zephyr workspace integration to validate
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Settings to check in place of the saved ones; omitted fields keep their saved values
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZephyrIntegrationValidationRequest'
+        required: false
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZephyrValidationResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/zephyr/integrations/{workspace_integration_id}/reconnectRequired:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Mark a Zephyr integration as needing reconnection
+      description: Internal, for the results sync. Marks the integration status error with status_reason reconnect_required, but only while its stored version still equals the one the sync read, so a token replaced since then is never flagged. A stale version is a no-op.
+      operationId: markZephyrIntegrationReconnectRequired
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        description: Unique identifier for the Zephyr workspace integration
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZephyrReconnectRequiredRequest'
+        required: true
+      responses:
+        '200':
+          description: Whether the integration was marked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZephyrReconnectRequiredResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::TestCaseManagement
+  /tcm/external/zephyr/integrations/{workspace_integration_id}/cases:
+    get:
+      tags:
+      - TestCaseManagement
+      summary: List the test cases of one Zephyr project behind an integration
+      description: One page of the project's case keys and names, for a picker that filters them locally. The project must be one of the integration's project_keys. With key, resolves that one case instead and returns it, or nothing when Zephyr does not know it; the key's project must equal project_key. Pages are read live from Zephyr; nothing is cached.
+      operationId: listZephyrCases
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: project_key
+        in: query
+        description: A project key from the integration's project_keys.
+        required: true
+        style: form
+        explode: true
+        schema:
+          maxLength: 100
+          type: string
+      - name: key
+        in: query
+        description: An exact case key, e.g. PROJ-T12. When present, cursor is ignored.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 200
+          type: string
+      - name: cursor
+        in: query
+        description: The next_cursor of the previous page. Omitted reads the first page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 40
+          type: string
+      responses:
+        '200':
+          description: One page of cases
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZephyrCaseList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '402':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/zephyr/workspaces/{workspace_id}/cases:content:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Read the content of Zephyr test cases for use as a test-generation specification
+      description: Returns what each case specifies -- objective, precondition, labels, and its steps or script -- for a model to read. The integration must belong to this workspace and be enabled, and each case's project must be one of its project_keys; a case outside them is out_of_scope without asking Zephyr. A step that calls another case is replaced by that case's steps, one level deep. Only a fixed set of fields is returned, because this content is intended for a model.
+      operationId: getZephyrCaseContent
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZephyrCaseContentRequest'
+        required: true
+      responses:
+        '200':
+          description: One entry per requested link, in request order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZephyrCaseContentResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '402':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/xray/validateCredentials/{workspace_integration_id}:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Validate Xray credentials for an integration
+      description: Validates that the Xray credentials stored in the given workspace integration are valid and can access the configured project
+      operationId: validateXrayCredentials
+      parameters:
+      - name: workspace_integration_id
+        in: path
+        description: Unique identifier for the workspace integration to validate
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Xray credentials are valid
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+  /tcm/external/xray/planPreflightValidation:
+    post:
+      tags:
+      - TestCaseManagement
+      summary: Validate Xray Plan Preflight Validation
+      description: Validates a Plan save operation for Xray
+      operationId: xrayPlanPreflightValidation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanXrayTestsPreflightValidationRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanXrayTestsPreflightValidationResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestCaseManagement
+components:
+  schemas:
+    ZephyrIntegrationValidationRequest:
+      type: object
+      properties:
+        region:
+          $ref: '#/components/schemas/ZephyrRegionEnum'
+        project_keys:
+          maxItems: 20
+          minItems: 1
+          type: array
+          items:
+            type: string
+        cycle_mode:
+          $ref: '#/components/schemas/ZephyrCycleModeEnum'
+        fixed_cycle_keys:
+          type: object
+          additionalProperties:
+            type: string
+        status_names:
+          $ref: '#/components/schemas/ZephyrStatusNames'
+      description: Settings to check a saved Zephyr integration's token against; omitted fields keep their saved values
+    PlanXraySyncStatus:
+      required:
+      - plan_id
+      - plan_run_id
+      - xray_sync_job
+      type: object
+      properties:
+        plan_id:
+          type: string
+          description: Unique identifier for the Plan
+        plan_run_id:
+          type: string
+          description: Unique identifier for the plan's latest PlanRun, which the sync job belongs to
+        external_tcm_platform:
+          description: The platform the job belongs to; echoes the request's platform
+          allOf:
+          - $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        sync_job:
+          description: The latest sync job for the requested platform
+          allOf:
+          - $ref: '#/components/schemas/AsynchronousJob'
+        xray_sync_job:
+          description: Deprecated alias of sync_job, kept populated for every platform because existing callers require it. Prefer sync_job.
+          allOf:
+          - $ref: '#/components/schemas/AsynchronousJob'
+      description: The latest Xray sync AsynchronousJob for a single plan's latest plan run
+    ZephyrProject:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Jira project key
+        status_names:
+          type: array
+          description: Names of the project's test execution statuses that are not archived
+          items:
+            type: string
+      description: A Zephyr project the token can read
+    PlanXrayTestsPreflightValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: Indicates whether the plan is valid for saving
+        tests_with_warnings:
+          type: array
+          description: List of Test IDs that are associated with a different (but disabled) Xray Project
+          items:
+            type: string
+        ineligible_tests:
+          type: array
+          description: List of Test IDs that are associated with a different (and enabled) Xray Project
+          items:
+            type: string
+      description: Result of a preflight validation check for a Plan save operation.
+    MablEntityTypeEnum:
+      type: string
+      description: Types of mabl entities that can be bound to external TCM.
+      enum:
+      - test
+      - test_case
+      - plan
+      - plan_run
+      x-enum-descriptions:
+      - Binds to a mabl Test using its invariant ID.
+      - DEPRECATED. Binds to a TestCase entity. Use 'test' instead.
+      - Binds to a Plan entity.
+      - Binds to a PlanRun entity.
+    XraySyncRequest:
+      required:
+      - job_source
+      - plan_run_id
+      type: object
+      properties:
+        plan_run_id:
+          type: string
+          description: Unique identifier for the PlanRun
+        job_source:
+          type: string
+          description: What triggered this job
+          enum:
+          - test_run
+          - plan_run
+        test_run_id:
+          type: string
+          description: The test run to sync, if not the whole plan run
+        external_tcm_platform:
+          description: The platform to sync to. Defaults to 'xray' when omitted, for back-compatibility.
+          allOf:
+          - $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+      description: Request body for creating an Xray sync job
+    BulkExternalTcmBindingOperationResult:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/OperationStatusEnum'
+        binding:
+          $ref: '#/components/schemas/ExternalTcmBinding'
+        error:
+          $ref: '#/components/schemas/BindingOperationResultError'
+    ZephyrCaseStep:
+      type: object
+      properties:
+        index:
+          type: integer
+          description: 1-based position in the case, after expansion.
+        action:
+          type: string
+        test_data:
+          type: string
+        expected:
+          type: string
+        called_case_key:
+          type: string
+          description: 'The called case: set on steps expanded from it, and on a call left unexpanded, whose action says why it was not expanded.'
+    PlanXrayTestsPreflightValidationRequest:
+      required:
+      - integration_id
+      - test_ids
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        integration_id:
+          type: string
+          description: The workspace integration ID to validate against. All tests' bindings must match this integration.
+        test_ids:
+          type: array
+          description: The IDs of the tests to validate
+          items:
+            type: string
+      description: Payload for Plan Xray Tests Preflight Validation request
+    ZephyrCaseContentResult:
+      required:
+      - results
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZephyrCaseContent'
+      description: The readable content of the requested cases, for use as a specification by test generation. One entry per requested link, in request order.
+    ZephyrRegionEnum:
+      type: string
+      description: The Zephyr Cloud region hosting the instance; selects the API host.
+      enum:
+      - us
+      - eu
+      - au
+      - de
+    XrayTcmBindingBatchQueryResult:
+      required:
+      - bindings
+      type: object
+      properties:
+        bindings:
+          type: array
+          description: List of Xray TCM bindings matching the query, ordered by mabl_entity_id and external_tcm_binding_id
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/XrayEntityBinding'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: Result envelope for batch Xray TCM binding query results
+    ZephyrCaseSection:
+      required:
+      - label
+      - text
+      type: object
+      properties:
+        label:
+          type: string
+          description: Objective, Precondition, Labels, Script, or Script (BDD).
+        text:
+          type: string
+    TestRailCaseLookupResult:
+      required:
+      - results
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestRailCaseLookup'
+    ZephyrCycleModeEnum:
+      type: string
+      description: 'per_plan_run: each plan run''s results go to a test cycle mabl creates for it. fixed: results go to the configured cycle of each project.'
+      enum:
+      - per_plan_run
+      - fixed
+    TcmSyncTargetRun:
+      required:
+      - run_id
+      type: object
+      properties:
+        run_id:
+          maxLength: 64
+          type: string
+          description: The platform's run identifier (TestRail run id; Xray Test Execution key; Zephyr test cycle key).
+        url:
+          maxLength: 500
+          type: string
+          description: Deep link into the platform, built from the host the results were recorded against. Omitted rather than truncated when it would exceed the cap.
+        project_id:
+          maxLength: 64
+          type: string
+        suite_id:
+          maxLength: 64
+          type: string
+        created:
+          type: boolean
+          description: True when this sync created the run; false when it reused one from an earlier sync.
+        workspace_integration_id:
+          maxLength: 64
+          type: string
+          description: The integration the run belongs to, for workspaces with more than one.
+      description: An external run holding results from this plan run.
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    TestRailSuite:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    BulkExternalTcmBindingDeleteOperationResponse:
+      required:
+      - results
+      type: object
+      properties:
+        results:
+          type: array
+          description: Results of the operation
+          items:
+            type: object
+            properties:
+              status:
+                $ref: '#/components/schemas/OperationStatusEnum'
+              error:
+                $ref: '#/components/schemas/BindingOperationResultError'
+      description: Response body for bulk deleting external TCM bindings
+    TestRailCaseContent:
+      required:
+      - link
+      - readable
+      type: object
+      properties:
+        link:
+          type: string
+          description: The requested link, echoed so results pair with the request.
+          example: C71
+        readable:
+          type: boolean
+          description: Whether any content could be read for this case.
+        reason:
+          $ref: '#/components/schemas/TestRailCaseContentReasonEnum'
+        title:
+          type: string
+        url:
+          type: string
+          description: The case in TestRail, for a human following up.
+        sections:
+          type: array
+          description: Free-text sections, labelled as the instance labels them.
+          items:
+            $ref: '#/components/schemas/TestRailCaseSection'
+        steps:
+          type: array
+          description: Structured steps, when the case's template uses them.
+          items:
+            $ref: '#/components/schemas/TestRailCaseStep'
+        truncated:
+          type: boolean
+          description: Whether content was dropped to fit the size budget. A caller must not present a truncated case as fully covered.
+      description: One case's content, normalised so a reader sees the same structure whatever template the case uses. A case whose content lies entirely outside the readable field set reports readable=false rather than an empty body, so a caller can say it could not read the case instead of treating it as a case with nothing in it.
+    TestRailCaseContentReasonEnum:
+      type: string
+      description: 'not_a_case_id: not a TestRail case id shape. unknown_case: the integration rejected the id. out_of_scope: the case exists but lies outside the integration''s configured project or suite. no_readable_content: the case was read, but everything it holds sits outside the readable field set -- reported rather than returned empty, so a caller does not plan against a specification it never saw. budget_exhausted: the case is readable, but earlier cases in this request used the whole size budget, so none of it was sent -- about us, not about the case. unavailable: the integration could not be asked.'
+      enum:
+      - not_a_case_id
+      - unknown_case
+      - out_of_scope
+      - no_readable_content
+      - budget_exhausted
+      - unavailable
+    TestRailCaseSummary:
+      required:
+      - id
+      - title
+      - url
+      - workspace_integration_id
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        section_id:
+          type: integer
+          format: int64
+        section_name:
+          type: string
+        suite_id:
+          type: integer
+          format: int64
+        refs:
+          type: string
+        url:
+          type: string
+          description: The case page on the TestRail instance
+        workspace_integration_id:
+          type: string
+          description: The integration whose instance holds this case
+      description: A TestRail case as the picker shows it
+    PlanRunXraySyncStatusQueryResult:
+      required:
+      - statuses
+      type: object
+      properties:
+        statuses:
+          type: array
+          description: Latest Xray sync status per plan run. Plan runs with no sync job are omitted.
+          items:
+            $ref: '#/components/schemas/PlanRunXraySyncStatus'
+      description: Result envelope for batch plan run Xray sync status query results
+    ZephyrStatusNames:
+      type: object
+      properties:
+        passed:
+          type: string
+        failed:
+          type: string
+        skipped:
+          type: string
+          description: When unset or empty, a case whose mabl runs were all skipped gets no execution. On update, an empty string clears a saved value; omitting it keeps the saved value.
+      description: Zephyr test execution status names, by mabl outcome.
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    TestRailCaseLookupStatusEnum:
+      type: string
+      description: 'found: an integration knows the case (see case). unknown_case: every reachable integration rejected the id. unavailable: no integration knew it and at least one could not be asked. not_a_case_id: not a TestRail case id shape. other_platform: another system''s link (a Jira key or Zephyr case key), not TestRail''s.'
+      enum:
+      - found
+      - unknown_case
+      - unavailable
+      - not_a_case_id
+      - other_platform
+    ZephyrReconnectRequiredRequest:
+      required:
+      - version
+      type: object
+      properties:
+        version:
+          type: string
+          description: The integration version the sync read before Zephyr refused its token
+    OperationStatusEnum:
+      type: string
+      description: Status of a bulk operation result
+      enum:
+      - success
+      - failure
+    AsynchronousJob:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the TestCase
+        workspace_id:
+          type: string
+          description: Unique identifier for the associated Workspace
+        job_type:
+          type: string
+          description: Type of AsynchronousJob
+          enum:
+          - xray_sync
+          - testrail_sync
+          - zephyr_sync
+          - workspace_copy
+        status:
+          type: string
+          description: Current status of the AsynchronousJob
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+        associated_entities:
+          type: array
+          description: Type of Entity this AsynchronousJob is associated with
+          items:
+            $ref: '#/components/schemas/AsynchronousJobAssociatedEntity'
+        created_time:
+          type: integer
+          description: Time the AsynchronousJob was created
+          format: int64
+        created_by_id:
+          type: string
+          description: Identifier of the user who created the AsynchronousJob
+        last_updated_time:
+          type: integer
+          description: Time the AsynchronousJob was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: Identifier of the user who last updated the AsynchronousJob
+        error_message:
+          type: string
+          description: If failed, an optional error message associated with the failure
+        job_source:
+          type: string
+          description: What triggered this job
+          enum:
+          - test_run
+          - plan_run
+        completion_details:
+          description: Structured outcome of a test case management sync, written by the consumer with the terminal status. Absent on jobs of other types and on jobs completed before the consumer recorded it. Replaced whole on every write.
+          allOf:
+          - $ref: '#/components/schemas/TcmSyncCompletionDetails'
+          x-dao-serialize: true
+      description: An AsynchronousJob to track and provide insight into long-running background job
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+    AsynchronousJobAssociatedEntity:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of Entity this AsynchronousJob is associated with
+          enum:
+          - workspace
+          - plan_run
+        id:
+          type: string
+          description: Unique identifier for the associated Entity
+      description: Represent an entity that is associated with an AsynchronousJob
+    TestRailCaseLookup:
+      required:
+      - link
+      - status
+      type: object
+      properties:
+        link:
+          type: string
+        status:
+          $ref: '#/components/schemas/TestRailCaseLookupStatusEnum'
+        case:
+          $ref: '#/components/schemas/TestRailCaseSummary'
+    TestRailCaseStep:
+      type: object
+      properties:
+        index:
+          type: integer
+          description: 1-based position in the case.
+        action:
+          type: string
+        expected:
+          type: string
+    TestRailCaseLookupRequest:
+      required:
+      - links
+      type: object
+      properties:
+        links:
+          maxItems: 20
+          minItems: 1
+          type: array
+          description: Case links as they appear on the test, at most 20
+          items:
+            maxLength: 200
+            type: string
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    XrayEntityBinding:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/ExternalTcmBinding'
+      - type: object
+        properties:
+          external_entity_key:
+            type: string
+            description: 'Unique key for the associated entity in Xray. NOTE: This is not persisted to the DB. It is a convenience method for the UI.'
+      x-discriminator-existing-property: true
+    TestRailValidationResult:
+      required:
+      - valid
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: True if the supplied TestRail credentials are valid
+        error_message:
+          type: string
+          description: Error description when validation fails
+        projects:
+          type: array
+          description: TestRail projects visible to the credentialed user
+          items:
+            $ref: '#/components/schemas/TestRailProject'
+        required_result_fields:
+          type: array
+          description: System names of TestRail result fields marked as required
+          items:
+            type: string
+      description: Result of validating a set of TestRail credentials
+    TcmSyncSkippedCase:
+      required:
+      - link
+      - reason
+      type: object
+      properties:
+        link:
+          maxLength: 64
+          type: string
+          description: 'Display value: the case link as it appears on the mabl test, trimmed and clipped to 64 characters. Not guaranteed to be the exact original when the original is longer.'
+        reason:
+          $ref: '#/components/schemas/TcmSyncSkipReasonEnum'
+        detail:
+          maxLength: 200
+          type: string
+          description: The platform's own message when it has one. Never required to render.
+        test_run_id:
+          maxLength: 64
+          type: string
+          description: The mabl test run the link was read from, for link-shape skips.
+        workspace_integration_id:
+          maxLength: 64
+          type: string
+          description: Set for platform-side skips; absent for link-shape skips, which apply to every integration.
+      description: A case link that produced no result on the external platform.
+    ExternalTcmBinding:
+      type: object
+      properties:
+        external_tcm_binding_id:
+          type: string
+          description: Unique identifier for the binding
+        workspace_id:
+          type: string
+          description: Unique identifier for the associated Workspace
+        workspace_integration_id:
+          type: string
+          description: Unique identifier for the associated WorkspaceIntegration
+        external_tcm_platform:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        external_entity_id:
+          type: string
+          description: Unique identifier for the associated entity in the external test case management solution
+        mabl_entity_type:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+        mabl_entity_id:
+          type: string
+          description: Unique identifier for the associated mabl entity
+        created_time:
+          type: integer
+          description: Time at which the binding was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this binding
+        auto_sync_enabled:
+          type: boolean
+          description: Per-binding automatic result synchronization setting
+          default: false
+      description: Represents an association between an entity in an external test-case management solution, and a mabl entity
+      discriminator:
+        propertyName: external_tcm_platform
+        mapping:
+          xray: '#/components/schemas/XrayEntityBinding'
+      x-discriminator-existing-property: true
+    TestRailCaseSearchResult:
+      required:
+      - cases
+      type: object
+      properties:
+        cases:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestRailCaseSummary'
+        next_offset:
+          type: integer
+          description: Offset of the next upstream page, present whenever TestRail reported one -- even when this page filtered down to nothing -- so later matches stay reachable.
+          format: int32
+        project_id:
+          type: integer
+          format: int64
+        suite_id:
+          type: integer
+          description: The suite the search was scoped to, when any
+          format: int64
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    TestRailCaseContentResult:
+      required:
+      - results
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestRailCaseContent'
+      description: The readable content of the requested cases, for use as a specification by test generation. One entry per requested link, in request order.
+    TcmSyncCompletionDetails:
+      required:
+      - external_tcm_platform
+      - recorded_case_count
+      - skipped_case_count
+      type: object
+      properties:
+        external_tcm_platform:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        recorded_case_count:
+          type: integer
+          description: Distinct (integration, case) pairs holding a result from this plan run, recorded by this sync or confirmed from an earlier one.
+        skipped_case_count:
+          type: integer
+          description: Distinct skipped entries, excluding other_platform links, which belong to another system; skipped_cases lists at most the first 50 entries of either kind.
+        skipped_cases:
+          maxItems: 50
+          type: array
+          items:
+            $ref: '#/components/schemas/TcmSyncSkippedCase'
+        run_count:
+          type: integer
+          description: External runs that received results; runs lists at most the first 20.
+        runs:
+          maxItems: 20
+          type: array
+          items:
+            $ref: '#/components/schemas/TcmSyncTargetRun'
+      description: What a test case management sync did, so the UI can report it without parsing text. Counts are always the full totals; the lists are capped and may be shorter than their count.
+    TcmSyncSkipReasonEnum:
+      type: string
+      description: 'Why a case link produced no result. not_a_case_id: blank, or not a case id shape for the platform. unknown_case: the platform reports no such case. unresolvable_suite: the case exists but its suite or project could not be resolved. not_in_run: the reused run does not include the case and could not be widened. platform_rejected: a per-case rejection fitting none of the above. no_outcome: every contributing mabl test run was stopped or skipped and the platform has no status for that. project_not_configured: the case belongs to a project the integration is not configured to write to. other_platform: the link belongs to another system (for example a Jira key in the shared Test Case ID field); listed for context, not counted in skipped_case_count.'
+      enum:
+      - not_a_case_id
+      - unknown_case
+      - unresolvable_suite
+      - not_in_run
+      - platform_rejected
+      - no_outcome
+      - project_not_configured
+      - other_platform
+    BulkExternalTcmBindingOperationResults:
+      type: object
+      properties:
+        results:
+          type: array
+          description: Results of the operation
+          items:
+            $ref: '#/components/schemas/BulkExternalTcmBindingOperationResult'
+    ExternalTcmBindingRequest:
+      allOf:
+      - $ref: '#/components/schemas/ExternalTcmBindingMutableFields'
+      - required:
+        - external_entity_id
+        - external_tcm_platform
+        - mabl_entity_id
+        - mabl_entity_type
+        - workspace_integration_id
+        type: object
+        properties:
+          auto_sync_enabled:
+            type: boolean
+            description: Per-binding automatic result synchronization setting. Defaults to false when omitted from create.
+            default: false
+          external_tcm_platform:
+            $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+          mabl_entity_type:
+            $ref: '#/components/schemas/MablEntityTypeEnum'
+          mabl_entity_id:
+            type: string
+            description: Unique identifier for the associated mabl entity
+        description: Request body for creating an external TCM binding
+    ExternalTcmBindingMutableFields:
+      type: object
+      properties:
+        external_entity_id:
+          type: string
+          description: Unique identifier for the associated entity in the external TCM system
+        workspace_integration_id:
+          type: string
+          description: Unique identifier for the WorkspaceIntegration to bind to
+        auto_sync_enabled:
+          type: boolean
+          description: Per-binding automatic result synchronization setting. On PATCH, omission leaves the stored value unchanged.
+      description: Fields that can be set when creating or updating an external TCM binding
+    ZephyrCaseContentReasonEnum:
+      type: string
+      description: 'not_a_case_id: not a Zephyr case key shape. unknown_case: Zephyr does not know the key. out_of_scope: the key''s project is not one of the integration''s project_keys; Zephyr was not asked. no_readable_content: the case was read, but every readable field is blank. budget_exhausted: earlier cases in this request used the whole size budget, so none of this one was sent -- about us, not about the case. unavailable: Zephyr could not be asked.'
+      enum:
+      - not_a_case_id
+      - unknown_case
+      - out_of_scope
+      - no_readable_content
+      - budget_exhausted
+      - unavailable
+    ExternalTcmPlatformTypeEnum:
+      type: string
+      description: Supported external test case management platforms
+      enum:
+      - xray
+      - testrail
+      - zephyr
+    TestRailProject:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: TestRail project ID
+          format: int64
+        name:
+          type: string
+          description: Project name
+        suite_mode:
+          type: integer
+          description: Suite mode of the project (1 = single suite, 2 = single suite with baselines, 3 = multiple suites)
+          format: int32
+      description: A TestRail project visible to the credentialed user
+    PlanXraySyncStatusQueryResult:
+      required:
+      - statuses
+      type: object
+      properties:
+        statuses:
+          type: array
+          description: Latest Xray sync status per plan. Plans with no completed run, and plans whose latest run has no sync job, are omitted.
+          items:
+            $ref: '#/components/schemas/PlanXraySyncStatus'
+      description: Result envelope for batch plan Xray sync status query results
+    TestRailCaseContentRequest:
+      required:
+      - links
+      - workspace_integration_id
+      type: object
+      properties:
+        workspace_integration_id:
+          type: string
+          description: The integration whose instance holds these cases. Case ids are unique only per instance, so the caller must say which one; it is validated against the workspace.
+        links:
+          maxItems: 5
+          minItems: 1
+          type: array
+          description: Case links, at most 5 -- each costs an upstream call and prompt budget
+          items:
+            maxLength: 200
+            type: string
+    BindingOperationResultError:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        status:
+          type: integer
+          description: HTTP status code
+      description: Error details if the operation failed
+    ZephyrCaseListItem:
+      required:
+      - key
+      - name
+      type: object
+      properties:
+        key:
+          type: string
+          example: PROJ-T12
+        name:
+          type: string
+      description: A Zephyr test case as the picker lists it
+    ZephyrValidationResult:
+      required:
+      - valid
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: True if the token can read every project and the settings fit them
+        error_message:
+          type: string
+          description: Why validation failed
+        projects:
+          type: array
+          description: The configured projects the token could read, in the order requested
+          items:
+            $ref: '#/components/schemas/ZephyrProject'
+        token_expires_at:
+          type: integer
+          description: UTC epoch milliseconds at which the token expires, when it says
+          format: int64
+      description: Result of validating a Zephyr token and settings
+    ExternalTcmBindingBase:
+      required:
+      - external_entity_id
+      - mabl_entity_type
+      type: object
+      properties:
+        external_entity_id:
+          type: string
+          description: Unique identifier for the associated entity in the external test case management solution
+        mabl_entity_type:
+          $ref: '#/components/schemas/MablEntityTypeEnum'
+        mabl_entity_id:
+          type: string
+          description: Unique identifier for the associated mabl entity
+      description: Base properties for external TCM binding
+    TestRailCredentialValidationRequest:
+      required:
+      - api_key
+      - host_url
+      - username
+      type: object
+      properties:
+        host_url:
+          type: string
+          description: Base URL of the TestRail instance, e.g. https://example.testrail.io
+        username:
+          type: string
+          description: TestRail username to authenticate as
+        api_key:
+          type: string
+          description: TestRail API key for the given username
+        project_id:
+          type: integer
+          description: Optional TestRail project the integration will be bound to. Result-field requiredness is scoped per project, so supplying it narrows required_result_fields to the configs that apply to that project.
+          format: int64
+      description: TestRail credentials to validate against the live TestRail instance
+    XrayTcmBindingBatchRequest:
+      required:
+      - mabl_entity_ids
+      type: object
+      properties:
+        mabl_entity_ids:
+          maxItems: 100
+          minItems: 1
+          type: array
+          description: Array of mabl entity IDs to find bindings for
+          items:
+            type: string
+      description: Request body for batch Xray TCM binding query
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    ExternalTcmBindingQueryResult:
+      required:
+      - bindings
+      type: object
+      properties:
+        bindings:
+          type: array
+          description: All external TCM bindings that matched the query
+          items:
+            $ref: '#/components/schemas/ExternalTcmBinding'
+      description: Query result containing external TCM bindings
+    ZephyrCredentialValidationRequest:
+      required:
+      - api_key
+      - project_keys
+      - region
+      type: object
+      properties:
+        region:
+          $ref: '#/components/schemas/ZephyrRegionEnum'
+        api_key:
+          type: string
+          description: Zephyr API token
+        project_keys:
+          maxItems: 20
+          minItems: 1
+          type: array
+          description: Jira project keys to check the token can read
+          items:
+            type: string
+        cycle_mode:
+          $ref: '#/components/schemas/ZephyrCycleModeEnum'
+        fixed_cycle_keys:
+          type: object
+          additionalProperties:
+            type: string
+          description: For cycle_mode fixed, the test cycle key by project key
+        status_names:
+          $ref: '#/components/schemas/ZephyrStatusNames'
+      description: A Zephyr API token and the settings to check it against
+    PlanRunXraySyncStatus:
+      required:
+      - plan_run_id
+      - xray_sync_job
+      type: object
+      properties:
+        plan_run_id:
+          type: string
+          description: Unique identifier for the PlanRun
+        external_tcm_platform:
+          description: The platform the job belongs to; echoes the request's platform
+          allOf:
+          - $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        sync_job:
+          description: The latest sync job for the requested platform
+          allOf:
+          - $ref: '#/components/schemas/AsynchronousJob'
+        xray_sync_job:
+          description: Deprecated alias of sync_job, kept populated for every platform because existing callers require it. Prefer sync_job.
+          allOf:
+          - $ref: '#/components/schemas/AsynchronousJob'
+      description: The latest test case management sync AsynchronousJob for a single plan run
+    TestRailCaseSection:
+      required:
+      - label
+      - text
+      type: object
+      properties:
+        label:
+          type: string
+          description: The instance's own wording for the field, e.g. Preconditions.
+        text:
+          type: string
+    ZephyrCaseList:
+      required:
+      - cases
+      - project_key
+      - workspace_integration_id
+      type: object
+      properties:
+        cases:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZephyrCaseListItem'
+        project_key:
+          type: string
+        workspace_integration_id:
+          type: string
+        next_cursor:
+          type: string
+          description: Pass as cursor to read the next page. Absent on the last page and for a key lookup.
+    TestRailIntegrationMetadata:
+      required:
+      - host_url
+      - project
+      - suites
+      type: object
+      properties:
+        host_url:
+          type: string
+          description: The TestRail instance the integration talks to, for building links
+        project:
+          $ref: '#/components/schemas/TestRailProject'
+        suites:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestRailSuite'
+        configured_suite_id:
+          type: integer
+          description: The suite the integration is bound to, when it is
+          format: int64
+    XrayEntityBindingUpdateRequest:
+      allOf:
+      - $ref: '#/components/schemas/ExternalTcmBindingMutableFields'
+      - type: object
+        description: Request body for partially updating an Xray TCM binding. Only fields present in the request are changed; omitted fields are left unchanged.
+    ZephyrCaseContent:
+      required:
+      - link
+      - readable
+      type: object
+      properties:
+        link:
+          type: string
+          description: The requested link, echoed so results pair with the request.
+          example: PROJ-T12
+        readable:
+          type: boolean
+          description: Whether any content could be read for this case.
+        reason:
+          $ref: '#/components/schemas/ZephyrCaseContentReasonEnum'
+        title:
+          type: string
+        url:
+          type: string
+          description: The case in Zephyr, for a human following up. Absent when the integration has no Jira site URL.
+        sections:
+          type: array
+          description: Objective, Precondition, Labels, and a plain or BDD script, as present.
+          items:
+            $ref: '#/components/schemas/ZephyrCaseSection'
+        steps:
+          type: array
+          description: The case's steps, with called cases expanded one level.
+          items:
+            $ref: '#/components/schemas/ZephyrCaseStep'
+        truncated:
+          type: boolean
+          description: Whether content was dropped to fit the size or step budget. A caller must not present a truncated case as fully covered.
+      description: One case's content. A case with nothing readable reports readable=false and a reason rather than an empty body, so a caller does not plan against a specification it never saw.
+    ZephyrCaseContentRequest:
+      required:
+      - links
+      - workspace_integration_id
+      type: object
+      properties:
+        workspace_integration_id:
+          type: string
+          description: The integration to read the cases through. Case keys are unique only per Jira site, so the caller must say which one; it is validated against the workspace.
+        links:
+          maxItems: 5
+          minItems: 1
+          type: array
+          description: Case keys, e.g. PROJ-T12, at most 5 -- each costs upstream calls and prompt budget
+          items:
+            maxLength: 200
+            type: string
+    PlanXraySyncStatusBatchRequest:
+      required:
+      - plan_ids
+      type: object
+      properties:
+        plan_ids:
+          maxItems: 100
+          minItems: 1
+          type: array
+          description: Array of plan IDs to find the latest sync status for
+          items:
+            type: string
+        external_tcm_platform:
+          description: Which platform's sync jobs to report. Defaults to xray, so callers that predate the field see no change.
+          allOf:
+          - $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+      description: Request body for batch plan test case management sync status query
+    ZephyrReconnectRequiredResult:
+      required:
+      - marked
+      type: object
+      properties:
+        marked:
+          type: boolean
+          description: False when the integration changed since that version, so nothing was written
+    PlanRunXraySyncStatusBatchRequest:
+      required:
+      - plan_run_ids
+      type: object
+      properties:
+        plan_run_ids:
+          maxItems: 100
+          minItems: 1
+          type: array
+          description: Array of plan run IDs to find the latest sync status for
+          items:
+            type: string
+        external_tcm_platform:
+          description: Which platform's sync jobs to report. Defaults to xray, so callers that predate the field see no change.
+          allOf:
+          - $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+      description: Request body for batch plan run test case management sync status query
+    BulkExternalTcmBindingOperationRequest:
+      required:
+      - bindings
+      - external_tcm_platform
+      - workspace_integration_id
+      type: object
+      properties:
+        workspace_integration_id:
+          type: string
+          description: Unique identifier for the associated WorkspaceIntegration
+        external_tcm_platform:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        bindings:
+          type: array
+          description: The list of external TCM bindings to create or delete
+          items:
+            $ref: '#/components/schemas/ExternalTcmBindingBase'
+      description: Request body for bulk creating or deleting external TCM bindings
+  responses:
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse409:
+      description: Conflicts with the current state of the resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

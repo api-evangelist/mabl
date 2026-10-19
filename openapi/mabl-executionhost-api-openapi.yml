@@ -1,0 +1,705 @@
+openapi: 3.2.0
+info:
+  title: mabl Execution Host API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: ExecutionHost
+paths:
+  /execution/hosts:
+    post:
+      tags:
+      - ExecutionHost
+      summary: Create new Execution Runner Host
+      description: Create Execution Host for tracking a single host of one or more runner instances
+      operationId: createExecutionHost
+      requestBody:
+        description: Host detail
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExecutionHostRequest'
+        required: true
+      responses:
+        '201':
+          description: Execution Host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionHost'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: Execution Host with ID already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::ExecutionHost
+  /execution/hosts/workspace/{workspace_id}/clusterId/{cluster_id}:
+    get:
+      tags:
+      - ExecutionHost
+      summary: Get Execution Hosts by Cluster ID
+      operationId: getExecutionHostsByClusterId
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: cluster_id
+        in: path
+        description: The cluster ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution Hosts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionHostQueryResult'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ExecutionHost
+  /execution/hosts/workspace/{workspace_id}/providerInstanceId/{provider_instance_id}:
+    get:
+      tags:
+      - ExecutionHost
+      summary: Get Execution Hosts by provider instance ID
+      operationId: getExecutionHostsByProviderInstanceId
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: provider_instance_id
+        in: path
+        description: The provider instance ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution Hosts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionHostQueryResult'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ExecutionHost
+  /execution/hosts/workspace/{workspace_id}:
+    get:
+      tags:
+      - ExecutionHost
+      summary: Query Execution Hosts
+      description: Query Execution Hosts, sorted last updated time descending
+      operationId: queryExecutionHosts
+      parameters:
+      - name: workspace_id
+        in: path
+        description: workspace owning the runners
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: operating_system
+        in: query
+        description: optional matching OS
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/ExecutionHostOperatingSystem'
+      - name: status
+        in: query
+        description: sought status
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/ExecutionHostStatus'
+      - name: sort
+        in: query
+        description: sort to use
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - created_time
+          - last_updated_time
+      - name: limit
+        in: query
+        description: max entities to return, max/default of 100
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution Host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionHostQueryResult'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ExecutionHost
+  /execution/hosts/{id}:
+    get:
+      tags:
+      - ExecutionHost
+      summary: Fetch Execution Host
+      operationId: getExecutionHost
+      parameters:
+      - name: id
+        in: path
+        description: host ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution Host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionHost'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: No such Execution Host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ExecutionHost
+    delete:
+      tags:
+      - ExecutionHost
+      summary: Remove Execution Host
+      operationId: removeExecutionHost
+      parameters:
+      - name: id
+        in: path
+        description: host ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Execution Host
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::ExecutionHost
+    patch:
+      tags:
+      - ExecutionHost
+      summary: Patch Execution Host
+      description: Created Execution Host for tracking a unique runner
+      operationId: updateExecutionHost
+      parameters:
+      - name: id
+        in: path
+        description: host ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24 - use to ensure atomic updates, pass "version" from etag
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Updated host detail
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchExecutionHostRequest'
+        required: true
+      responses:
+        '200':
+          description: Execution Host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionHost'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: No such Execution Host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: Conflict with If-Match header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::ExecutionHost
+components:
+  schemas:
+    ExecutionHostOperatingSystem:
+      type: string
+      description: Operation system used in the runtime
+      enum:
+      - windows
+      - linux
+      - osx
+    CreateExecutionHostRequest:
+      required:
+      - provider
+      - status
+      - workspace_id
+      type: object
+      properties:
+        execution_cluster_id:
+          type: string
+          description: cluster this host belongs to
+        provider:
+          $ref: '#/components/schemas/ExecutionHostProvider'
+        region:
+          type: string
+          description: region the execution host is in
+        zone:
+          type: string
+          description: zone the execution host is in
+        ipv4_address:
+          type: string
+          description: Currently associated IP address (typically RFC 1918)
+        provider_instance_id:
+          type: string
+          description: id of the host within the provider
+        labels:
+          type: array
+          description: Host labels
+          items:
+            type: string
+        capabilities:
+          type: array
+          description: Host supported capabilities
+          items:
+            type: string
+        current_state:
+          $ref: '#/components/schemas/ExecutionNodeState'
+        status:
+          $ref: '#/components/schemas/ExecutionHostStatus'
+        memory_mib:
+          type: integer
+          description: memory in megabytes available on the host
+          format: int32
+        cpu:
+          type: integer
+          description: cpus available on the host
+          format: float
+        instance_type:
+          type: string
+          description: Unique identifies for the instance type (e.g. mac1.metal)
+        os:
+          $ref: '#/components/schemas/ExecutionHostOperatingSystem'
+        workspace_id:
+          type: string
+          description: Id of workspace this host is assigned to or 'mabl' for general purpose
+      description: Host for execution runners
+    ExecutionHost:
+      required:
+      - created_by_id
+      - created_time
+      - id
+      - last_updated_by_id
+      - last_updated_time
+      - workspace_id
+      type: object
+      description: Host for execution runners
+      allOf:
+      - $ref: '#/components/schemas/CreateExecutionHostRequest'
+      - $ref: '#/components/schemas/PatchExecutionHostRequest'
+      - type: object
+        properties:
+          id:
+            type: string
+            description: API generated globally unique ID
+          etag:
+            type: string
+            description: API version etag
+          created_time:
+            type: integer
+            description: Creation time, epoch millis
+            format: int64
+          created_by_id:
+            type: string
+            description: Creation principal ID
+          last_updated_time:
+            type: integer
+            description: Last updated time, epoch millis
+            format: int64
+          last_updated_by_id:
+            type: string
+            description: Last updating principal ID
+          deleted_time:
+            type: integer
+            description: Deletion time, epoch millis
+            format: int64
+          deleted_by_id:
+            type: string
+            description: Deletion principal ID
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+    ExecutionHostProvider:
+      type: string
+      description: Cloud where execution host resides
+      enum:
+      - google_cloud
+      - amazon_web_services
+      - customer
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    ExecutionHostStatus:
+      type: string
+      description: Status of execution host
+      enum:
+      - initializing
+      - ready
+      - updating
+      - shutting_down
+      - stopped
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    ExecutionHostQueryResult:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/PaginatedResponse'
+      - type: object
+        properties:
+          items:
+            type: array
+            description: Results
+            readOnly: true
+            items:
+              $ref: '#/components/schemas/ExecutionHost'
+    ExecutionNodeState:
+      type: object
+      properties:
+        versions:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of software versions running on the cluster
+        lastUpdatedTime:
+          type: integer
+          format: int64
+      description: Execution node state
+    PaginatedResponse:
+      required:
+      - count
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Number of items returned in this response, maybe 0 if count == limit on last call
+          format: int32
+        limit:
+          type: integer
+          description: Limit applied to this query
+          format: int32
+        cursor:
+          type: string
+          description: Cursor that can be used to fetch the next page, count <= limit
+      description: Common paginated response result holder
+    PatchExecutionHostRequest:
+      type: object
+      properties:
+        labels:
+          type: array
+          description: Host labels
+          items:
+            type: string
+        capabilities:
+          type: array
+          description: Host supported capabilities
+          items:
+            type: string
+        current_state:
+          $ref: '#/components/schemas/ExecutionNodeState'
+        command:
+          $ref: '#/components/schemas/ExecutionHostCommand'
+        status:
+          $ref: '#/components/schemas/ExecutionHostStatus'
+      description: Patch select Execution Host properties
+    ExecutionHostCommand:
+      type: object
+      properties:
+        command_type:
+          type: string
+          description: The command to deliver to the execution host
+          enum:
+          - update
+          - shutdown
+          - restart_runners
+          - none
+        target_state:
+          $ref: '#/components/schemas/ExecutionNodeState'
+        context:
+          type: object
+          additionalProperties:
+            type: string
+          description: map of additional context properties to include with the command
+      description: Command to send to execution host
+  responses:
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

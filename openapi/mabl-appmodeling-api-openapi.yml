@@ -1,0 +1,1505 @@
+openapi: 3.2.0
+info:
+  title: mabl App Modeling API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: AppModeling
+paths:
+  /appModeling/run/seedFrontier:
+    post:
+      tags:
+      - AppModeling
+      summary: Seed the app modeling work frontier (internal)
+      description: 'Upserts the app_model_coordinator row for the given application and seeds the work
+
+        frontier from the requested scope (all app-tagged tests by default). Called exclusively
+
+        by the TypeScript initiateAppModelingRun handler — not intended for external callers.
+
+        A full seed is idempotent: re-running on an existing frontier safely adds new tests and
+
+        removes de-tagged ones without re-opening what an earlier run already attempted. A
+
+        scoped seed deliberately re-opens the tests it names.'
+      operationId: seedAppModelingFrontier
+      parameters:
+      - name: workspaceId
+        in: query
+        description: The workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeedAppModelingFrontierRequest'
+        required: true
+      responses:
+        '200':
+          description: Frontier seeded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeedAppModelingFrontierResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '404':
+          description: Application not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::AppModelingRun
+  /appModeling/run/{application_id}/state:
+    get:
+      tags:
+      - AppModeling
+      summary: Get coordinator run state (internal)
+      description: 'Returns the coordinator run state for the given application. Called internally by the
+
+        TypeScript getAppModelingRunState handler to delegate coordinator bookkeeping to the
+
+        Java service layer.'
+      operationId: getAppModelingCoordinatorState
+      parameters:
+      - name: application_id
+        in: path
+        description: The application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspaceId
+        in: query
+        description: The workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Current coordinator run state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppModelingRunState'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '404':
+          description: Coordinator row not found for this application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::AppModelingRun
+  /appModeling/run/{application_id}/batch/dequeue:
+    post:
+      tags:
+      - AppModeling
+      summary: Dequeue next pending batch (internal)
+      description: 'Returns the next pending test invariant IDs for the coordinator to process and
+
+        transitions the run status to RUNNING. Called internally by the TypeScript
+
+        dequeueNextAppModelingBatch handler.'
+      operationId: dequeueAppModelingBatchInternal
+      parameters:
+      - name: application_id
+        in: path
+        description: The application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspaceId
+        in: query
+        description: The workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppModelingDequeueInternalRequest'
+        required: true
+      responses:
+        '200':
+          description: Next batch, or exhausted signal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppModelingDequeueInternalResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '404':
+          description: Coordinator row not found for this application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::AppModelingRun
+  /appModeling/run/{application_id}/batch/complete:
+    post:
+      tags:
+      - AppModeling
+      summary: Mark batch as processed (internal)
+      description: 'Marks batch test invariant IDs as attempted, records the inner session ID,
+
+        clears in-flight state, and returns whether the frontier is now exhausted. Called
+
+        internally by the TypeScript markAppModelingBatchComplete handler.'
+      operationId: markAppModelingBatchCompleteInternal
+      parameters:
+      - name: application_id
+        in: path
+        description: The application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspaceId
+        in: query
+        description: The workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppModelingMarkBatchCompleteInternalRequest'
+        required: true
+      responses:
+        '200':
+          description: Batch recorded; frontier exhaustion reported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppModelingMarkBatchCompleteInternalResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '404':
+          description: Coordinator row not found for this application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::AppModelingRun
+  /appModeling/run/{application_id}/inflight:
+    put:
+      tags:
+      - AppModeling
+      summary: Persist in-flight coordinator state (internal)
+      description: 'Writes the active inner session ID, last executeAppModeling messages, and batch cursor
+
+        so a pod restart can resume. Called internally by the TypeScript
+
+        persistAppModelingInFlightState handler.'
+      operationId: persistAppModelingInFlightStateInternal
+      parameters:
+      - name: application_id
+        in: path
+        description: The application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspaceId
+        in: query
+        description: The workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppModelingInFlightStateInternalRequest'
+        required: true
+      responses:
+        '200':
+          description: In-flight state persisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppModelingInFlightStateInternalResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '404':
+          description: Coordinator row not found for this application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::AppModelingRun
+  /appModeling/run/{application_id}/status:
+    put:
+      tags:
+      - AppModeling
+      summary: Set coordinator run status to terminal state (internal)
+      description: 'Sets the coordinator run status to a terminal value (COMPLETED or ERROR). Called
+
+        internally by the TypeScript markAppModelingRunComplete handler.'
+      operationId: markAppModelingRunCompleteInternal
+      parameters:
+      - name: application_id
+        in: path
+        description: The application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspaceId
+        in: query
+        description: The workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppModelingRunStatusUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Run status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppModelingRunStatusUpdateResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '404':
+          description: Coordinator row not found for this application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::AppModelingRun
+components:
+  schemas:
+    JsonToolCallPartInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - json
+        json:
+          type: object
+          additionalProperties: true
+          description: JSON input
+    ThinkingPart:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - thinking
+        thinking:
+          type: string
+          description: The thinking/reasoning text
+        signature:
+          type: string
+          description: Signature of the thinking/reasoning
+    Base64FileSource:
+      type: object
+      properties:
+        source_type:
+          type: string
+          enum:
+          - base64
+        data:
+          type: string
+          description: Base64-encoded file data
+      allOf:
+      - $ref: '#/components/schemas/BaseFileSource'
+    TextToolOutput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - text
+        text:
+          type: string
+          description: Text tool output that should be directly sent to the API
+    FileSource:
+      type: object
+      properties:
+        source_type:
+          type: string
+          enum:
+          - base64
+          - uri
+      anyOf:
+      - $ref: '#/components/schemas/Base64FileSource'
+      - $ref: '#/components/schemas/UriFileSource'
+    AppModelingDequeueInternalResponse:
+      required:
+      - exhausted
+      type: object
+      properties:
+        exhausted:
+          type: boolean
+          description: True when the frontier is fully attempted and there is nothing left.
+        batch_item_count:
+          type: integer
+          description: Number of test invariant IDs in this batch. Echo token passed back to markAppModelingBatchCompleteInternal.
+          format: int32
+        test_invariant_ids:
+          type: array
+          description: Test invariant IDs in this batch. Empty when exhausted is true.
+          items:
+            type: string
+      description: Response from the internal dequeue endpoint.
+    ToolOutputLogLinesContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - log-lines
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/LogLineEntry'
+        title:
+          type: string
+          description: Optional heading above the log list
+      description: Structured log lines for monospace / level-colored rendering (parity with screenshot-style rich blocks)
+    ToolOutputFileDataContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - file-data
+        file_data:
+          type: string
+          description: Base-64 encoded file data
+        filename:
+          type: string
+          description: Optional filename of the file
+      allOf:
+      - $ref: '#/components/schemas/BaseToolOutputDataContentItem'
+    SpecialMessageData:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - cloud_instance_lifecycle
+          - user_requested_stop
+          - summarize_context
+          - branch_merge_skipped
+          - workspace_scope_changed
+      anyOf:
+      - $ref: '#/components/schemas/CloudInstanceLifecycleData'
+      - $ref: '#/components/schemas/UserRequestedStopData'
+      - $ref: '#/components/schemas/SummarizeContextData'
+      - $ref: '#/components/schemas/BranchMergeSkippedData'
+      - $ref: '#/components/schemas/WorkspaceScopeChangedData'
+    SummarizeContextData:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - summarize_context
+        summary:
+          type: string
+          description: A summary of the conversation prior to this message
+    ToolOutputHarUrlContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - har-url
+        har_url:
+          type: string
+          description: gs:// or https URI of the HAR resource
+        label:
+          type: string
+          description: Optional short label for the HAR viewer
+      description: Reference to a HAR file artifact (render like screenshot file URIs in the client)
+    BaseAgentCloudInstanceLifecycleEvent:
+      type: object
+      properties:
+        cloud_agent_instance_id:
+          type: string
+          description: The ID of the cloud instance
+    BaseFileSource:
+      type: object
+      properties:
+        media_type:
+          type: string
+          description: MIME type of the file
+    AppModelingRunScopeMode:
+      type: string
+      description: 'Which tests a run''s work frontier is seeded from.
+
+
+        full: every test that ran against this application in the last 90 days. The default,
+
+        and the only mode that also drops de-tagged tests from the frontier and restores
+
+        previously deferred ones.
+
+
+        modified_since: the same run-history population, narrowed to tests whose content was
+
+        last updated at or after the given timestamp. Intended for incremental knowledge-graph
+
+        updates over recently-edited tests.
+
+
+        explicit_tests: exactly the caller-supplied test invariant IDs.
+
+        '
+      enum:
+      - full
+      - modified_since
+      - explicit_tests
+    UserMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+          - user
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMessagePart'
+      allOf:
+      - $ref: '#/components/schemas/BaseMessage'
+    ToolOutputImageUrlContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - image-url
+        image_url:
+          type: string
+          description: URL of the image
+    ToolOutputContentItem:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ToolOutputContentItemType'
+      anyOf:
+      - $ref: '#/components/schemas/ToolOutputTextContentItem'
+      - $ref: '#/components/schemas/ToolOutputJsonContentItem'
+      - $ref: '#/components/schemas/ToolOutputFileDataContentItem'
+      - $ref: '#/components/schemas/ToolOutputFileUrlContentItem'
+      - $ref: '#/components/schemas/ToolOutputImageDataContentItem'
+      - $ref: '#/components/schemas/ToolOutputImageUrlContentItem'
+      - $ref: '#/components/schemas/ToolOutputHarUrlContentItem'
+      - $ref: '#/components/schemas/ToolOutputHarJsonContentItem'
+      - $ref: '#/components/schemas/ToolOutputLogLinesContentItem'
+    UriFileSource:
+      type: object
+      properties:
+        source_type:
+          type: string
+          enum:
+          - uri
+        uri:
+          type: string
+          description: URI of the file
+      allOf:
+      - $ref: '#/components/schemas/BaseFileSource'
+    ExecutionDeniedToolOutput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - execution-denied
+        reason:
+          type: string
+          description: Optional reason for the execution denial
+    ErrorJsonToolOutput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - error-json
+        error_json:
+          description: Error details as JSON value
+    AppModelingRunStatus:
+      type: string
+      description: Lifecycle status of an app modeling run.
+      enum:
+      - IDLE
+      - RUNNING
+      - COMPLETED
+      - ERROR
+    LogLineEntry:
+      required:
+      - text
+      type: object
+      properties:
+        text:
+          type: string
+        level:
+          type: string
+          description: Severity e.g. error, warn, info, debug
+        source:
+          type: string
+          description: Origin e.g. console, browser, network
+      description: A single log line for structured console or diagnostic output
+    AppModelingMarkBatchCompleteInternalResponse:
+      required:
+      - frontier_exhausted
+      type: object
+      properties:
+        frontier_exhausted:
+          type: boolean
+          description: Whether the frontier has nothing left for this run to do. True once no item is pending, which for a scoped run includes the tests it deferred — those are not attempted, they are waiting for a later full run.
+      description: Response from the internal mark-batch-complete endpoint.
+    WorkspaceResultsScopeSnapshot:
+      required:
+      - end_time
+      - start_time
+      type: object
+      properties:
+        start_time:
+          type: string
+          description: ISO-8601 start of the analysis window
+        end_time:
+          type: string
+          description: ISO-8601 end of the analysis window
+        environment_id:
+          type: string
+        environment_name:
+          type: string
+        application_id:
+          type: string
+        application_name:
+          type: string
+      description: The filters a workspace results chat session was scoped to at a point in time.
+    ToolOutputMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+          - tool_output
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolOutputMessagePart'
+      allOf:
+      - $ref: '#/components/schemas/BaseMessage'
+    MessagePartType:
+      type: string
+      enum:
+      - text
+      - file
+      - tool_call
+      - tool_output
+      - thinking
+      - code_execution_call
+      - code_execution_result
+    ModelMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+          - model
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelMessagePart'
+      allOf:
+      - $ref: '#/components/schemas/BaseMessage'
+    BranchMergeSkippedData:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - branch_merge_skipped
+        branch_id:
+          type: string
+          description: The ID of the session branch whose automatic merge was skipped
+        branch_name:
+          type: string
+          description: The name of the session branch whose automatic merge was skipped
+        diverged_entity_names:
+          type: array
+          description: Names of the tests or flows whose master version changed after the agent's branch point, making an automatic merge unsafe; the branch is left open for manual review and merge
+          items:
+            type: string
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    MessageRole:
+      type: string
+      enum:
+      - user
+      - model
+      - tool_output
+      - special
+    CodeExecutionCallPart:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - code_execution_call
+        language:
+          type: string
+          description: Programming language identifier from Gemini's Language enum (e.g. PYTHON). LANGUAGE_UNSPECIFIED when the model omitted it.
+        code:
+          type: string
+          description: Source code that was executed in the sandbox.
+        signature:
+          type: string
+          description: Thought signature (Gemini 3 with thinking enabled).
+      description: Code the model asked the Gemini built-in Python execution sandbox to run. Emitted alongside a matching CodeExecutionResultPart on the same model turn — the sandbox runs synchronously and returns its result in the same response. Only appears when the agent enables the code execution tool and the model chooses to use it.
+    JsonToolOutput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - json
+        json:
+          description: Response content as JSON value
+    UserMessagePart:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/MessagePartType'
+      anyOf:
+      - $ref: '#/components/schemas/TextPart'
+      - $ref: '#/components/schemas/FilePart'
+    ErrorContentToolOutput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - error-content
+        error_content:
+          type: array
+          description: Array of error content items
+          items:
+            $ref: '#/components/schemas/ToolOutputContentItem'
+    ToolOutputImageDataContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - image-data
+        image_data:
+          type: string
+          description: Base-64 encoded image data
+      allOf:
+      - $ref: '#/components/schemas/BaseToolOutputDataContentItem'
+    UserRequestedStopData:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - user_requested_stop
+        cloud_agent_instance_id:
+          type: string
+          description: The ID of the cloud instance that the user requested to stop
+        requested_by_id:
+          type: string
+          description: The ID of the user who requested the stop
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    ModelMessagePart:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/MessagePartType'
+      anyOf:
+      - $ref: '#/components/schemas/TextPart'
+      - $ref: '#/components/schemas/ToolCallPart'
+      - $ref: '#/components/schemas/ThinkingPart'
+      - $ref: '#/components/schemas/CodeExecutionCallPart'
+      - $ref: '#/components/schemas/CodeExecutionResultPart'
+    CloudInstanceLifecycleData:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - cloud_instance_lifecycle
+        lifecycle_event:
+          $ref: '#/components/schemas/AgentCloudInstanceLifecycleEvent'
+    MessagePart:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/MessagePartType'
+      anyOf:
+      - $ref: '#/components/schemas/TextPart'
+      - $ref: '#/components/schemas/FilePart'
+      - $ref: '#/components/schemas/ToolCallPart'
+      - $ref: '#/components/schemas/ThinkingPart'
+      - $ref: '#/components/schemas/ToolOutputMessagePart'
+      - $ref: '#/components/schemas/CodeExecutionCallPart'
+      - $ref: '#/components/schemas/CodeExecutionResultPart'
+    AppModelingRunStatusUpdateRequest:
+      required:
+      - run_status
+      type: object
+      properties:
+        run_status:
+          $ref: '#/components/schemas/AppModelingRunStatus'
+        budget_capped:
+          type: boolean
+          description: 'True when the run is completing because it hit the MAX_BATCHES budget ceiling while
+
+            the work frontier was NOT exhausted (a truncated run); false on a true frontier-drain
+
+            completion. Persisted in run_metrics so a bound-out is distinguishable from a full
+
+            drain. Optional; defaults false.
+
+            '
+          default: false
+        run_session_id:
+          type: string
+          description: 'The run session this status belongs to. Supply it whenever the caller knows which run it is finalizing: the coordinator row is reused per application, so a newer run can have re-claimed it, and a status carrying a session id is applied only while that session still owns the row. Omitted, the status is written unconditionally.'
+      description: Request to update the coordinator run status.
+    ToolCallPart:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - tool_call
+        id:
+          type: string
+          description: Unique identifier for the tool call
+        name:
+          type: string
+          description: Name of the tool/function
+        input:
+          $ref: '#/components/schemas/ToolCallPartInput'
+        signature:
+          type: string
+          description: Thought signature from the model (required by Gemini 3 when thinking is enabled)
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    SeedAppModelingFrontierResponse:
+      required:
+      - seeded_test_count
+      type: object
+      properties:
+        seeded_test_count:
+          type: integer
+          description: Number of test invariant IDs the run's scope opened for modeling.
+          format: int32
+        deferred_test_count:
+          type: integer
+          description: Number of tests an earlier run left pending that this run set aside because they fall outside its scope. Always zero for a full run.
+          format: int32
+      description: Response from seedAppModelingFrontier.
+    ToolOutputFileUrlContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - file-url
+        file_url:
+          type: string
+          description: URL of the file
+    AppModelingRunScope:
+      required:
+      - mode
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/AppModelingRunScopeMode'
+        modified_since:
+          type: string
+          description: Required for modified_since, rejected otherwise. Tests whose last update is at or after this instant are seeded.
+          format: date-time
+        test_invariant_ids:
+          type: array
+          description: Required for explicit_tests, rejected otherwise. Each ID must name a test that exists in this workspace and is not deleted; unknown IDs fail the request rather than being silently skipped.
+          items:
+            type: string
+      description: 'The subset of an application''s tests a run covers.
+
+
+        In a scoped mode (modified_since, explicit_tests) the run''s scope becomes the frontier''s
+
+        pending set: the scoped tests are opened for modeling even if an earlier run already
+
+        attempted them, tests already attempted outside the scope stay attempted, and tests left
+
+        pending by an earlier run that ended early are deferred so this run does not drain them.
+
+        A later full run restores deferred tests, so nothing is lost.
+
+        '
+    AppModelingInFlightStateInternalRequest:
+      required:
+      - active_inner_session_id
+      - batch_cursor
+      type: object
+      properties:
+        active_inner_session_id:
+          type: string
+          description: The inner AMA session ID currently being driven.
+        last_inner_messages:
+          type: array
+          description: The new_messages returned by the most recent executeAppModeling turn.
+          items:
+            type: object
+            additionalProperties: true
+        batch_cursor:
+          type: integer
+          description: Current batch cursor.
+          format: int32
+        last_kg_row_count:
+          type: integer
+          description: The kg_row_count observed after the most recent executeAppModeling turn.
+          format: int64
+        stall_reinvoke_count:
+          type: integer
+          description: Consecutive re-invocations so far with no net-new KG rows for this inner session.
+          format: int32
+        test_invariant_ids:
+          type: array
+          description: Test invariant IDs of the batch being processed, persisted so a resumed coordinator pod can mark the batch complete instead of re-dequeuing/re-modeling it.
+          items:
+            type: string
+      description: Request body to persist in-flight coordinator state.
+    BaseMessage:
+      required:
+      - id
+      - parts
+      - role
+      - timestamp
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the message
+        message_index:
+          type: integer
+          description: The index of the message in the session (used for ordering)
+          format: int64
+        timestamp:
+          type: integer
+          description: The timestamp of the message in epoch milliseconds
+          format: int64
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: The metadata of the message
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessagePart'
+        role:
+          $ref: '#/components/schemas/MessageRole'
+      x-implements-interface:
+      - HasId
+    ToolCallPartInputType:
+      type: string
+      enum:
+      - text
+      - json
+    ErrorTextToolOutput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - error-text
+        error_text:
+          type: string
+          description: Error message as text
+    AppModelingDequeueInternalRequest:
+      required:
+      - batch_size
+      type: object
+      properties:
+        batch_size:
+          maximum: 50
+          minimum: 1
+          type: integer
+          description: Number of test invariant IDs to dequeue.
+          format: int32
+      description: Request body for the internal dequeue endpoint.
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    ToolOutputHarJsonContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - har-json
+        har:
+          type: object
+          additionalProperties: true
+          description: HAR document (typically includes log.entries)
+      description: Inline W3C HAR JSON for rich network waterfall rendering
+    AppModelingInFlightStateInternalResponse:
+      required:
+      - ok
+      type: object
+      properties:
+        ok:
+          type: boolean
+          description: Always true on success.
+      description: Response from the internal persist in-flight state endpoint.
+    ToolOutputContentItemType:
+      type: string
+      enum:
+      - text
+      - json
+      - file-data
+      - file-url
+      - image-data
+      - image-url
+      - har-url
+      - har-json
+      - log-lines
+    ToolOutputJsonContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - json
+        json:
+          type: object
+          additionalProperties: true
+    ToolOutputMessagePart:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - tool_output
+        tool_name:
+          type: string
+          description: Name of the tool that was called
+        tool_call_id:
+          type: string
+          description: ID of the tool call this responds to
+        output:
+          $ref: '#/components/schemas/ToolOutput'
+    AppModelingMarkBatchCompleteInternalRequest:
+      required:
+      - batch_item_count
+      - inner_session_id
+      - success
+      type: object
+      properties:
+        batch_item_count:
+          type: integer
+          description: The batch_item_count returned by dequeueAppModelingBatchInternal; echoed back for audit.
+          format: int32
+        inner_session_id:
+          type: string
+          description: The inner AMA session ID that processed this batch.
+        success:
+          type: boolean
+          description: Whether the batch completed successfully.
+        test_invariant_ids:
+          type: array
+          description: The test invariant IDs that were attempted in this batch.
+          items:
+            type: string
+      description: Request body to record a completed batch internally.
+    AgentCloudInstanceLifecycleEvent:
+      type: object
+      properties:
+        event_type:
+          type: string
+          enum:
+          - started
+          - stopped
+      anyOf:
+      - $ref: '#/components/schemas/AgentCloudInstanceStarted'
+      - $ref: '#/components/schemas/AgentCloudInstanceStopped'
+    ToolCallPartInput:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ToolCallPartInputType'
+      anyOf:
+      - $ref: '#/components/schemas/TextToolCallPartInput'
+      - $ref: '#/components/schemas/JsonToolCallPartInput'
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    AppModelingRunState:
+      required:
+      - batches_processed
+      - frontier_exhausted
+      - run_status
+      type: object
+      properties:
+        run_status:
+          $ref: '#/components/schemas/AppModelingRunStatus'
+        frontier_exhausted:
+          type: boolean
+          description: Whether the work frontier has nothing left for this run to do. True once no item is pending, which for a scoped run includes the tests it deferred — those are not attempted, they are waiting for a later full run.
+        batches_processed:
+          type: integer
+          description: Number of batches that have been marked complete.
+          format: int32
+        active_inner_session_id:
+          type: string
+          description: The inner AMA session ID currently being driven, if any.
+        resume_state:
+          $ref: '#/components/schemas/AppModelingResumeState'
+        kg_row_count:
+          type: integer
+          description: 'Current count of this app''s active KG rows (nodes + edges + external refs). A
+
+            read-only progress signal: the coordinator compares this value across
+
+            executeAppModeling re-invocations to detect a stalled inner session (see
+
+            AppModelingResumeState.last_kg_row_count). Counts only — never inspects what was
+
+            written.
+
+            '
+          format: int64
+        budget_capped:
+          type: boolean
+          description: 'True if this run completed by hitting the MAX_BATCHES budget ceiling with the work
+
+            frontier not yet exhausted (a truncated run), false otherwise. Surfaced from the
+
+            persisted run_metrics so a bound-out is observable and not mistaken for a full drain.
+
+            '
+        scope_mode:
+          description: 'The seed scope this run covers. Always stated: a run recorded before scoping existed covered everything and reads as full.'
+          allOf:
+          - $ref: '#/components/schemas/AppModelingRunScopeMode'
+        deferred_test_count:
+          type: integer
+          description: Number of tests this run set aside because they fall outside its scope. They are not attempted and no run picks them up until a full run restores them. Zero for a full run.
+          format: int32
+      description: Coordinator run state for an app modeling run.
+    AppModelingRunStatusUpdateResponse:
+      required:
+      - run_status
+      type: object
+      properties:
+        run_status:
+          $ref: '#/components/schemas/AppModelingRunStatus'
+      description: Response from the internal run status update endpoint.
+    ToolOutputTextContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - text
+        text:
+          type: string
+          description: Text content
+    SeedAppModelingFrontierRequest:
+      required:
+      - application_id
+      - run_session_id
+      type: object
+      properties:
+        application_id:
+          type: string
+          description: The application whose tests seed the frontier.
+        run_session_id:
+          type: string
+          description: The run coordinator session ID, stored on the coordinator row.
+        scope:
+          $ref: '#/components/schemas/AppModelingRunScope'
+      description: Request to seed or reconcile the work frontier for an app modeling run.
+    SpecialMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+          - special
+        data:
+          $ref: '#/components/schemas/SpecialMessageData'
+      allOf:
+      - $ref: '#/components/schemas/BaseMessage'
+    WorkspaceScopeChangedData:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - workspace_scope_changed
+        previous_scope:
+          $ref: '#/components/schemas/WorkspaceResultsScopeSnapshot'
+        current_scope:
+          $ref: '#/components/schemas/WorkspaceResultsScopeSnapshot'
+      description: Marks the point in a workspace results chat where the user changed the dashboard filters. Turns before it answered from `previous_scope`; turns after it answer from `current_scope`. Clients render it as a divider. Both scopes are present whenever `type` is `workspace_scope_changed`; they are not declared required because the generated clients flatten every special data variant into one type.
+    TextPart:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - text
+        text:
+          type: string
+          description: Text content
+        signature:
+          type: string
+          description: Thought signature from the model (used by Gemini 3 for text parts with thinking)
+        user_prompted:
+          type: boolean
+          description: True when this text part originated from a user-initiated prompt (user-typed input, a selected suggested prompt, or an auto-sent prompt on the user's behalf). This is content that will be displayed in the UI in a chat bubble with the user profile picture.
+    BaseToolOutputDataContentItem:
+      type: object
+      properties:
+        media_type:
+          type: string
+          description: IANA media type
+    AgentSessionMessage:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/MessageRole'
+      anyOf:
+      - $ref: '#/components/schemas/ModelMessage'
+      - $ref: '#/components/schemas/UserMessage'
+      - $ref: '#/components/schemas/ToolOutputMessage'
+      - $ref: '#/components/schemas/SpecialMessage'
+    AgentCloudInstanceStarted:
+      type: object
+      properties:
+        event_type:
+          type: string
+          enum:
+          - started
+        triggered_by_message_id:
+          type: string
+          description: The message ID that triggered this instance to start
+        agent_type:
+          type: string
+          description: The type of agent being run on the cloud instance
+        machine_config:
+          type: object
+          additionalProperties: true
+          description: Configuration details for the cloud machine
+      allOf:
+      - $ref: '#/components/schemas/BaseAgentCloudInstanceLifecycleEvent'
+    TextToolCallPartInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - text
+        text:
+          type: string
+          description: Text input
+    FilePart:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - file
+        source:
+          $ref: '#/components/schemas/FileSource'
+        title:
+          type: string
+          description: Optional file title/name
+        display_name:
+          type: string
+          description: Optional display name
+    AppModelingResumeState:
+      required:
+      - active_inner_session_id
+      - batch_cursor
+      type: object
+      properties:
+        active_inner_session_id:
+          type: string
+          description: The inner AMA session ID being driven.
+        last_inner_messages:
+          type: array
+          description: The new_messages returned by the most recent executeAppModeling turn.
+          items:
+            $ref: '#/components/schemas/AgentSessionMessage'
+        batch_cursor:
+          type: integer
+          description: Index into the current batch, for ordered resume.
+          format: int32
+        last_kg_row_count:
+          type: integer
+          description: 'The kg_row_count observed after the most recent executeAppModeling turn. Persisted
+
+            so a pod restart resumes stall detection from where it left off instead of resetting
+
+            the no-progress counter to zero.
+
+            '
+          format: int64
+        stall_reinvoke_count:
+          type: integer
+          description: 'Number of consecutive executeAppModeling re-invocations that produced no net-new KG
+
+            rows for this inner session. Persisted alongside last_kg_row_count so it survives a
+
+            pod restart mid-batch.
+
+            '
+          format: int32
+        test_invariant_ids:
+          type: array
+          description: 'Test invariant IDs of the batch being processed. Persisted so a resumed coordinator
+
+            pod can call markBatchComplete for the batch instead of re-dequeuing and re-modeling
+
+            it (which would otherwise loop, never marking the batch''s tests ATTEMPTED).
+
+            '
+          items:
+            type: string
+      description: Persisted in-flight state for resuming a coordinator pod after restart.
+    CodeExecutionResultPart:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - code_execution_result
+        outcome:
+          type: string
+          description: Outcome identifier from Gemini's Outcome enum (OUTCOME_OK, OUTCOME_FAILED, OUTCOME_DEADLINE_EXCEEDED, or OUTCOME_UNSPECIFIED).
+        output_text:
+          type: string
+          description: Combined stdout and stderr captured from the sandbox. Named `output_text` (not `output`) to avoid colliding with ToolOutputMessagePart.output in the flattened MessagePart interface — see the comment on this schema.
+      description: The result of the sandbox executing the immediately preceding CodeExecutionCallPart. Bundled with the call on the same model turn; there is no separate tool-output round-trip.
+    ContentToolOutput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - content
+        content:
+          type: array
+          description: Array of content items
+          items:
+            $ref: '#/components/schemas/ToolOutputContentItem'
+    ToolOutput:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ToolOutputType'
+      anyOf:
+      - $ref: '#/components/schemas/TextToolOutput'
+      - $ref: '#/components/schemas/JsonToolOutput'
+      - $ref: '#/components/schemas/ExecutionDeniedToolOutput'
+      - $ref: '#/components/schemas/ErrorTextToolOutput'
+      - $ref: '#/components/schemas/ErrorJsonToolOutput'
+      - $ref: '#/components/schemas/ContentToolOutput'
+      - $ref: '#/components/schemas/ErrorContentToolOutput'
+    AgentCloudInstanceStopped:
+      type: object
+      properties:
+        event_type:
+          type: string
+          enum:
+          - stopped
+        cause:
+          type: string
+          description: Reason for stopping (e.g., "completed", "failed", "timeout", "cancelled")
+        reason:
+          $ref: '#/components/schemas/AgentCloudInstanceTerminationReason'
+      allOf:
+      - $ref: '#/components/schemas/BaseAgentCloudInstanceLifecycleEvent'
+    AgentCloudInstanceTerminationReason:
+      type: string
+      description: The reason for terminating a cloud instance. 'infra_shutdown' covers any shutdown signal from the runtime environment (K8s pod eviction, Cloud Run instance cycling, etc.) — kept generic so it applies regardless of where the agent runs. 'dispatch_failed' means the instance never started — its start message failed to publish, or expired in the queue before any runner claimed it. 'agent_stalled' means the agent was still alive but stopped making progress, so a watchdog hard-killed it. 'agent_error' means the agent threw or exited unexpectedly while its work was still in flight.
+      enum:
+      - execution_timeout
+      - stop_requested
+      - infra_shutdown
+      - dispatch_failed
+      - agent_stalled
+      - agent_error
+      - unknown
+    ToolOutputType:
+      type: string
+      enum:
+      - text
+      - json
+      - execution-denied
+      - error-text
+      - error-json
+      - content
+      - error-content
+  responses:
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

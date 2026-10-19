@@ -1,0 +1,363 @@
+openapi: 3.2.0
+info:
+  title: mabl Chat API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Chat
+paths:
+  /chat/{workspace_id}/request:
+    post:
+      tags:
+      - Chat
+      summary: Make a chat request
+      description: Make a chat request to the assistant
+      operationId: requestChat
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace associated with this assertion
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: A chat request to the assistant including relevant user context and chat history
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+        required: true
+      responses:
+        '200':
+          description: A response from the assistant to the user's request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Run::Chat
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    EntityTypeEnum:
+      type: string
+      enum:
+      - application
+      - branch
+      - datatable
+      - deployment_event
+      - environment
+      - file_upload
+      - flow
+      - insight
+      - plan
+      - plan_run
+      - snippet
+      - test
+      - test_run
+    ChatContextEntityList:
+      required:
+      - entity_type
+      - ids
+      - is_focus
+      type: object
+      properties:
+        entity_type:
+          $ref: '#/components/schemas/EntityTypeEnum'
+        is_focus:
+          type: boolean
+          description: Whether the entity is the primary focus (for that entity type) in the user's current context. If true, the list of IDs should contain only one ID.
+        ids:
+          type: array
+          description: List of entity IDs
+          items:
+            type: string
+        names:
+          type: array
+          description: Optional list of entity names by same index as IDs
+          items:
+            type: string
+    ChatRequest:
+      required:
+      - user_context
+      - user_text
+      type: object
+      properties:
+        user_text:
+          type: string
+          description: The user's latest text input to the assistant
+        session_id:
+          type: string
+          description: The ID of the current conversation session for tracking purposes
+        user_context:
+          $ref: '#/components/schemas/ChatUserContext'
+        history:
+          type: array
+          description: The chat history leading up to this request
+          items:
+            $ref: '#/components/schemas/ChatHistoryItem'
+        module_override:
+          type: string
+          description: Temporarily force router to use specific module for hackathon only. String must match getName() value of the module
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    ChatAction:
+      required:
+      - action_type
+      - display_text
+      type: object
+      properties:
+        action_type:
+          type: string
+          description: The type of action to suggest to the user
+          enum:
+          - deep_link
+          - external_link
+          - failure_categorization
+          - create_plan_from_test_list
+          - add_label
+        display_text:
+          type: string
+          description: The text to display for the external link suggested action
+      discriminator:
+        propertyName: action_type
+        mapping:
+          deep_link: '#/components/schemas/ChatActionDeepLink'
+          external_link: '#/components/schemas/ChatActionExternalLink'
+          failure_categorization: '#/components/schemas/ChatActionFailureCategorization'
+          create_plan_from_test_list: '#/components/schemas/ChatActionCreatePlanFromTestList'
+          add_label: '#/components/schemas/ChatActionAddLabel'
+    ChatMessageRoleEnum:
+      type: string
+      enum:
+      - user
+      - model
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    ChatResponse:
+      required:
+      - response_text
+      - workspace_id
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace associated with this assertion evaluation
+        response_text:
+          type: string
+          description: The assistant's response to the user's request
+        action_suggestions:
+          type: array
+          description: Suggestions for actions the user can take next
+          items:
+            $ref: '#/components/schemas/ChatAction'
+        entities:
+          type: array
+          description: Entities, by ID, that are referenced in the assistant's response and provide context in subsequent conversation or action suggestions
+          items:
+            $ref: '#/components/schemas/ChatContextEntityList'
+    ChatFunctionCallGroup:
+      required:
+      - function_calls
+      type: object
+      properties:
+        function_calls:
+          type: array
+          description: Contains a list of function calls made in parallel.
+          items:
+            $ref: '#/components/schemas/ChatFunctionCall'
+        text:
+          type: string
+          description: The text output from the model prior to generating this group of function calls
+        thinking:
+          type: string
+          description: The model's thinking output that led to generating this group of function calls
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    ChatFunctionCall:
+      required:
+      - function_name
+      type: object
+      properties:
+        function_name:
+          type: string
+          description: The name of the function that was called
+        arguments:
+          type: object
+          additionalProperties: true
+          description: The arguments passed to the function
+        output:
+          type: object
+          additionalProperties: true
+          description: The output returned by the function
+        succeeded:
+          type: boolean
+          description: Whether the function call succeeded (may be undefined while in progress during streaming)
+        error_message:
+          type: string
+          description: Error message if the function call failed
+      description: A function call made during a chat message. Function calls are only supported for model messages.
+    ChatHistoryItem:
+      required:
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/ChatMessageRoleEnum'
+        message:
+          type: string
+          description: The text of the chat message (may be partial or absent during streaming)
+        timestamp:
+          type: integer
+          description: The time the item was generated in epoch millis
+          format: int64
+        function_call_groups:
+          type: array
+          description: Function calls made during this chat message. Function calls are only supported for model messages. Each item is a group of function calls made in parallel, and following function calls were executed serially after the previous function calls.
+          items:
+            $ref: '#/components/schemas/ChatFunctionCallGroup'
+        streamed_thinking:
+          type: string
+          description: The model's thinking output that is being streamed in real-time (only populated during streaming, accumulates until next function call round)
+        thinking:
+          type: string
+          description: The model's final thinking output for this message
+    ChatUserContext:
+      required:
+      - location_description
+      type: object
+      properties:
+        location_description:
+          type: string
+          description: Short description of the location/source from which the chat request was made, such as the current page or view in the app or from an integration
+        additional_context_description:
+          type: string
+          description: Additional, detailed, free-text context about the user's current context in the application, such as selected/highlighted information or visible data not easily retrievable on the backend
+        entities:
+          type: array
+          description: Entities, by ID, relevant to current user context (especially any entities currently shown in UI)
+          items:
+            $ref: '#/components/schemas/ChatContextEntityList'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

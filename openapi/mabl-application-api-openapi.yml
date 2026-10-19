@@ -1,0 +1,738 @@
+openapi: 3.2.0
+info:
+  title: mabl Application API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Application
+paths:
+  /applications:
+    get:
+      tags:
+      - Application
+      summary: Get applications by workspace
+      description: Get all applications in a workspace
+      operationId: queryApplications
+      parameters:
+      - name: workspace_id
+        in: query
+        description: ID of workspace in which to query applications
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Pagination limit
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Pagination cursor
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Applicatations in given workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Application
+      x-mabl-scope: public
+    post:
+      tags:
+      - Application
+      summary: Create application
+      description: Create a new application
+      operationId: createApplication
+      requestBody:
+        description: Application to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Application'
+        required: true
+      responses:
+        '201':
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Application
+      x-mabl-scope: public
+  /applications/{id}:
+    get:
+      tags:
+      - Application
+      summary: Get application by ID
+      description: Get application information by ID
+      operationId: getApplication
+      parameters:
+      - name: id
+        in: path
+        description: Application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Application with given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Application
+      x-mabl-scope: public
+    delete:
+      tags:
+      - Application
+      summary: Remove application
+      description: Remove an application
+      operationId: removeApplication
+      parameters:
+      - name: id
+        in: path
+        description: Application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Application removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Application
+      x-mabl-scope: public
+    patch:
+      tags:
+      - Application
+      summary: Update application
+      description: Update an existing application
+      operationId: updateApplication
+      parameters:
+      - name: id
+        in: path
+        description: Application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: field_mask
+        in: query
+        description: Comma seperated set of fields to update. If provided, only fields in the field mask will be updated. Fields in the field mask but not in the body will be set to null.
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
+        description: Update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Application'
+        required: true
+      responses:
+        '200':
+          description: Application updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Application
+      x-mabl-scope: public
+  /applicationSummary:
+    post:
+      tags:
+      - Application
+      summary: Upsert application summary
+      description: Create a new application summary version (AI-generated or user-created). Version number is auto-incremented.
+      operationId: upsertApplicationSummary
+      parameters:
+      - name: If-Match
+        in: header
+        description: 'ETag of the current latest summary. Required when creating subsequent versions to prevent race conditions.
+
+          Omit only when creating the first summary for an application. Returns 412 if:
+
+          - Provided but no summary exists for the application
+
+          - Provided but doesn''t match the current latest version''s ETag
+
+          - Omitted when a summary already exists for the application
+
+          '
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Application summary to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationSummary'
+        required: true
+      responses:
+        '201':
+          description: Application summary created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummary'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '412':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-generate-raw: true
+      x-mabl-action: Edit::Application
+  /applicationSummary/{id}:
+    get:
+      tags:
+      - Application
+      summary: Get application summary by ID
+      description: Get an application summary by its unique ID
+      operationId: getApplicationSummary
+      parameters:
+      - name: id
+        in: path
+        description: Application summary ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Application summary with given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummary'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-generate-raw: true
+      x-mabl-action: Read::Application
+  /applications/{application_id}/summary:
+    get:
+      tags:
+      - Application
+      summary: Get latest summary for application
+      description: Get the most recent summary for an application
+      operationId: getLatestApplicationSummary
+      parameters:
+      - name: application_id
+        in: path
+        description: Application ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Latest application summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummary'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-generate-raw: true
+      x-mabl-action: Read::Application
+components:
+  schemas:
+    AgentType:
+      type: string
+      enum:
+      - test_authoring
+      - flow_authoring
+      - test_creation_planning
+      - test_planning
+      - agent_review
+      - app_summary
+      - test_run_analysis
+      - test_recovery
+      - runtime_recovery_summary_agent
+      - plan_run_analysis
+      - deployment_analysis
+      - workspace_results_analysis
+      - results_auto_analysis
+      - workspace_assistant
+      - app_modeling
+      - app_modeling_run
+      - file_assertion
+      - test_impact
+      - test_impact_shadow
+      - repair_notes
+      - external_agent
+      - exploratory_qa
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    ApplicationSummary:
+      required:
+      - application_id
+      - is_user_created_version
+      - summary
+      - workspace_id
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the application summary
+          readOnly: true
+        version:
+          type: integer
+          description: Business version number of this summary (auto-incremented by server)
+          format: int64
+          readOnly: true
+        workspace_id:
+          type: string
+          description: ID of workspace associated with this summary
+        application_id:
+          type: string
+          description: ID of the application this summary describes
+        created_time:
+          type: integer
+          description: Time summary was created (epoch milliseconds)
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: ID of user or client who created the summary
+          readOnly: true
+        summary:
+          type: string
+          description: The full AI-generated summary text
+        headline:
+          type: string
+          description: Short headline version of the summary
+        previous_agent_summary_id:
+          type: string
+          description: ID of the previous AI-generated summary this was based on
+        is_user_created_version:
+          type: boolean
+          description: Whether this version was created or edited by a user
+        user_edits_summary:
+          type: string
+          description: User-provided summary text if is_user_created_version is true
+        agent_type:
+          $ref: '#/components/schemas/AgentType'
+        agent_version:
+          type: string
+          description: Version of the AI agent that generated this summary
+        test_summaries_used_count:
+          type: integer
+          description: Number of test summaries used to generate this summary
+          format: int64
+        test_details_used_invariant_ids:
+          type: array
+          description: Invariant IDs of tests whose details were used
+          items:
+            type: string
+        screenshots_used_count:
+          type: integer
+          description: Number of screenshots analyzed for this summary
+          format: int64
+      description: AI-generated summary of an application based on test analysis
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Application ID
+          readOnly: true
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time application created
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: ID of user who created application
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time application last updated
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: ID of user who last updated application
+          x-mabl-scope: public
+        organization_id:
+          type: string
+          description: (Deprecated, use workspace_id)
+        workspace_id:
+          type: string
+          description: ID of workspace associated with application
+          x-mabl-scope: public
+        name:
+          type: string
+          description: Application display name
+          x-mabl-scope: public
+        description:
+          type: string
+          description: Application description
+          x-mabl-scope: public
+        ssl_options:
+          $ref: '#/components/schemas/SslOptions'
+        send_mabl_header:
+          type: boolean
+          description: Controls whether or not the x-mabl-agent header is sent on requests (can be overridden by plan and test)
+          x-mabl-scope: public
+        execution_runner_size:
+          $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+        enter_text_mode:
+          $ref: '#/components/schemas/EnterTextModeEnum'
+        bypass_actionability_checks:
+          type: boolean
+          description: 'Application-level preference for whether a click step may act on an element that
+
+            fails actionability checks — disabled, hidden, covered, or unstable. Affects new
+
+            click steps authored in the test editor or by the Test Creation Agent. `true`
+
+            clicks the element anyway; `false` fails the step when the target is not
+
+            actionable. Absent means no workspace preference. Per-step overrides set in the
+
+            test editor always win.
+
+            '
+          x-mabl-scope: public
+        skip_javascript_fallback_clicks:
+          type: boolean
+          description: 'Application-level preference for whether a click step skips the synthetic
+
+            JavaScript fallback click that normally fires when the native browser click
+
+            cannot reach the target element — for example when an overlay intercepts the
+
+            click or the browser routes the input away from a cross-origin iframe.
+
+            `true` fails the step with a clear error instead of clicking synthetically;
+
+            `false` or absent allows the fallback (the historical behavior). Newly
+
+            created applications default to `true`.
+
+            '
+          x-mabl-scope: public
+        custom_test_id_attributes:
+          type: array
+          description: Custom HTML element attribute names mabl should prioritize when locating elements, in priority order
+          items:
+            type: string
+          x-dao-serialize: true
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasName
+    EnterTextModeEnum:
+      type: string
+      description: 'Application-level preference for how the "enter text" step types into inputs.
+
+        Absent means "no preference; runtime falls back to its default."
+
+        - `fill`: write the value atomically via Playwright''s `fill()`. Fast and reliable for standard inputs.
+
+        - `press`: type one character at a time. Slower, but works with autocomplete / per-character event handlers.
+
+        '
+      enum:
+      - fill
+      - press
+    SslOptions:
+      type: object
+      properties:
+        alpn_protocols:
+          type: array
+          description: ALPN protocols that should be used to communicate with this application, specified in order of preference (defaults to all)
+          items:
+            $ref: '#/components/schemas/AlpnProtocol'
+        min_version:
+          type: string
+          deprecated: true
+          enum:
+          - TLSv1
+          - TLSv1_1
+          - TLSv1_2
+          - TLSv1_3
+          x-mabl-scope: public
+          x-force-uppercase: true
+        max_version:
+          type: string
+          deprecated: true
+          enum:
+          - TLSv1
+          - TLSv1_1
+          - TLSv1_2
+          - TLSv1_3
+          x-mabl-scope: public
+          x-force-uppercase: true
+    ExecutionRunnerSizeEnum:
+      type: string
+      description: available runner sizes
+      enum:
+      - x1
+      - x2
+      - x3
+      - x4
+      - x5
+      - x6
+      - small
+      - medium
+      - large
+      - inherit
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    ApplicationQueryResult:
+      type: object
+      properties:
+        applications:
+          type: array
+          description: All applications that match query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Application'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Pagination cursor
+          readOnly: true
+          x-mabl-scope: public
+    AlpnProtocol:
+      type: string
+      enum:
+      - http1_1
+      - h2
+      - none
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

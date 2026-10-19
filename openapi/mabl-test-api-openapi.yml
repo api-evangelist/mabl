@@ -1,0 +1,3825 @@
+openapi: 3.2.0
+info:
+  title: mabl Test API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Test
+paths:
+  /test/journeys:
+    get:
+      tags:
+      - Test
+      summary: Retrieve a set of latest test versions by query and branch
+      description: 'Used to query tests. The secondary filters (include_labels, exclude_labels, include_test_case_ids, author_id, application_id, name) are applied in memory after the workspace''s tests are fetched and combine as a logical AND, so when any of them is supplied the endpoint returns up to `limit` matching tests from a full scan and the returned cursor reflects that underlying scan rather than the filtered set. test_type is different: it is applied at the datastore layer via the test-type index (so a type-only query is a seek, not a full scan) and combines as a logical AND with the in-memory filters. credentials_id takes a separate path: it takes precedence over and is mutually exclusive with all other filters — supplying it together with name returns 400 rather than silently ignoring name.'
+      operationId: queryTests
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: include_labels
+        in: query
+        description: at least one label must be matched, if supplied, otherwise all tests considered
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+          default: []
+      - name: exclude_labels
+        in: query
+        description: any matching labels will exclude entity from matching, if supplied, otherwise all tests considered
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+          default: []
+      - name: include_test_case_ids
+        in: query
+        description: at least one id must be matched, if supplied
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+          default: []
+      - name: branch
+        in: query
+        description: mabl branch to retrieve tests for
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: branch_changes_only
+        in: query
+        description: Run ONLY tests MODIFIED on above mabl branch
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: author_id
+        in: query
+        description: filter results by mabl user ID of author
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: credentials_id
+        in: query
+        description: filter results to tests whose latest version references this credentials id
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: filter results to tests whose training application is this application id
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_type
+        in: query
+        description: filter results to tests of this type (browser, api, performance, or mobile); applied at the datastore layer via the test-type index
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: Return only tests whose name equals this value, ignoring case and surrounding whitespace. This is one of the in-memory filters, so it returns up to `limit` matches and the returned cursor reflects the underlying scan rather than the filtered set. Cannot be combined with credentials_id (returns 400).
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 500
+          type: string
+      responses:
+        '200':
+          description: Array of tests matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestQueryResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+    post:
+      tags:
+      - Test
+      summary: Create a Test
+      description: Creates a Test
+      operationId: createTest
+      parameters:
+      - name: branch
+        in: query
+        description: The branch the test should be created on.  Defaults to master
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: master
+      requestBody:
+        description: The test to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Test'
+        required: true
+      responses:
+        '201':
+          description: The complete test that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        '400':
+          description: Invalid test was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Test
+  /test/journeysByType:
+    get:
+      tags:
+      - Test
+      summary: Retrieve a set of latest test versions by query and branch
+      description: Used to query tests by type
+      operationId: queryTestsByType
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_type
+        in: query
+        description: The test type to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: branch
+        in: query
+        description: mabl branch to retrieve tests for
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of tests matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journeys/removeMultiple:
+    post:
+      tags:
+      - Test
+      summary: Bulk remove tests
+      description: Used to remove multiple tests simultaneously
+      operationId: removeTests
+      requestBody:
+        description: List of test IDs to remove
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        required: true
+      responses:
+        '204':
+          description: Confirms the tests do not exist
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Test
+  /test/journeys/byIds:
+    get:
+      tags:
+      - Test
+      summary: Retrieve a known set of tests by id on a branch view
+      description: 'Reads exactly the requested tests in one call. Each test resolves on `branch` (master when omitted) the same way getTest resolves it with sourceControlTag: an explicit `:version`, else the branch version, else the master version when the branch is a feature branch or does not exist, else the test alone with no `version` or `flows`. An explicit `:version` that does not exist also returns the test alone. Tests that are missing, deleted, or in another workspace are left out, and the rest keep the requested order. `variables` is not computed.'
+      operationId: getTestsByIds
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace the tests belong to
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_ids
+        in: query
+        description: Test ids, optionally with an explicit `:version`. Blanks and exact duplicates are ignored.
+        required: true
+        style: form
+        explode: false
+        schema:
+          maxItems: 100
+          minItems: 1
+          type: array
+          items:
+            maxLength: 40
+            type: string
+      - name: branch
+        in: query
+        description: The mabl branch to read the tests on. Master when omitted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maxLength: 200
+          type: string
+      responses:
+        '200':
+          description: The requested tests that exist in the workspace, in the requested order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestsByIdsResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journeys/sample:
+    get:
+      tags:
+      - Test
+      summary: Sample random tests with prioritization
+      description: 'Returns a random sample of test variant IDs, prioritizing tests with recent passing runs,
+
+        then tests with any recent runs, then all other tests in the workspace. For tests with
+
+        runs, returns the latest variant that has passing runs, or else latest with any runs.
+
+        Tests are associated with applications via their test run history.'
+      operationId: sampleTests
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization/workspace ID to sample tests from
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Optional application ID to filter tests (filters by test runs with this application_id)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: sample_size
+        in: query
+        description: Number of test IDs to return (1-100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 10
+      responses:
+        '200':
+          description: Array of sampled test variant IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSampleResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/estimateCredits:
+    post:
+      tags:
+      - Test
+      summary: Get estimated credit costs for tests
+      description: 'Calculates the estimated credit cost for executing multiple tests based on
+
+        their accounts'' current execution credit weights. For performance tests, uses
+
+        configured runtime; actual runtime may vary.'
+      operationId: estimateTestCredits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestCreditEstimateRequest'
+        required: true
+      responses:
+        '200':
+          description: Credit estimates for requested tests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestCreditEstimateResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journey/{id}:
+    get:
+      tags:
+      - Test
+      summary: Retrieve test
+      description: Used to retrieve an existing test
+      operationId: getTest
+      parameters:
+      - name: id
+        in: path
+        description: The test ID or test invariant ID to retrieve. Invariant ID returns latest version.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: sourceControlTag
+        in: query
+        description: A source control tag to retrieve the version of the flow for
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The test that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+    delete:
+      tags:
+      - Test
+      summary: Remove Test
+      description: Used to remove existing tests
+      operationId: removeTest
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the test to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Confirms the test does not exist
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Test
+    patch:
+      tags:
+      - Test
+      summary: Update Test
+      description: Creates a new version for existing tests
+      operationId: updateTest
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the test to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: branch
+        in: query
+        description: The branch the test update should be saved to.  Defaults to master
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: force
+        in: query
+        description: Force an update to occur, even if no changes have been made
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: field_mask
+        in: query
+        description: A comma seperated set of fields to update. If provided, only fields in the field mask will be updated. Fields in the field mask but not in the body will be set to null.
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
+        description: The test fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Test'
+        required: true
+      responses:
+        '200':
+          description: The updated test
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Test
+  /test/journey/{id}/metadata:
+    patch:
+      tags:
+      - Test
+      summary: Update Test metadata
+      description: Update the unversioned metadata of an existing test
+      operationId: updateTestMetadataLegacy
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the test to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: field_mask
+        in: query
+        description: A comma separated set of fields to update. If provided, only fields in the field mask will be updated. Fields in the field mask but not in the body will be set to null.
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
+        description: The test metadata fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestMetadata'
+        required: true
+      responses:
+        '200':
+          description: Test metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestMetadata'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Test
+  /test/{id}/metadata:
+    get:
+      tags:
+      - Test
+      summary: Get test metadata
+      description: Get the unversioned metadata of an existing test
+      operationId: getTestMetadata
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the test
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Test metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestMetadata'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+      x-mabl-scope: public
+    patch:
+      tags:
+      - Test
+      summary: Update test metadata
+      description: Update the unversioned metadata of an existing test
+      operationId: updateTestMetadata
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the test to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: field_mask
+        in: query
+        description: A comma separated set of fields to update. If provided, only fields in the field mask will be updated. Fields in the field mask but not in the body will be set to null.
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+        x-mabl-scope: private
+      requestBody:
+        description: The test metadata fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestMetadata'
+        required: true
+      responses:
+        '200':
+          description: The updated test on the master branch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestMetadata'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Test
+      x-mabl-scope: public
+  /test/journeys/addLabels:
+    patch:
+      tags:
+      - Test
+      summary: Add Labels to Tests
+      description: Update tests to contain new labels
+      operationId: addLabelsToTests
+      parameters:
+      - name: ids
+        in: query
+        description: List of test IDs
+        required: true
+        style: form
+        explode: true
+        schema:
+          maxItems: 20
+          type: array
+          items:
+            type: string
+      requestBody:
+        description: Array of labels to add; Unique label is determined by a unique combination of name and color
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Label'
+        required: true
+      responses:
+        '200':
+          description: Array of updated tests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Test
+  /test/metadata:
+    post:
+      tags:
+      - Test
+      summary: Retrieve test metadata for workspace
+      description: Get metadata for all tests in a workspace
+      operationId: queryTestsMetadata
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace ID to query tests for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of test metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestMetadata'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /recover/test/{id}:
+    post:
+      tags:
+      - Test
+      summary: Recover Test
+      description: Used to undelete a test
+      operationId: recoverTest
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the test to recover
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Confirms the test does not exist
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Recover::Test
+  /test/journey/{id}/version:
+    get:
+      tags:
+      - Test
+      summary: Retrieve test versions
+      description: Used to retrieve test variant version list.
+      operationId: listTestVersions
+      parameters:
+      - name: id
+        in: path
+        description: The test invariant or variant ID.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: branch
+        in: query
+        description: Filter the returned versions to those created on this mabl branch. Omit to return the full version history across all branches.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The test variant versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestVariantVersionQueryResult'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journeys/{id}/versions/{version}/objectiveCheck:
+    get:
+      tags:
+      - Test
+      summary: Get a test version's objective check
+      description: The most recent objective check recorded against one test version, which is the version's current verdict. Not found when the version has never been checked.
+      operationId: getTestObjectiveCheck
+      parameters:
+      - name: id
+        in: path
+        description: The test invariant ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: version
+        in: path
+        description: The version of the test the check judges
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: The version's current objective check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestObjectiveCheck'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+    post:
+      tags:
+      - Test
+      summary: Record an objective check
+      description: Records whether the steps of one test version satisfy its objective summary, as a new check that becomes the version's current verdict. The test version itself is not changed. Who checked it comes from the caller's credentials. An agent may only record aligned or drifted, and only when the current check is missing or was recorded by an agent. accepted_gap is for people only and needs a gap. Re-sending the current verdict records nothing and returns the current check.
+      operationId: createTestObjectiveCheck
+      parameters:
+      - name: id
+        in: path
+        description: The test invariant ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: version
+        in: path
+        description: The version of the test the check judges
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: The verdict to record
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestObjectiveCheckRequest'
+        required: true
+      responses:
+        '200':
+          description: The request matched the current check, so nothing was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestObjectiveCheck'
+        '201':
+          description: The check was recorded and is now the version's current verdict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestObjectiveCheck'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          $ref: '#/components/responses/ErrorResponse409'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Test
+  /test/workspace/{workspace_id}/objectiveChecks/query:
+    post:
+      tags:
+      - Test
+      summary: Query the current objective checks of several test versions
+      description: The current objective check of each named test version, for a page of the tests list. A version with no check is left out of the response, which reads as unverified. Tests outside the workspace are left out too.
+      operationId: queryTestObjectiveChecks
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID the tests belong to
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestObjectiveChecksQuery'
+        required: true
+      responses:
+        '200':
+          description: The current check of each named version that has one
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestObjectiveCheckList'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journey/{id}/restore:
+    post:
+      tags:
+      - Test
+      summary: Restore a test to a previous version
+      description: 'Restores a previous version of a test by creating a new latest version whose content matches the requested version. This is non-destructive: the intervening versions are preserved in the test''s version history.'
+      operationId: restoreTestVersion
+      parameters:
+      - name: id
+        in: path
+        description: The test invariant or variant ID.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: version
+        in: query
+        description: The version number to restore as the new latest version.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '201':
+          description: The newly created test version mirroring the requested version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        '404':
+          description: Test or version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Restore::Test
+  /test/journey/{id}/duplicateCustomLogin:
+    post:
+      tags:
+      - Test
+      summary: Duplicate auto-login test with custom login
+      description: Duplicate a test, replacing any auto-login flow by a custom login flow
+      operationId: duplicateTestWithCustomLoginFlow
+      parameters:
+      - name: id
+        in: path
+        description: The test invariant or variant ID.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: flow_id
+        in: query
+        description: The ID of the custom login flow to use
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '201':
+          description: The complete test that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+        '400':
+          description: Invalid flow ID was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Test
+  /test/journey/{journey_invariant_id}/stepIds:
+    get:
+      tags:
+      - Test
+      summary: Get step ids for test for corresponding test runs
+      description: Get step ids for corresponding test runs
+      operationId: getStepIdsInTestByTestRun
+      parameters:
+      - name: journey_invariant_id
+        in: path
+        description: The test invariant ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: journey_run_ids
+        in: query
+        description: The test run ids
+        required: true
+        style: form
+        explode: false
+        schema:
+          minItems: 1
+          type: array
+          items:
+            type: string
+      responses:
+        '200':
+          description: The step ids for the Test corresponding to the test runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityStepIds'
+        '400':
+          description: Invalid ID was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: Wrong credentials for supplied test ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journey/{journey_invariant_id}/stepIdsByFlow:
+    get:
+      tags:
+      - Test
+      summary: Get step ids for given flows of a tes
+      description: Get step ids for given flows
+      operationId: getStepIdsInTestByFlow
+      parameters:
+      - name: journey_invariant_id
+        in: path
+        description: The test invariant ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: flow_variant_ids
+        in: query
+        description: The flow variant IDs
+        required: true
+        style: form
+        explode: false
+        schema:
+          minItems: 1
+          type: array
+          items:
+            type: string
+      - name: source_control_tag
+        in: query
+        description: Branch to resolve nested flows on, matching the branch the test runs on. When omitted, each nested flow resolves to its latest version on any branch.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The step ids for the Test's given flows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlowStepIds'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journey/{id}/billingEstimate:
+    get:
+      tags:
+      - Test
+      summary: Estimates the billable usage that would be incurred by executing this test
+      description: Calculates the estimated billing summary for executing this test
+      operationId: getEstimatedBillingSummary
+      parameters:
+      - name: id
+        in: path
+        description: The test invariant or variant ID.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: source_control_tag
+        in: query
+        description: Source control tag of the test
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The estimated billing summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunBillingSummary'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journey/{id}/flows:
+    get:
+      tags:
+      - Test
+      summary: Get flows for test
+      description: Get flows for the corresponding test
+      operationId: getFlowsInTest
+      parameters:
+      - name: id
+        in: path
+        description: A test invariant or variant id. If invariant, returns latest test version.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: sourceControlTag
+        in: query
+        description: An optional source control tag for the test
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of flows for the corresponding test version
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Flow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/journey/{id}/context:
+    get:
+      tags:
+      - Test
+      summary: Retrieve test with additional context
+      description: Used to retrieve an existing test with supplemental context information
+      operationId: getTestWithContext
+      parameters:
+      - name: id
+        in: path
+        description: The test ID or test invariant ID to retrieve. Invariant ID returns latest version.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: sourceControlTag
+        in: query
+        description: A source control tag to retrieve the version of the flow for
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: include_screenshot_info
+        in: query
+        description: Include step-level details with screenshot GCS URIs from most recent passing test run
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: The test that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestWithContext'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/references/chunk:
+    post:
+      tags:
+      - Test
+      summary: Query tests by chunk
+      description: Used to query tests using test step chunks for most recent main version
+      operationId: queryTestsByChunk
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace associated with this query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant tests.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryEntityByTaskParameters'
+        required: true
+      responses:
+        '200':
+          description: Array of tests matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSemanticQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/count:
+    get:
+      tags:
+      - Test
+      summary: Count tests in a workspace, optionally scoped to an application
+      description: 'Returns the count of active (non-tombstoned) tests in the workspace. When
+
+        `application_id` is provided, the count is scoped to that application.'
+      operationId: getTestCount
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace to count tests in.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Optional application id; when present, scope the count to this application.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Counts for the workspace (and optionally the application scope).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestCounts'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/references/by-application:
+    get:
+      tags:
+      - Test
+      summary: Get test invariant IDs for a workspace scoped to an application
+      description: 'Returns the full set of canonical application-associated test invariant IDs using
+
+        the same four-leg association logic as semantic search (plan-based, training-app,
+
+        run-history, and unassociated fallback). The caller intersects the returned IDs
+
+        with its locally-loaded test list to apply the application filter.
+
+
+        Requires `application_id`; use `GET /test/count` for workspace-wide counts.'
+      operationId: getTestsByApplication
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace to query.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: The application to scope the test IDs to.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Pagination limit.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 3000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 3000
+      - name: cursor
+        in: query
+        description: Pagination cursor.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The set of test invariant IDs associated with the application.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestsByApplicationResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+  /test/references/search:
+    post:
+      tags:
+      - Test
+      summary: Search active test references by full-text token query
+      description: 'Token-based full-text search over a workspace''s active tests, using the Spanner
+
+        SEARCH() function. A test is matched on its own name, description, intent, and
+
+        labels through `idx_test_reference_search_v2`; the default "combined" search covers
+
+        all four at once, and restricting `search_field` scopes the match to that one
+
+        column. The combined search also matches on the step text of a test''s flows,
+
+        through `idx_flow_reference_search_v3`, so a test whose steps describe the query is
+
+        found even when its own name, description, intent and labels say nothing about it.
+
+        Step matches rank below every metadata match rather than competing with them; see
+
+        `match_source` for the tier rule.
+
+
+        Returns rich per-test rows, including an excerpt of the annotated step descriptions
+
+        of the test''s flows (joined through `test_reference.flows` -> `flow_reference`).
+
+        Under the "combined" search a flow whose steps matched contributes a window of its
+
+        step text around the matching steps, a flow that did not match contributes its
+
+        opening steps, and the flows are ordered most relevant first, so that a capped
+
+        excerpt keeps the steps the query was about rather than whichever flows happen to
+
+        run first. Shaping the excerpt decides only which steps a row shows: it never
+
+        admits a test, and never changes how the returned tests rank.
+
+
+        The `query` follows Spanner search syntax — multi-token queries default to AND.
+
+        Callers can join keywords with " OR " for broader recall, or quote phrases.
+
+        `OR` binds only the two words beside it and parentheses do not group terms, so
+
+        prefer one plain multi-word query (all words required) over mixing `OR` with
+
+        other terms.'
+      operationId: searchTestReferences
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace to search in.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestReferenceTextSearchRequest'
+        required: true
+      responses:
+        '200':
+          description: Search results ordered by relevance score (descending).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestReferenceTextSearchResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Test
+components:
+  schemas:
+    Flow:
+      type: object
+      description: A Flow represents a set of steps in a Test
+      allOf:
+      - $ref: '#/components/schemas/FlowMetadata'
+      - $ref: '#/components/schemas/FlowVersion'
+      - $ref: '#/components/schemas/MergedVariant'
+      - type: object
+        properties:
+          api_steps:
+            type: object
+            description: API steps for API only flow (stored in postman collection format)
+          json_steps:
+            type: object
+            description: Steps in the new json format that replaces mablscript
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasWorkspaceId
+      - HasVersion
+    FlowTypeEnum:
+      type: string
+      description: the type of flow
+      enum:
+      - validate_page
+      - login
+      - verify_url
+      - mablscript
+      - check_links
+      - visual_page_validation
+      - api
+      - mobile
+      - desktop
+      x-mobile-scope: public
+    PerformanceFailureCriteriaOptionalParameters:
+      type: object
+      properties:
+        metric_aggregation:
+          type: string
+          description: The aggregation level of the metric determining failure case
+          enum:
+          - average
+          - percentile
+        metric_percentile:
+          type: integer
+          description: The percentile for the metric we are considering
+          format: int32
+        metric_error_codes:
+          type: array
+          description: Response codes that count as errors for error rate
+          items:
+            type: string
+            enum:
+            - codes_3xx
+            - codes_4xx
+            - codes_5xx
+        metric_step_ids:
+          type: array
+          description: IDs of steps to include in metric calculations
+          items:
+            type: string
+        metric_cwv_measurements:
+          type: array
+          description: Individual CWV measurements' failure criteria configuration
+          items:
+            $ref: '#/components/schemas/PerformanceFailureCriteriaCWVMeasurement'
+      description: Optional parameters related to specific failure criteria
+    TestCreditEstimateResponse:
+      type: object
+      properties:
+        estimates:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestCreditEstimate'
+      description: Credit estimates for multiple tests
+    PerformanceFailureCriteria:
+      type: object
+      properties:
+        metric_comparator:
+          type: string
+          description: The comparator determining the failure case
+          enum:
+          - greater_than
+          - less_than
+        metric_threshold:
+          type: number
+          description: The cutoff value determining the failure case
+          format: double
+        metric_type:
+          type: string
+          description: The type of metric determining failure case
+          enum:
+          - response_time
+          - http_error_rate
+          - functional_test_failure_rate
+          - core_web_vitals
+          - step_duration
+        metric_optional_parameters:
+          $ref: '#/components/schemas/PerformanceFailureCriteriaOptionalParameters'
+      description: Definition of failure criteria per workload
+    FileValue:
+      required:
+      - mime_type
+      - name
+      - origin
+      - size
+      type: object
+      properties:
+        origin:
+          type: string
+          description: 'Provenance of the file. `upload` is a durable, reusable FileUpload (see file_upload_id). `download` is a transient file produced by a test run (see download_ref).
+
+            '
+          enum:
+          - upload
+          - download
+        name:
+          type: string
+          description: the base file name
+        mime_type:
+          type: string
+          description: the true MIME type (e.g. application/pdf), not a file extension
+        size:
+          type: integer
+          description: the size of the file in bytes
+          format: int64
+        checksum:
+          type: string
+          description: optional content checksum
+        file_upload_id:
+          type: string
+          description: 'Set when origin == upload; the id of a durable FileUpload (FileUpload.id). This is how a persisted or authored file variable references its file.
+
+            '
+        download_ref:
+          description: Set when origin == download; run-scoped coordinates for a file downloaded during a test run.
+          allOf:
+          - $ref: '#/components/schemas/FileDownloadReference'
+      description: 'A typed file value for a file-typed variable, reconciling field-for-field with the runtime FileValue (mabl-cli mablscript-find). `origin` selects which reference is populated: `upload` uses file_upload_id, `download` uses download_ref. This one-of invariant is NOT enforced by the schema (a oneOf/discriminator would make the generated Java/TS clients polymorphic and diverge from the flat runtime FileValue); it must be enforced by validation on the Flow/Test write path, tracked in MABL-20387, before file variables are consumed (first reader: MABL-20718). Until then a malformed file_value is accepted but unused. The run-local localUri from the runtime shape is intentionally omitted (ephemeral, never persisted).
+
+        '
+    ApiAuthentication:
+      required:
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          description: The authentication type to use
+          enum:
+          - apikey
+          - basic
+          - bearer
+          - noauth
+          - oauth1
+          - oauth2
+        api_key:
+          $ref: '#/components/schemas/ApiKeyAuthentication'
+        basic:
+          $ref: '#/components/schemas/BasicAuthentication'
+        bearer:
+          $ref: '#/components/schemas/BearerAuthentication'
+        oauth1:
+          $ref: '#/components/schemas/OAuth1Authentication'
+        oauth2:
+          $ref: '#/components/schemas/OAuth2Authentication'
+      description: Configuration for API authentication
+    TestSource:
+      type: string
+      description: Where the test lives
+      enum:
+      - mabl_cloud
+      - external
+      - mabl_local
+      - mabl_agent
+      x-mabl-scope: public
+    MobilePlatformEnum:
+      type: string
+      description: The mobile platform associated with this object
+      enum:
+      - android
+      - ios
+      x-mabl-scope: public
+    FlowVersion:
+      type: object
+      description: A Flow represents a set of steps in a Test
+      allOf:
+      - $ref: '#/components/schemas/Variant'
+      - type: object
+        properties:
+          variant_last_updated_by_app_version:
+            type: string
+            description: The version of the desktop app used to create this version.
+          script:
+            type: string
+            description: The flow's script
+          script_description:
+            type: string
+            description: Description of what the script does
+          step_annotations:
+            type: object
+            additionalProperties:
+              type: object
+              properties:
+                description:
+                  type: string
+                  description: step description
+                note:
+                  type: string
+                  description: step note
+                auto_generated_description:
+                  type: string
+                  description: description generated by the AI
+                step_description_source:
+                  type: string
+                  description: the source of the step description
+                  enum:
+                  - user
+                  - ai
+                  - default
+            description: Step descriptions and notes keyed by the step index
+          selectors:
+            type: array
+            description: the selectors from mablscript
+            items:
+              type: string
+              description: the JSON string of a selector
+          file_references:
+            type: array
+            description: the file references from mablscript
+            items:
+              $ref: '#/components/schemas/FileReference'
+          flow_references:
+            type: array
+            description: reusable flows referenced by steps in this flow
+            items:
+              $ref: '#/components/schemas/FlowReference'
+          snippet_references:
+            type: array
+            description: this snippets referenced by this Flow
+            items:
+              $ref: '#/components/schemas/SnippetReference'
+          variables:
+            $ref: '#/components/schemas/UserDefinedVariables'
+          parameters:
+            type: array
+            description: Configurable parameters mapping parameter name to a default value for that parameter
+            items:
+              $ref: '#/components/schemas/UserDefinedInputVariable'
+          step_features:
+            type: array
+            description: Steps that are associated with specific features
+            items:
+              $ref: '#/components/schemas/StepFeature'
+          page_urls:
+            type: array
+            description: URLs that should be visited for a visual page checker test
+            items:
+              type: string
+              description: A URL to run visual inspection and other page validation against
+          api_steps:
+            type: object
+            description: API steps for API only flow (stored in postman collection format)
+            x-dao-serialize: true
+            x-dao-compress: true
+          json_steps:
+            type: object
+            description: Steps in the new json format that replaces mablscript
+            x-dao-serialize: true
+            x-dao-compress: true
+          mobile_training_info:
+            $ref: '#/components/schemas/MobileTrainingInfo'
+          created_by_app_version:
+            type: string
+            description: The version of the desktop app used to create this version.
+          url:
+            type: string
+            description: the URL used when creating the flow
+          agent_session_id:
+            type: string
+            description: the id of the agent session that authored this flow version, if any
+      x-implements-interface:
+      - IsVariant
+      - HasVersion
+    UserDefinedOutputVariable:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: the fully qualified symbol name of the variable
+    TestsByIdsResult:
+      type: object
+      properties:
+        tests:
+          type: array
+          description: The requested tests that exist in the workspace, in the requested order
+          items:
+            $ref: '#/components/schemas/Test'
+      description: Tests read by id
+    PerformanceFailureCriteriaCWVMeasurement:
+      type: object
+      properties:
+        measurement_type:
+          type: string
+          enum:
+          - first_contentful_paint
+          - largest_contentful_paint
+          - cumulative_layout_shift
+          - time_to_first_byte
+          - dom_content_loaded
+        threshold:
+          type: number
+          format: double
+      description: Individual CWV measurement failure criteria configuration
+    DeviceEmulationConfiguration:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: Emulation configuration display name
+          x-mabl-scope: public
+        preset_type:
+          type: string
+          description: Preset device configuration (optional)
+          enum:
+          - blackberry_playbook
+          - blackberry_z30
+          - galaxy_fold
+          - galaxy_note_3
+          - galaxy_note_ii
+          - galaxy_s5
+          - galaxy_s6
+          - galaxy_s8
+          - galaxy_s21
+          - galaxy_s22
+          - galaxy_s23
+          - galaxy_s_iii
+          - galaxy_tab_s7
+          - ipad
+          - ipad_air_2020
+          - ipad_mini
+          - ipad_mini_4
+          - ipad_pro
+          - ipad_ten_point_two
+          - iphone_11_pro_max
+          - iphone_11
+          - iphone_12
+          - iphone_12_pro_max
+          - iphone_13_mini
+          - iphone_13
+          - iphone_13_pro
+          - iphone_13_pro_max
+          - iphone_14
+          - iphone_14_pro
+          - iphone_14_plus
+          - iphone_14_pro_max
+          - iphone_15
+          - iphone_15_plus
+          - iphone_15_pro
+          - iphone_15_pro_max
+          - iphone_4
+          - iphone_5_se
+          - iphone_6_7_8
+          - iphone_6_7_8_plus
+          - iphone_x
+          - jiophone_2
+          - kindle_fire_hdx
+          - laptop_with_hidpi_screen
+          - laptop_with_mdpi_screen
+          - laptop_with_touch
+          - lg_optimus_l70
+          - microsoft_lumia_550
+          - microsoft_lumia_950
+          - moto_g4
+          - nexus_4
+          - nexus_5
+          - nexus_5x
+          - nexus_6
+          - nexus_6p
+          - nexus_7
+          - nexus_10
+          - nokia_lumia_520
+          - nokia_n9
+          - pixel_2
+          - pixel_2_xl
+          - pixel_6
+          - surface_duo
+          x-mabl-scope: public
+        user_agent:
+          type: string
+          description: Client User Agent string
+          x-mabl-scope: public
+        type:
+          type: string
+          description: General device type
+          enum:
+          - phone
+          - tablet
+          - notebook
+          x-mabl-scope: public
+        capabilities:
+          type: array
+          description: Optional device capabilities
+          items:
+            type: string
+            enum:
+            - touch
+            - mobile
+          x-mabl-scope: public
+        screen:
+          type: object
+          properties:
+            device_pixel_ratio:
+              type: number
+              description: Device pixel ratio (may be decimal)
+              format: double
+              x-mabl-scope: public
+            horizontal:
+              $ref: '#/components/schemas/DeviceScreenDimensions'
+            vertical:
+              $ref: '#/components/schemas/DeviceScreenDimensions'
+          description: Screen configuration
+          x-mabl-scope: public
+      description: Emulation configuration
+    WorkloadConfiguration:
+      type: object
+      properties:
+        test_invariant_id:
+          type: string
+          description: The invariant id of the test (tes) used to generate the workload
+        test_variant_id:
+          type: string
+          description: 'The variant id of the test (tes) used to generate the workload.  Only populated in test runs and can be found in TestRun.tes.performance_configuration.workloads. It is never populated in Test.performance_configuration.workloads.
+
+            '
+        concurrency:
+          type: integer
+          description: Number of threads/users to use for this test
+          format: int64
+        failure_criteria:
+          type: array
+          description: The failure criteria associated with this workload
+          items:
+            $ref: '#/components/schemas/PerformanceFailureCriteria'
+        failure_criteria_evaluate:
+          type: string
+          description: How to combine failure criteria
+          enum:
+          - any
+          - all
+        datatables:
+          type: array
+          description: IDs of data tables to be used for this workload
+          items:
+            type: string
+        credentials_id:
+          type: string
+          description: Optional ID of the credentials object to use with this test
+        http_auth_credentials_id:
+          type: string
+          description: Optional ID of credentials to pass in the HTTP request (as opposed to interactive login credentials)
+      description: Definition of workload for a test
+    ExternalTestCase:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id associated with this test case
+          x-mabl-scope: public
+      description: External test case
+    TestQueryResult:
+      type: object
+      properties:
+        journeys:
+          type: array
+          description: All tess that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Test'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for test query results
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    Test:
+      type: object
+      description: Tests represent a single chunk of test logic.
+      allOf:
+      - $ref: '#/components/schemas/TestMetadata'
+      - $ref: '#/components/schemas/TestVersion'
+      - $ref: '#/components/schemas/MergedVariant'
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasWorkspaceId
+      - HasName
+      - HasVersion
+    TestReferenceTextSearchRequest:
+      required:
+      - limit
+      - query
+      type: object
+      properties:
+        query:
+          maxLength: 2000
+          type: string
+          description: 'Token query. Multi-token defaults to AND; join with " OR " to broaden
+
+            recall (e.g., "login OR signin OR authentication"). Adjacent tokens are
+
+            treated as a phrase. Empty query returns zero rows.
+
+            '
+        search_field:
+          type: string
+          description: 'Which tokenized columns to search. "combined" searches name, description,
+
+            intent and labels together; use a single field name to scope the match to
+
+            that column alone. Only "combined" orders a test''s step excerpt by relevance
+
+            to the query — a scoped search leaves the excerpt in test order.
+
+            '
+          enum:
+          - combined
+          - name
+          - description
+          - intent
+          - labels
+          default: combined
+        application_id:
+          type: string
+          description: 'Optional. When set, results are scoped to the application using the same
+
+            four-leg association logic as semantic search and
+
+            `GET /test/references/by-application`, rather than the test''s training-time
+
+            application alone. A test is in scope when any leg holds: it belongs to a
+
+            plan resolving to this application, it was trained on this application, it
+
+            ran against this application within the last 90 days, or it has no
+
+            training-time application and belongs to no application-resolving plan.
+
+            That last leg treats such tests as belonging to every application — a
+
+            deliberate recall aid — and does not consult run history, so a test whose
+
+            only runs were against a different application is still in scope. Workspace
+
+            scope is always the hard boundary.
+
+            '
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        label_filter:
+          maxItems: 20
+          type: array
+          description: 'Exact-match label filter. When set, only tests whose `labels` array
+
+            contains every entry in this list are returned. Max 20 entries.
+
+            '
+          items:
+            type: string
+        updated_after:
+          type: string
+          description: Optional. Only return tests with last_updated_time >= this timestamp.
+          format: date-time
+        limit:
+          maximum: 200
+          minimum: 1
+          type: integer
+          description: Per-call hard limit. Capped at 200 server-side.
+          default: 20
+      description: 'Parameters for token-based full-text search over a workspace''s active tests,
+
+        using the Spanner SEARCH() function. See the operation description for which
+
+        fields each `search_field` covers.
+
+        '
+    UserDefinedInputVariable:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: the fully qualified symbol name of the variable
+        default_value:
+          type: string
+          description: the value to use when the variable is not otherwise defined
+        value_type:
+          type: string
+          description: 'The kind of value this variable carries. Absent implies `string` for backward compatibility; existing string variables are unaffected.
+
+            '
+          enum:
+          - string
+          - file
+        file_value:
+          description: The file value; present only when value_type == file. Additive and optional, so string variables serialize unchanged.
+          allOf:
+          - $ref: '#/components/schemas/FileValue'
+    TestStepChunkMatch:
+      required:
+      - annotated_step_descriptions
+      - context
+      - flow_invariant_id
+      - flow_step_end_index
+      - flow_step_start_index
+      type: object
+      properties:
+        annotated_step_descriptions:
+          type: string
+          description: Detailed description of the steps in this chunk
+          readOnly: true
+        context:
+          type: string
+          description: A brief summary of what this chunk does
+          readOnly: true
+        flow_invariant_id:
+          type: string
+          description: The flow invariant ID associated with this chunk
+          readOnly: true
+        flow_step_end_index:
+          type: integer
+          description: The end index of the flow step in this chunk
+          format: int64
+          readOnly: true
+        flow_step_start_index:
+          type: integer
+          description: The start index of the flow step in this chunk
+          format: int64
+          readOnly: true
+        reusable_flow:
+          type: boolean
+          description: True when the chunk's steps live in a reusable flow, false when they are an inline (non-reusable) test-step fragment. Lets a consumer anchor a coverage link on the flow (reusable) versus the containing test position (non-reusable).
+        distance:
+          type: number
+          description: Cosine distance between the query embedding and this chunk's embedding. Lower = more similar. Only populated by semantic (by-task) chunk queries; absent for non-semantic paths. A support signal for the consumer to weigh, not a ranking the API applies.
+          format: double
+    TestSampleResult:
+      type: object
+      properties:
+        test_ids:
+          type: array
+          description: Array of sampled test IDs, prioritized by recent test run results
+          readOnly: true
+          items:
+            type: string
+            description: Test ID (versioned/variant ID)
+      description: Result envelope for test sampling endpoint
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    ImportSourceId:
+      type: string
+      enum:
+      - postman
+      - selenium_node_proxy
+      - selenium_java_agent
+    TestReferenceTextSearchResult:
+      required:
+      - matches
+      - truncated
+      type: object
+      properties:
+        matches:
+          type: array
+          description: 'Tests matching the query, already in rank order. Tests matched on their own
+
+            name, description, intent or labels come first, then tests matched only on the
+
+            step text of their flows. See `match_source`.
+
+            '
+          items:
+            $ref: '#/components/schemas/TestReferenceTextSearchMatch'
+        truncated:
+          type: boolean
+          description: 'True when the 20000-character cap cut any match''s step text, at either level:
+
+            a single flow past it, or a test''s flows past it once joined. Independent of
+
+            the excerpt window. Derived from the per-match annotated_step_truncated flags.
+
+            The agent-side adaptive truncation re-truncates against a total tool-response
+
+            budget.
+
+            '
+    TestObjectiveCheckRequest:
+      required:
+      - state
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/TestObjectiveCheckState'
+        gap:
+          type: string
+          description: How the steps fall short of the summary. Required for accepted_gap, optional for drifted, and dropped for aligned.
+      description: A verdict on whether a test version's steps satisfy its objective summary.
+    ExecutableSnippet:
+      type: object
+      properties:
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        description:
+          type: string
+          description: Summary of the Snippet
+        name:
+          type: string
+          description: The display name of the Snippet
+        body:
+          type: string
+          description: the base64 encoded body of the Snippet
+        snippet_type:
+          $ref: '#/components/schemas/SnippetTypeEnum'
+        reusable:
+          type: boolean
+          description: Indicates whether the snippet is reusable
+        workspace_id:
+          type: string
+          description: The ID of the workspace that this Snippet belongs to
+      description: Fields necessary to execute a snippet in a test or flow
+    DeviceEmulation:
+      required:
+      - device_config
+      - orientation
+      type: object
+      properties:
+        device_config:
+          $ref: '#/components/schemas/DeviceEmulationConfiguration'
+        orientation:
+          type: string
+          description: Fixed device orientation
+          enum:
+          - portrait_primary
+          - portrait_secondary
+          - landscape_primary
+          - landscape_secondary
+          x-mabl-scope: public
+      description: Emulation configuration
+    TestCounts:
+      type: object
+      properties:
+        test_count:
+          type: integer
+          description: The total number of tests in the workspace
+          format: int64
+        default_test_count:
+          type: integer
+          description: 'Deprecated: use test_count instead'
+          format: int64
+          deprecated: true
+        non_default_test_count:
+          type: integer
+          description: 'Deprecated: use test_count instead'
+          format: int64
+          deprecated: true
+    FileReference:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the uploaded file
+        name:
+          type: string
+          description: the base file name
+        size:
+          type: integer
+          description: the size of the file
+          format: int64
+        type:
+          type: string
+          description: the type of the file, i.e., the extension
+    BasicAuthentication:
+      type: object
+      properties:
+        username:
+          type: string
+          description: The username to use for authentication
+        password:
+          type: string
+          description: The password to use for authentication
+      description: Configuration for basic authentication
+    StepFeature:
+      type: object
+      properties:
+        step_index:
+          type: integer
+          description: Index of the step
+          format: int64
+        nested_step_index:
+          type: array
+          description: Array of indices representing the path to nested steps within StepGroups. Empty for top-level steps.
+          items:
+            type: integer
+            format: int64
+        feature_id:
+          type: string
+          description: Id of the Feature is that is associated with this particular step.
+    TestStepContextDetails:
+      type: object
+      properties:
+        step_index:
+          type: integer
+          description: Zero-based index of the step in the test including all flows but ignoring looping
+        step_description:
+          type: string
+          description: Annotated description of the step
+        step_id:
+          type: string
+          description: Unique ID for the step with respect to the flow (aka step_id_in_flow)
+        page_screenshot_uri:
+          type: string
+          description: GCS URI of the full page screenshot for this step from the most recent passing test run (null if no screenshot available)
+        page_thumbnail_screenshot_uri:
+          type: string
+          description: GCS URI of the thumbnail page screenshot for this step from the most recent passing test run (null if no screenshot available)
+      description: Details about a specific step in a test, including screenshot information
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    MergedVariant:
+      type: object
+      properties:
+        variant_last_updated_time:
+          type: integer
+          description: Time the variant was last updated
+          format: int64
+          x-mabl-scope: public
+        variant_last_updated_by_id:
+          type: string
+          description: ID of the user who last updated the variant
+          x-mabl-scope: public
+        cloud_safe_invariant_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP/email/Kubernetes safe)
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+    TestTypeEnum:
+      type: string
+      description: Type of test
+      enum:
+      - api
+      - browser
+      - performance
+      - mobile
+      - desktop
+      x-mabl-scope: public
+    ExecutionRunnerSizeEnum:
+      type: string
+      description: available runner sizes
+      enum:
+      - x1
+      - x2
+      - x3
+      - x4
+      - x5
+      - x6
+      - small
+      - medium
+      - large
+      - inherit
+    SnippetTypeEnum:
+      type: string
+      enum:
+      - css
+      - javascript
+      - xpath
+      - sql
+      - postman
+    Label:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: name
+          x-mabl-scope: public
+        color:
+          type: string
+          description: color
+    TestRunBillingSummary:
+      type: object
+      properties:
+        billable_api_minutes:
+          type: integer
+          description: Billable API performance test minutes associated with this run (e.g. 10 min * 5 users = 75 min billable)
+          format: int64
+        billable_api_vuh:
+          type: number
+          description: Billable API performance test virtual user hours associated with this run (e.g. 10 min * 4 users = 1.0 billable VUH)
+          format: double
+        used_api_minutes:
+          type: integer
+          description: API performance test minutes used during this run (e.g. 10 min * 5 users = 50 min used)
+          format: int64
+        billable_browser_minutes:
+          type: integer
+          description: Billable browser performance test minutes associated with this run (e.g. 10 min * 5 users * 2.0 browser multiplier = 150 min billable)
+          format: int64
+        billable_browser_vuh:
+          type: number
+          description: Billable browser performance test virtual user hours associated with this run (e.g. 10 min * 4 users * 2.0 browser multiplier = 2.0 billable VUH)
+          format: double
+        used_browser_minutes:
+          type: integer
+          description: Browser performance test minutes used during this run (e.g. 10 min * 5 users = 50 min used)
+          format: int64
+      description: Summary of usage associated with this run for billing purposes
+    SnippetReference:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the snippet invariant used
+        snippetType:
+          $ref: '#/components/schemas/SnippetTypeEnum'
+    FileDownloadReference:
+      required:
+      - object_key
+      - test_run_id
+      type: object
+      properties:
+        id:
+          type: string
+          description: stable logical handle for this downloaded file within the producing run
+        test_run_id:
+          type: string
+          description: the id of the test run that produced this download
+        object_key:
+          type: string
+          description: 'Bucket-relative storage key (e.g. execution-output/<nonce>/downloads/<run>/<step>/<name>). Excludes the bucket name; the backend prepends the workspace bucket at resolution time.
+
+            '
+      description: 'Run-scoped coordinates locating a file downloaded during a test run. The backend derives the workspace from test_run_id and reconstructs the artifact location from object_key server-side; the bucket name is never stored here or returned to clients. Valid only within the producing run''s artifact-retention window.
+
+        '
+    OAuth2Authentication:
+      required:
+      - access_token_url
+      - client_credentials_location
+      - client_id
+      - client_secret
+      - grant_type
+      - token_variable
+      type: object
+      properties:
+        access_token_url:
+          type: string
+        client_credentials_location:
+          type: string
+          enum:
+          - basic_auth_header
+          - body
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        grant_type:
+          type: string
+          enum:
+          - client_credentials
+        scope:
+          type: string
+        token_variable:
+          type: string
+          description: The OAuth token will be stored to this variable
+      description: Configuration for OAuth 2.0 authentication
+    TestObjectiveCheckState:
+      type: string
+      description: aligned means the steps satisfy the summary; drifted means they fall short, with the difference in gap; accepted_gap means a person saw that gap and chose to keep it.
+      enum:
+      - aligned
+      - drifted
+      - accepted_gap
+    PerformanceConfiguration:
+      type: object
+      properties:
+        runtime:
+          type: object
+          properties:
+            duration_mins:
+              type: integer
+              description: Test duration in minutes
+              format: int64
+            ramp_up_seconds:
+              type: integer
+              description: Test ramp up time in seconds
+              format: int64
+          description: Overall duration of the performance test.
+        workloads:
+          type: array
+          description: Workloads included in this performance test
+          items:
+            $ref: '#/components/schemas/WorkloadConfiguration'
+      description: Configuration of the performance test type.
+    FlowReference:
+      required:
+      - invariantId
+      type: object
+      properties:
+        invariantId:
+          type: string
+          description: The ID of a referenced flow
+        flowType:
+          $ref: '#/components/schemas/FlowTypeEnum'
+        flow:
+          $ref: '#/components/schemas/Flow'
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    TestSemanticQueryResult:
+      required:
+      - tests
+      type: object
+      properties:
+        tests:
+          type: array
+          description: All tests that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestSemanticQueryMatch'
+    BearerAuthentication:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The token to use for authentication
+      description: Configuration for bearer authentication
+    OAuth1Authentication:
+      type: object
+      properties:
+        add_parameters_to_header:
+          type: boolean
+        add_empty_parameters_to_signature:
+          type: boolean
+        callback_url:
+          type: string
+        consumer_key:
+          type: string
+        consumer_secret:
+          type: string
+        include_body_hash:
+          type: boolean
+        nonce:
+          type: string
+        realm:
+          type: string
+        signature_method:
+          type: string
+          enum:
+          - HMAC-SHA1
+          - HMAC-SHA256
+          - HMAC-SHA512
+          - RSA-SHA1
+          - RSA-SHA256
+          - RSA-SHA512
+          - PLAINTEXT
+        timestamp:
+          type: string
+        token:
+          type: string
+        token_secret:
+          type: string
+        verifier:
+          type: string
+        version:
+          type: string
+      description: Configuration for OAuth 1.0 authentication
+    FlowRole:
+      type: string
+      description: The role this flow plays in the test. A teardown flow always runs at the end of the test, even if an earlier flow failed. Teardown flows must form a contiguous block at the end of the test's flow list. Defaults to normal.
+      enum:
+      - normal
+      - teardown
+      default: normal
+    Invariant:
+      type: object
+      properties:
+        id:
+          maxLength: 50
+          type: string
+          description: Unique identifier
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this test
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time the test was last updated in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this test
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time the test was created in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        revision_history:
+          type: string
+          description: Serialized graph describing the test's version history. Managed by mabl API only.
+          x-dao-unindexed: true
+        version_tags:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+          description: Mapping of version tags to version numbers that the tag is currently applied to
+          x-dao-unindexed: true
+        latest_version:
+          type: integer
+          description: The latest numeric version of this test
+          format: int64
+        organization_id:
+          type: string
+          description: (deprecated) The ID of the organization that this journey belongs to
+        workspace_id:
+          type: string
+          description: Workspace Id
+          x-mabl-scope: public
+      x-implements-interface:
+      - IsInvariant
+    TestObjectiveChecksQuery:
+      required:
+      - tests
+      type: object
+      properties:
+        tests:
+          maxItems: 200
+          type: array
+          items:
+            $ref: '#/components/schemas/TestVersionReference'
+    TestSemanticQueryMatch:
+      required:
+      - test_invariant_id
+      - test_step_chunks
+      type: object
+      properties:
+        test_invariant_id:
+          type: string
+          description: The test invariant ID associated with this match
+          readOnly: true
+        test_name:
+          type: string
+          readOnly: true
+        test_description:
+          type: string
+          readOnly: true
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        application_id:
+          type: string
+          description: The application this test is associated with, if any.
+          readOnly: true
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        labels:
+          type: array
+          description: Labels attached to this test (e.g., "smoke", "regression").
+          readOnly: true
+          items:
+            type: string
+        intent:
+          type: string
+          description: TAA-generated intent string for the test (often empty until the Dataflow writer fills it).
+          readOnly: true
+        last_updated_time:
+          type: string
+          description: ISO-8601 timestamp of the last update to the test.
+          format: date-time
+          readOnly: true
+        created_by_id:
+          type: string
+          description: User ID of the test's creator.
+          readOnly: true
+        last_updated_by_id:
+          type: string
+          description: User ID of the last user to update the test.
+          readOnly: true
+        test_step_chunks:
+          type: array
+          description: All test step chunks associated with this test that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestStepChunkMatch'
+    TestCreditEstimateRequest:
+      required:
+      - test_ids
+      type: object
+      properties:
+        test_ids:
+          maxItems: 100
+          minItems: 1
+          type: array
+          description: List of test IDs (invariant or variant)
+          items:
+            type: string
+      description: Request to estimate credit costs for tests
+    IterationConfiguration:
+      type: object
+      properties:
+        iteration_type:
+          type: string
+          description: The type of iteration
+          enum:
+          - fixed
+          - variable
+          - list
+          - elements
+          - variable_array
+          - condition
+          - none
+        iteration_value:
+          type: string
+          description: A number, the name of the variable containing the number, a range of values to iterate over, a CSS query whose matching elements are iterated over (one iteration per matched element when iteration_type is elements), or the name of a variable whose array value is iterated over (one iteration per array element when iteration_type is variable_array; a non-array value iterates once). Not used when iteration_type is condition, which carries its condition in iteration_condition instead.
+        iteration_condition:
+          description: 'Required when iteration_type is condition. A single step in the json_steps format, keyed If, in the same shape a conditional step group uses - for example {"If": {"target": {...}, "condition": {...}, "actionCode": "conditional_if"}}. It is evaluated before each iteration and the loop runs for as long as it holds, so a condition that is false to begin with runs the flow zero times. See iteration_limit for what happens when the loop hits its cap.'
+          x-dao-serialize: true
+        iteration_count_variable:
+          type: string
+          description: Optional variable name (elements iteration only). When set, the number of elements the loop iterated over is written to a variable with this name once the loop completes, so later steps can reference it.
+        iteration_limit:
+          type: integer
+          description: Optional maximum number of iterations (elements, variable_array, and condition iteration only). When set, the loop runs at most this many iterations even if more elements match or the array is longer. Capped at the system maximum of 500. Elements and variable_array loops stop quietly on reaching it; a condition loop whose condition still holds at the cap fails the step.
+        prefetch:
+          type: boolean
+          description: Optional (elements iteration only). When true, the loop counts all matching elements once at the start and iterates by index, which is navigation-safe; use it when the loop body navigates away from or reloads the page (for example clicking each matching row to open a detail page and then returning). When false or unset, the loop marks the matched DOM elements and revisits them each iteration, which is faster but breaks if the page changes between iterations.
+      description: Configuration for iterations on a flow
+    VariantVersion:
+      type: object
+      properties:
+        variant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        previous_version:
+          type: integer
+          description: The generation number of the variant that was edited to create this variant (if applicable)
+          format: int64
+        merged_version:
+          type: integer
+          description: The generation number of the variant that was merged with the previous version to create this variant (if applicable)
+          format: int64
+        next_versions:
+          type: array
+          description: An array of generation numbers for the variants that were edited over this variant (if applicable)
+          items:
+            type: integer
+            format: int64
+        created_on_branch:
+          type: string
+          description: Name of the branch the variant was created on
+        change_description:
+          type: string
+          description: Description of the change between this variant and the previous variant
+        source_control_tags:
+          type: array
+          description: An array of source control tags that apply to this variant version
+          items:
+            type: string
+        created_time:
+          type: integer
+          description: Time at which the variant was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this variant
+        agent_session_id:
+          type: string
+          description: The ID of the agent session that authored this variant, if any. Not set for snippets.
+        mobile_training_info:
+          description: Device and app details recorded when a mobile variant was trained. Not set for snippets or non-mobile variants.
+          allOf:
+          - $ref: '#/components/schemas/MobileTrainingInfo'
+      x-implements-interface:
+      - HasCreatedActivity
+    TestVariantVersionQueryResult:
+      type: object
+      properties:
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        latest_version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        versions:
+          type: array
+          description: The versions for this entity.
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/VariantVersion'
+        mobile_platform:
+          description: Mobile platform of the test, when it is a mobile test.
+          allOf:
+          - $ref: '#/components/schemas/MobilePlatformEnum'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for test variant version query results
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    TestObjectiveCheck:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        workspace_id:
+          type: string
+          readOnly: true
+        test_invariant_id:
+          type: string
+          description: The test invariant ID
+          readOnly: true
+        test_version:
+          type: integer
+          format: int64
+          readOnly: true
+        state:
+          $ref: '#/components/schemas/TestObjectiveCheckState'
+        gap:
+          type: string
+          description: When state is drifted or accepted_gap, how the steps fall short of the summary.
+        checked_time:
+          type: integer
+          description: When the check was recorded, in epoch milliseconds.
+          format: int64
+          readOnly: true
+        checked_by_type:
+          description: Whether a person or an agent recorded the check, from the caller's credentials.
+          readOnly: true
+          allOf:
+          - $ref: '#/components/schemas/TestObjectiveSource'
+        checked_by_id:
+          type: string
+          description: The ID of the user or API key that recorded the check.
+          readOnly: true
+        checked_by_agent_session_id:
+          type: string
+          description: The agent session that recorded the check, when an agent did.
+          readOnly: true
+      description: 'One verdict on whether the steps of a test version satisfy that version''s objective summary. Stored apart from the test, so recording one never creates a test version, and never carried to a new version.
+
+        Scoped to the step list stored on that version. Steps reached through a referenced flow are not covered: a flow is held by ID and resolved to a version at run time, and that resolution depends on the branch, so editing a referenced flow, or reading the test from a branch that resolves it differently, can leave the check describing steps it never saw.'
+    FlowMetadata:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Invariant'
+      - type: object
+        properties:
+          flow_type:
+            description: 'Type of flow. Set at create and immutable afterwards: the value sent to either PATCH is ignored, and a create that omits it is classified from the step content the request carries.'
+            allOf:
+            - $ref: '#/components/schemas/FlowTypeEnum'
+            x-mabl-scope: public
+          reusable:
+            type: boolean
+            description: Indicates whether this can be used by multiple tests
+          name:
+            type: string
+            description: 'The display name of the flow. Required (non-blank) for reusable flows.
+
+              When absent on older reusable data, the API serves the description value
+
+              here; non-reusable flows are never given a name they did not have.
+
+              '
+            x-mabl-scope: public
+          description:
+            type: string
+            description: 'Usage notes and considerations for the flow. Historically this field held
+
+              the flow''s display name; that role has moved to `name`. To rename a flow,
+
+              write `name` — writing this field edits the description only. When a flow
+
+              has no description, the API serves the flow''s name here for backwards
+
+              compatibility.
+
+              '
+            x-mabl-scope: public
+          labels:
+            type: array
+            description: User provided labels
+            items:
+              $ref: '#/components/schemas/Label'
+            x-mabl-scope: public
+          source_control_tags:
+            type: object
+            additionalProperties:
+              type: integer
+              format: int64
+            description: mapping of tags to version numbers the tag is currently applied to
+          import_source_id:
+            $ref: '#/components/schemas/ImportSourceId'
+          import_source_version:
+            type: string
+            description: Version of the import tool used to import this flow
+            x-mabl-scope: public
+          mobile_platform:
+            $ref: '#/components/schemas/MobilePlatformEnum'
+          minimize_execution_overhead:
+            type: boolean
+            description: 'When enabled, mabl will not capture screenshots, network logs, DOM snapshots,
+
+              or other test artifacts in order to report the most accurate flow execution time
+
+              '
+            x-mabl-scope: public
+          reuse_browser_state_in_plan_run:
+            type: boolean
+            description: 'Shares the browser state this flow produces with the rest of a cloud plan run.
+
+
+              Tests that reach the flow before any state has been stored each run it and store
+
+              their own result. The tests in a plan stage start together, so that is the common
+
+              case; a test that starts once state already exists for the same application and
+
+              credentials begins from that stored state instead.
+
+
+              To sign in once per plan run, put a test that runs this flow in an earlier plan
+
+              stage, against the same application URL and with the same credentials. Stages run
+
+              in order, so the tests of later stages all start from the state that test stored.
+
+
+              A marked flow still runs every time. It is not skipped, so it must decide for
+
+              itself whether there is anything left to do — a login flow, for example, should
+
+              wrap its sign-in steps in a condition that only holds when the login page is
+
+              actually showing. A marked flow that unconditionally repeats its work will do so
+
+              on a browser that already carries the session.
+
+
+              The stored state lasts only for the plan run. Has no effect on local CLI runs.
+
+              '
+            x-mabl-scope: public
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+      - HasOrganizationId
+      - HasName
+      - IsInvariant
+    TestObjectiveCheckList:
+      type: object
+      properties:
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestObjectiveCheck'
+    QueryEntityByTaskParameters:
+      required:
+      - limit
+      - task_description
+      type: object
+      description: Parameters for querying entities by task description
+      allOf:
+      - $ref: '#/components/schemas/QueryEntityParameters'
+      - type: object
+        properties:
+          session_id:
+            type: string
+            description: The id of the mabl AI session, if any
+          task_description:
+            type: string
+            description: The task description
+          rerank_with_llm:
+            type: boolean
+            description: 'When true (default), the candidate list is LLM-reranked against the task
+
+              description before the top `limit` are returned. When false, the LLM rerank
+
+              is skipped and the raw datastore-ordered candidates (ASC by `COSINE_DISTANCE`)
+
+              are returned. Either way the response honors `limit`; the internal candidate
+
+              widening multiplier varies by endpoint (endpoints that group results after the
+
+              fetch keep the widened set so grouping does not underfill `limit`).
+
+              '
+            default: true
+    Variant:
+      type: object
+      properties:
+        id:
+          maxLength: 50
+          type: string
+          description: Unique identifier
+          x-mabl-scope: public
+        is_latest:
+          type: boolean
+          description: Indicates whether this was the latest variant when retrieved
+        version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        previous_version:
+          type: integer
+          description: The generation number of the variant that was edited to create this variant (if applicable)
+          format: int64
+        merged_version:
+          type: integer
+          description: The generation number of the variant that was merged with the previous version to create this variant (if applicable)
+          format: int64
+        merged_from_branch:
+          type: string
+          description: Name of the source branch whose version was merged to create this variant (if applicable)
+        created_on_branch:
+          type: string
+          description: Branch name the test was created on
+        change_description:
+          type: string
+          description: Description of the change between this variant and the previous variant
+        created_by_id:
+          type: string
+          description: The ID of the user who created this test
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time the test was created in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+      x-implements-interface:
+      - IsVariant
+    TestVersion:
+      type: object
+      description: A single test version
+      allOf:
+      - $ref: '#/components/schemas/Variant'
+      - type: object
+        properties:
+          manual_steps:
+            type: string
+            description: Test steps outline, used for manual tests
+          flows:
+            type: array
+            description: Array of flow IDs for flows to execute during test
+            items:
+              type: string
+          flow_configuration:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/FlowConfiguration'
+            description: Configuration for specific flow instances
+          iterations:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/IterationConfiguration'
+            description: Iteration configurations keyed by flow index (as string)
+          performance_configuration:
+            $ref: '#/components/schemas/PerformanceConfiguration'
+          api_url:
+            type: string
+            description: the API URL associated with the test
+          api_configuration:
+            $ref: '#/components/schemas/ApiConfiguration'
+          url:
+            type: string
+            description: the URL used when creating the test version
+          credentials_id:
+            type: string
+            description: the id of the credentials used when creating the test version
+          application_id:
+            type: string
+            description: the id of the application used when creating the test version
+          environment_id:
+            type: string
+            description: the id of the environment used when creating the test version
+          datatable_row_id:
+            type: string
+            description: the id of the DataTable row used when creating the test version
+          variables:
+            $ref: '#/components/schemas/UserDefinedVariables'
+          mobile_training_info:
+            $ref: '#/components/schemas/MobileTrainingInfo'
+          training_session_id:
+            type: string
+            description: the id of the training session used when creating the test version
+          agent_session_id:
+            type: string
+            description: the id of the agent session that authored this test version, if any
+          objective:
+            description: Retired; use test_objective. Ignored on every write and never returned.
+            deprecated: true
+            allOf:
+            - $ref: '#/components/schemas/TestObjective'
+          test_objective:
+            $ref: '#/components/schemas/TestObjective'
+      x-implements-interface:
+      - IsVariant
+      - HasVersion
+    ApiKeyAuthentication:
+      type: object
+      properties:
+        location:
+          type: string
+          description: The location of the API key
+          enum:
+          - header
+          - query
+        key:
+          type: string
+          description: The key to use for authentication
+        value:
+          type: string
+          description: The value to use for authentication
+      description: Configuration for API key authentication
+    TestsByApplicationResult:
+      required:
+      - test_invariant_ids
+      type: object
+      properties:
+        test_invariant_ids:
+          type: array
+          description: The set of test invariant IDs associated with the given application.
+          items:
+            type: string
+        cursor:
+          type: string
+          description: Pagination cursor.
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    TestMetadata:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Invariant'
+      - type: object
+        properties:
+          enabled:
+            type: boolean
+            description: If test is enabled to execute
+            x-mabl-scope: public
+          name:
+            type: string
+            description: The display name of the test
+            x-mabl-scope: public
+          description:
+            type: string
+            description: Brief description the test
+            x-mabl-scope: public
+          device_emulation:
+            $ref: '#/components/schemas/DeviceEmulation'
+          device_emulations:
+            type: array
+            description: List of browser device emulation configurations. Empty list means configured for desktop
+            items:
+              $ref: '#/components/schemas/DeviceEmulation'
+            x-mabl-scope: public
+          tags:
+            type: array
+            description: Tag objects associated with this test
+            items:
+              $ref: '#/components/schemas/Tag'
+          default:
+            type: boolean
+            description: Whether this test is a default test generated for all customers from a template
+          labels:
+            type: array
+            description: User provided labels
+            items:
+              $ref: '#/components/schemas/Label'
+            x-mabl-scope: public
+          datatables:
+            type: array
+            description: Array of datatable IDs for datatables that satisfy the parameter requirements of the test
+            items:
+              type: string
+            x-mabl-scope: public
+          export_variables:
+            type: boolean
+            description: Whether this test should export variables
+            x-mabl-scope: public
+          source_control_tags:
+            type: object
+            additionalProperties:
+              type: integer
+              format: int64
+            description: (deprecated, use versionTags) mapping of source control tags to version numbers the tag is currently applied to
+          ref_id:
+            type: string
+            description: Reference id to this test in another system
+            x-mobile-scope: public
+          test_type:
+            $ref: '#/components/schemas/TestTypeEnum'
+          test_source:
+            $ref: '#/components/schemas/TestSource'
+          test_cases:
+            type: array
+            description: User provided external test cases (limit 20)
+            items:
+              $ref: '#/components/schemas/ExternalTestCase'
+            x-mabl-scope: public
+          send_mabl_header:
+            type: boolean
+            description: Controls whether or not the x-mabl-agent header is sent on requests
+            x-mabl-scope: public
+          execution_runner_size:
+            $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+          mobile_platform:
+            $ref: '#/components/schemas/MobilePlatformEnum'
+          intent:
+            type: string
+            description: The intent of the test as natural language
+          test_case_id:
+            type: string
+            description: Unique identifier of the associated TestCase
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+      - HasOrganizationId
+      - HasName
+      - IsInvariant
+    FlowStepIds:
+      type: object
+      properties:
+        flowInvariantId:
+          type: string
+          description: The flow invariant id
+        flowId:
+          type: string
+          description: The flow variant id
+        flowSourceIndexInTest:
+          type: integer
+          description: The index of the flow within a test if relevant
+          format: int64
+        flowReusable:
+          type: boolean
+          description: Boolean for if the flow is reusable
+        flowType:
+          type: string
+          description: The type of flow
+        stepIdsInFlow:
+          type: array
+          description: The step ids for the flow (hashing info about the step with flowInvariantId)
+          items:
+            type: string
+        stepIdsInJourney:
+          type: array
+          description: The step ids for the flow within a test if relevant (hashing stepIdInFlow with testInvariantId and flowSourceIndexInTest)
+          items:
+            type: string
+      description: The step IDs in a particular Flow with associated context about the flow
+    TestObjectiveState:
+      type: string
+      description: 'Whether the steps of this test version have been checked against the objective summary, and what the check found. unverified means the summary has not been checked against these steps; aligned means it was checked and the steps satisfy it; drifted means it was checked and the steps fall short, with the difference in gap; accepted_gap means the user saw that gap and chose to keep it.
+
+        Scoped to the step list stored on this version. Steps reached through a referenced flow are not covered: a flow is held by ID and resolved to a version at run time, and that resolution depends on the branch, so editing a referenced flow, or reading this version from a branch that resolves it differently, can leave the state describing steps the check never saw.'
+      enum:
+      - unverified
+      - aligned
+      - drifted
+      - accepted_gap
+    TestCreditEstimate:
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The test ID
+        estimated_centicredits:
+          type: integer
+          description: Estimated centicredits (1/100th of a credit) this test will consume (may vary for performance tests based on actual runtime)
+          format: int32
+        has_weights:
+          type: boolean
+          description: Whether execution credit weights are configured for this test's account
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        has_advanced_ai:
+          type: boolean
+          description: Whether this test uses advanced AI features that incur additional charges
+        error:
+          type: string
+          description: Error message if credit estimation failed for this test
+      description: Estimated credit cost for executing a test
+    ApiConfiguration:
+      type: object
+      properties:
+        authentication:
+          $ref: '#/components/schemas/ApiAuthentication'
+        pre_request_snippets:
+          type: array
+          description: Snippets to execute before the request
+          items:
+            $ref: '#/components/schemas/ExecutableSnippet'
+        post_request_snippets:
+          type: array
+          description: Snippets to execute after the request
+          items:
+            $ref: '#/components/schemas/ExecutableSnippet'
+      description: Configuration of the API test type.
+    TestObjectiveSource:
+      type: string
+      description: Who authored the objective summary.
+      enum:
+      - user
+      - agent
+    QueryEntityParameters:
+      required:
+      - limit
+      type: object
+      properties:
+        application_id:
+          type: string
+          description: Restricts the query to entities of a given application ID
+        database_connection_id:
+          type: string
+          description: Restricts the query to entities with the given database connection ID (only used for Snippet queries)
+        flow_type:
+          $ref: '#/components/schemas/FlowTypeEnum'
+        limit:
+          minimum: 1
+          type: integer
+          description: The max results to return
+          format: int32
+          default: 10
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        reusable:
+          type: boolean
+          description: If specified, will only return entities with the given reusable flag
+        snippet_types:
+          type: array
+          description: Restricts the query to entities with the given snippet type (only used for Snippet queries)
+          items:
+            $ref: '#/components/schemas/SnippetTypeEnum'
+    UserDefinedVariables:
+      type: object
+      properties:
+        inputs:
+          type: array
+          description: the input variables for the flow/test (used before they are defined) with set semantics on name
+          items:
+            $ref: '#/components/schemas/UserDefinedInputVariable'
+        outputs:
+          type: array
+          description: the variables defined by this script with set semantics. this is not used by the test.
+          items:
+            $ref: '#/components/schemas/UserDefinedOutputVariable'
+    TestReferenceTextSearchMatch:
+      required:
+      - score
+      - test_invariant_id
+      - test_name
+      - test_type
+      type: object
+      properties:
+        test_invariant_id:
+          type: string
+        test_name:
+          type: string
+        description:
+          type: string
+        labels:
+          type: array
+          items:
+            type: string
+        intent:
+          type: string
+          description: TAA-generated intent string (often empty until Dataflow writer fills it).
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        application_id:
+          type: string
+        last_updated_time:
+          type: string
+          format: date-time
+        annotated_step_text:
+          type: string
+          description: 'An excerpt of the test''s steps, not its flows in full. Each flow contributes
+
+            a window of its annotated_step_descriptions around the steps that matched the
+
+            query, or its opening steps when it did not match, and the windows are joined.
+
+            For the default "combined" search the flows are ordered by how well their steps
+
+            answer the query, most relevant first, so that a shortened excerpt keeps the
+
+            steps the query was about; flows that answer it not at all follow in test order.
+
+            A single-column search has no per-flow relevance, so it is always in test order
+
+            and contributes opening steps rather than windows.
+
+            Ordering never changes which tests match or how they rank against each other.
+
+            Server caps the text at 20000 characters, applied both per flow and over the
+
+            full concatenation; annotated_step_truncated reports when that cap cut a flow.
+
+            The calling agent service applies its own adaptive truncation on top.
+
+            '
+        annotated_step_truncated:
+          type: boolean
+          description: 'True when the 20000-character cap cut this test''s step text, at either level:
+
+            a single flow ran past it, or the test''s flows ran past it once joined even
+
+            though each one fits. Independent of the excerpt window — the excerpt is a
+
+            window around the matched steps, or the opening steps when nothing matched,
+
+            and that windowing is not truncation and does not set this flag. False when
+
+            the row carries every flow''s contribution whole.
+
+            '
+        score:
+          type: number
+          description: Relevance, higher = better, and not on a fixed scale. Comparable only among rows of a single response that share a match_source, because scores from test metadata and from flow step text come from different corpora. Never comparable across responses.
+          format: double
+        match_source:
+          type: string
+          description: 'What the query matched on, and the primary sort key. "metadata" means the test''s own
+
+            name, description, intent or labels, so the test itself describes what was asked for;
+
+            every metadata match ranks above every step-text match, and results already arrive in
+
+            that order. "own_steps" and "shared_steps" mean nothing on the test matched and the
+
+            query was found only in the step text of the test''s flows, which is weaker evidence
+
+            about what the test is for: confirm against the test name and the step excerpt before
+
+            treating such a row as belonging to the category that was searched for. "own_steps" is
+
+            a flow belonging to this test alone; "shared_steps" is the weakest of the three,
+
+            because the flow that matched is shared with other tests and says little about any one
+
+            of them.
+
+            '
+          enum:
+          - metadata
+          - own_steps
+          - shared_steps
+        matched_field:
+          type: string
+          description: 'Echo of the requested search_field, i.e. which test_reference columns were
+
+            searched. It does not say where the match landed: under "combined" a row may
+
+            have surfaced through the step text of the test''s flows instead.
+
+            '
+          enum:
+          - combined
+          - name
+          - description
+          - intent
+          - labels
+    MobileTrainingInfo:
+      type: object
+      properties:
+        device_name:
+          type: string
+          description: The name of the mobile device
+        device_api_level:
+          type: string
+          description: The API level of the mobile device
+        device_os_version:
+          type: string
+          description: The OS version of the mobile device
+        screen_dimensions:
+          $ref: '#/components/schemas/DeviceScreenDimensions'
+        is_cloud_training:
+          type: boolean
+          description: Whether the training took place on a cloud device or local device
+        is_real_device:
+          type: boolean
+          description: Whether the training took place on a real device or an emulator/simulator
+        app_file_name:
+          type: string
+          description: The mobile app file name (only present for local training)
+        app_file_id:
+          type: string
+          description: The file id of the mobile app (only present for cloud training)
+    EntityStepIds:
+      type: object
+      properties:
+        entityInvariantId:
+          type: string
+          description: The invariant id of the entity
+        journeyRunId:
+          description: The corresponding test run id if relevant
+        entityId:
+          type: string
+          description: The version of the entity (variant ID)
+        stepIdsByFlow:
+          type: array
+          description: The step ids for each flow in the entity in order
+          items:
+            $ref: '#/components/schemas/FlowStepIds'
+      description: The step ids for a versioned test or flow used in a particular test run
+    TestObjective:
+      type: object
+      properties:
+        summary:
+          type: string
+          description: A natural language summary of what this test version does. Omitting it on a save keeps the stored one; sending it empty removes the objective outright, since source, state, and gap all describe a summary.
+        source:
+          $ref: '#/components/schemas/TestObjectiveSource'
+        state:
+          $ref: '#/components/schemas/TestObjectiveState'
+        gap:
+          type: string
+          description: 'When state is drifted or accepted_gap, how the steps of this version fall short of the summary. Retained after the user accepts the gap so the accepted difference stays readable. Unindexed: free prose nothing queries, and long enough to exceed Datastore''s 1500-byte ceiling on an indexed string.'
+          x-dao-unindexed: true
+      description: 'What this test version is trying to accomplish, in natural language. Version-scoped, so each version records the objective it was authored against rather than sharing one across the whole test''s history. Saved through test_objective: a full save may set it alongside steps as one version, and omitting it keeps the stored one. A field_mask=test_objective write may only record state and gap; changing summary or source that way is refused, so use a full save.'
+    TestVersionReference:
+      required:
+      - test_id
+      - version
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The test invariant ID
+        version:
+          type: integer
+          format: int64
+    TestWithContext:
+      type: object
+      description: Contains test data plus additional context information
+      allOf:
+      - $ref: '#/components/schemas/Test'
+      - type: object
+        properties:
+          annotated_step_descriptions:
+            type: string
+            description: Detailed description of the steps in this test
+          step_details:
+            type: array
+            description: Step-level details with screenshot GCS URIs from the most recent passing test run (only populated when include_screenshot_info parameter is true)
+            items:
+              $ref: '#/components/schemas/TestStepContextDetails'
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasWorkspaceId
+      - HasName
+      - HasVersion
+    DeviceScreenDimensions:
+      required:
+      - height
+      - width
+      type: object
+      properties:
+        height:
+          type: integer
+          description: Height (pixels)
+          format: int32
+          x-mabl-scope: public
+        width:
+          type: integer
+          description: Width (pixels)
+          format: int32
+          x-mabl-scope: public
+    FlowConfiguration:
+      type: object
+      properties:
+        iterations:
+          $ref: '#/components/schemas/IterationConfiguration'
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+          description: The parameter values to pass into the flow
+        role:
+          $ref: '#/components/schemas/FlowRole'
+      description: Configuration for a flow instance
+  responses:
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse409:
+      description: Conflicts with the current state of the resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

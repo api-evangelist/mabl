@@ -1,0 +1,3562 @@
+openapi: 3.2.0
+info:
+  title: mabl Reporting API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Reporting
+paths:
+  /workspaces/{workspace_id}/reports/usage/testRunCounts:
+    get:
+      tags:
+      - Reporting
+      summary: Query test run counts
+      description: 'Retrieve the count of test runs in an active workspace, aggregated into time buckets. Each bucket reports the total number of runs that started within the bucket window, as well as how many of those passed and how many failed or were terminated. Useful for plotting test activity over time, tracking reliability trends, and feeding external dashboards with per-day/week/month usage metrics.
+
+
+        Runs are counted by their `start_time`, not `end_time` — a long-running test that starts on day D and finishes on day D+1 is attributed to day D. In-flight runs (ones that have started but not yet completed) are included in `total_test_runs` and counted as `failed_test_runs` until they complete, since they have not yet succeeded.
+
+
+        Optional filters (`application_id`, `plan_id`, `test_type`) narrow the underlying row set. Optional `group_by` (`plan` or `application`) breaks each time bucket further into one bucket per group value, with the `group_id` field on each bucket identifying the dimension value.
+
+
+        All timestamps in requests and responses are Unix epoch milliseconds. Bucket boundaries are aligned to UTC; convert to local time on the client side if needed. Time range is capped by granularity: daily (90 days), weekly/monthly (400 days). Data is served live from the test run database, so results reflect runs completed within seconds of the request.'
+      operationId: queryWorkspaceTestRunCounts
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Inclusive start of the time range to report on, as Unix epoch milliseconds. Must be strictly less than `end_time`.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: 'Exclusive end of the time range to report on, as Unix epoch milliseconds. Must be strictly greater than `start_time`. The total window `end_time - start_time` is capped by granularity: 90 days for `daily`, 400 days for `weekly` or `monthly`. Requests exceeding the cap return HTTP 400.'
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: granularity
+        in: query
+        description: Time bucket size for the response. Valid values are `daily`, `weekly`, and `monthly`. Daily buckets start at midnight UTC. Weekly buckets follow ISO-8601 week boundaries (Monday 00:00 UTC). Monthly buckets align with the first day of each calendar month at 00:00 UTC.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - daily
+          - weekly
+          - monthly
+      - name: group_by
+        in: query
+        description: Optional dimension to break the response down by. Without `group_by`, each time bucket aggregates all matching runs. With `group_by` set, each time bucket is further split by the grouping value and the `group_id` field on each bucket identifies which plan, application, or workspace it represents (workspace only appears on account-level endpoints). Buckets are emitted for every (period, group_id) combination that has at least one matching run; combinations with zero runs are omitted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - plan
+          - application
+      - name: application_id
+        in: query
+        description: Filter results to runs associated with a specific mabl application. Only runs whose `application_id` matches this value exactly are included. Combined additively with other filters (`plan_id`, `test_type`) — runs must match all provided filters.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_id
+        in: query
+        description: Filter results to runs that were part of executions of a specific test plan. Useful for attributing usage to a particular CI pipeline, schedule, or deployment trigger. Runs not associated with any plan (for example, ad-hoc runs from the Trainer) are excluded when this filter is set.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_type
+        in: query
+        description: Filter results to runs of a specific test type. Valid values are `browser` (UI automation), `api` (REST API tests), `mobile`, and `performance`. Useful when a workspace exercises multiple test types and you want to report on them independently — for example, to split UI-automation usage from API-test usage in an attribution dashboard. When omitted, all test types are included.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - api
+          - browser
+          - mobile
+          - performance
+      responses:
+        '200':
+          description: Test run counts grouped by time buckets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageTestRunCountsResponse'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Report
+      x-mabl-scope: public
+  /accounts/{account_id}/reports/usage/testRunCounts:
+    get:
+      tags:
+      - Reporting
+      summary: Query account test run counts
+      description: 'Same as `/workspaces/{workspace_id}/reports/usage/testRunCounts` but aggregates across every active workspace the authenticated caller has access to within the account. Use this endpoint for account-wide usage dashboards where you want a single aggregated bucket per time period, or pair it with `group_by=workspace` to produce a per-workspace breakdown of test run counts.
+
+
+        To scope the query to a single workspace within the account (for example, to reuse the same account-level API key while drilling into one workspace), pass its identifier as the `workspace_id` query parameter. When `workspace_id` is provided, the caller must still have access to that workspace.
+
+
+        All filter (`application_id`, `plan_id`, `test_type`), granularity, `group_by`, and time-range rules are identical to the workspace-level endpoint. All timestamps are Unix epoch milliseconds.'
+      operationId: queryAccountTestRunCounts
+      parameters:
+      - name: account_id
+        in: path
+        description: The account ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Inclusive start of the time range to report on, as Unix epoch milliseconds. Must be strictly less than `end_time`.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: 'Exclusive end of the time range to report on, as Unix epoch milliseconds. Must be strictly greater than `start_time`. The total window `end_time - start_time` is capped by granularity: 90 days for `daily`, 400 days for `weekly` or `monthly`. Requests exceeding the cap return HTTP 400.'
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: granularity
+        in: query
+        description: Time bucket size for the response. Valid values are `daily`, `weekly`, and `monthly`. Daily buckets start at midnight UTC. Weekly buckets follow ISO-8601 week boundaries (Monday 00:00 UTC). Monthly buckets align with the first day of each calendar month at 00:00 UTC.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - daily
+          - weekly
+          - monthly
+      - name: group_by
+        in: query
+        description: Optional dimension to break the response down by. Without `group_by`, each time bucket aggregates all matching runs. With `group_by` set, each time bucket is further split by the grouping value and the `group_id` field on each bucket identifies which plan, application, or workspace it represents (workspace only appears on account-level endpoints). Buckets are emitted for every (period, group_id) combination that has at least one matching run; combinations with zero runs are omitted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - workspace
+          - plan
+          - application
+      - name: application_id
+        in: query
+        description: Filter results to runs associated with a specific mabl application. Only runs whose `application_id` matches this value exactly are included. Combined additively with other filters (`plan_id`, `test_type`) — runs must match all provided filters.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_id
+        in: query
+        description: Filter results to runs that were part of executions of a specific test plan. Useful for attributing usage to a particular CI pipeline, schedule, or deployment trigger. Runs not associated with any plan (for example, ad-hoc runs from the Trainer) are excluded when this filter is set.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_type
+        in: query
+        description: Filter results to runs of a specific test type. Valid values are `browser` (UI automation), `api` (REST API tests), `mobile`, and `performance`. Useful when a workspace exercises multiple test types and you want to report on them independently — for example, to split UI-automation usage from API-test usage in an attribution dashboard. When omitted, all test types are included.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - api
+          - browser
+          - mobile
+          - performance
+      - name: workspace_id
+        in: query
+        description: Optional identifier of a single workspace within the account to scope the response to. When omitted, the response aggregates across every workspace the authenticated caller has access to in the account. When provided, the caller must still have access to that workspace and the workspace must belong to the account in the path parameter.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Test run counts grouped by time buckets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageTestRunCountsResponse'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Report
+      x-mabl-scope: public
+  /workspaces/{workspace_id}/reports/usage/executionSeconds:
+    get:
+      tags:
+      - Reporting
+      summary: Query execution seconds
+      description: 'Retrieve total execution time for an active workspace, aggregated into time buckets. The `total_execution_seconds` field sums (end_time - start_time) across every completed run whose `start_time` falls within the bucket. In-flight runs (without a recorded end_time) are excluded both from this sum and from the `total_test_runs` count on this endpoint — consult `testRunCounts` if you want a count that includes in-flight runs.
+
+
+        Execution time is measured from the moment a run starts executing to the moment it completes (successfully or otherwise). It does not include time spent queued waiting for a runner. Useful for billing, capacity planning, or attributing compute cost to a specific team (via `application_id` or `plan_id`), test type, or time window.
+
+
+        All filter, granularity, and `group_by` semantics are identical to the `testRunCounts` endpoint. All timestamps are Unix epoch milliseconds, and bucket boundaries are aligned to UTC.'
+      operationId: queryWorkspaceExecutionSeconds
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Inclusive start of the time range to report on, as Unix epoch milliseconds. Must be strictly less than `end_time`.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: 'Exclusive end of the time range to report on, as Unix epoch milliseconds. Must be strictly greater than `start_time`. The total window `end_time - start_time` is capped by granularity: 90 days for `daily`, 400 days for `weekly` or `monthly`. Requests exceeding the cap return HTTP 400.'
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: granularity
+        in: query
+        description: Time bucket size for the response. Valid values are `daily`, `weekly`, and `monthly`. Daily buckets start at midnight UTC. Weekly buckets follow ISO-8601 week boundaries (Monday 00:00 UTC). Monthly buckets align with the first day of each calendar month at 00:00 UTC.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - daily
+          - weekly
+          - monthly
+      - name: group_by
+        in: query
+        description: Optional dimension to break the response down by. Without `group_by`, each time bucket aggregates all matching runs. With `group_by` set, each time bucket is further split by the grouping value and the `group_id` field on each bucket identifies which plan, application, or workspace it represents (workspace only appears on account-level endpoints). Buckets are emitted for every (period, group_id) combination that has at least one matching run; combinations with zero runs are omitted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - plan
+          - application
+      - name: application_id
+        in: query
+        description: Filter results to runs associated with a specific mabl application. Only runs whose `application_id` matches this value exactly are included. Combined additively with other filters (`plan_id`, `test_type`) — runs must match all provided filters.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_id
+        in: query
+        description: Filter results to runs that were part of executions of a specific test plan. Useful for attributing usage to a particular CI pipeline, schedule, or deployment trigger. Runs not associated with any plan (for example, ad-hoc runs from the Trainer) are excluded when this filter is set.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_type
+        in: query
+        description: Filter results to runs of a specific test type. Valid values are `browser` (UI automation), `api` (REST API tests), `mobile`, and `performance`. Useful when a workspace exercises multiple test types and you want to report on them independently — for example, to split UI-automation usage from API-test usage in an attribution dashboard. When omitted, all test types are included.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - api
+          - browser
+          - mobile
+          - performance
+      responses:
+        '200':
+          description: Execution time grouped by time buckets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageExecutionSecondsResponse'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Report
+      x-mabl-scope: public
+  /accounts/{account_id}/reports/usage/executionSeconds:
+    get:
+      tags:
+      - Reporting
+      summary: Query account execution seconds
+      description: 'Same as `/workspaces/{workspace_id}/reports/usage/executionSeconds` but aggregates across every active workspace the authenticated caller has access to within the account. Use this for account-wide billing or utilization reports, or pair with `group_by=workspace` to produce a per-workspace breakdown of execution seconds.
+
+
+        Scope to one workspace by passing its identifier as the `workspace_id` query parameter; the caller must have access to that workspace. All filter, granularity, `group_by`, and time-range rules are identical to the workspace-level endpoint. All timestamps are Unix epoch milliseconds.'
+      operationId: queryAccountExecutionSeconds
+      parameters:
+      - name: account_id
+        in: path
+        description: The account ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Inclusive start of the time range to report on, as Unix epoch milliseconds. Must be strictly less than `end_time`.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: 'Exclusive end of the time range to report on, as Unix epoch milliseconds. Must be strictly greater than `start_time`. The total window `end_time - start_time` is capped by granularity: 90 days for `daily`, 400 days for `weekly` or `monthly`. Requests exceeding the cap return HTTP 400.'
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: granularity
+        in: query
+        description: Time bucket size for the response. Valid values are `daily`, `weekly`, and `monthly`. Daily buckets start at midnight UTC. Weekly buckets follow ISO-8601 week boundaries (Monday 00:00 UTC). Monthly buckets align with the first day of each calendar month at 00:00 UTC.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - daily
+          - weekly
+          - monthly
+      - name: group_by
+        in: query
+        description: Optional dimension to break the response down by. Without `group_by`, each time bucket aggregates all matching runs. With `group_by` set, each time bucket is further split by the grouping value and the `group_id` field on each bucket identifies which plan, application, or workspace it represents (workspace only appears on account-level endpoints). Buckets are emitted for every (period, group_id) combination that has at least one matching run; combinations with zero runs are omitted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - workspace
+          - plan
+          - application
+      - name: application_id
+        in: query
+        description: Filter results to runs associated with a specific mabl application. Only runs whose `application_id` matches this value exactly are included. Combined additively with other filters (`plan_id`, `test_type`) — runs must match all provided filters.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_id
+        in: query
+        description: Filter results to runs that were part of executions of a specific test plan. Useful for attributing usage to a particular CI pipeline, schedule, or deployment trigger. Runs not associated with any plan (for example, ad-hoc runs from the Trainer) are excluded when this filter is set.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_type
+        in: query
+        description: Filter results to runs of a specific test type. Valid values are `browser` (UI automation), `api` (REST API tests), `mobile`, and `performance`. Useful when a workspace exercises multiple test types and you want to report on them independently — for example, to split UI-automation usage from API-test usage in an attribution dashboard. When omitted, all test types are included.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - api
+          - browser
+          - mobile
+          - performance
+      - name: workspace_id
+        in: query
+        description: Optional identifier of a single workspace within the account to scope the response to. When omitted, the response aggregates across every workspace the authenticated caller has access to in the account. When provided, the caller must still have access to that workspace and the workspace must belong to the account in the path parameter.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution time grouped by time buckets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageExecutionSecondsResponse'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Report
+      x-mabl-scope: public
+  /workspaces/{workspace_id}/reports/usage/maxTestRunConcurrency:
+    get:
+      tags:
+      - Reporting
+      summary: Query workspace daily maximum concurrent test runs
+      description: 'Retrieve the daily maximum number of simultaneously executing test runs in an active workspace, along with the workspace''s configured test run concurrency limit for the same test type. The reported `max_test_run_concurrency` is computed as the maximum number of runs executing at any single instant during the day — not an average, not a count of runs started. If ten runs start and finish within the same minute but a different run was also executing for that minute, the maximum for that minute is eleven.
+
+
+        Use this endpoint to track how close a workspace is running to its purchased concurrency capacity, decide when to request a limit increase, identify load bursts, or correlate peak usage with customer-side deployment or traffic patterns. Compare the `max_test_run_concurrency` values against `configured_test_run_concurrency_limit` to see headroom.
+
+
+        Data is pre-aggregated from billable events by a background job that runs every 12 hours, so values for the current calendar day may be incomplete until the next aggregation cycle finishes. Time range cannot exceed 90 days. If `start_time` and `end_time` are both omitted, the endpoint returns the last 90 completed days ending at the start of the current UTC day.
+
+
+        The `configured_test_run_concurrency_limit` is resolved against the requested `test_type`. For `browser` (the default when unspecified), it is the sum of the workspace''s Linux, macOS, and Windows browser quotas. For `api`, `mobile`, or `performance`, it is the single numeric quota for that resource. A workspace with no configured quota for a given test type returns `configured_test_run_concurrency_limit: 0`.'
+      operationId: queryWorkspaceMaxTestRunConcurrency
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: 'Inclusive start of the time range to report on, as Unix epoch milliseconds. Must be earlier than `end_time`. Optional: if both `start_time` and `end_time` are omitted, the endpoint returns the most recent 90 completed days. If `end_time` is provided but `start_time` is not, `start_time` defaults to 90 days before `end_time`. Any sub-day precision is snapped to midnight UTC of that day; the response echoes the snapped value.'
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: 'Exclusive end of the time range to report on, as Unix epoch milliseconds. Must be later than `start_time`. Optional: defaults to the start of the current calendar day in UTC (i.e. the end of the most recent completed day). The window `end_time - start_time` cannot exceed 90 days. Any sub-day precision is snapped to the start of the following UTC day; the response echoes the snapped value.'
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: test_type
+        in: query
+        description: Test type to report maximum test run concurrency for. Valid values are `browser` (UI automation), `api` (REST API tests), `mobile`, and `performance`. The returned `max_test_run_concurrency` values and the matching `configured_test_run_concurrency_limit` both reflect the selected test type. Defaults to `browser` when omitted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - api
+          - browser
+          - mobile
+          - performance
+      responses:
+        '200':
+          description: Daily maximum concurrent test run data for the workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceMaxTestRunConcurrencyResponse'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Report
+      x-mabl-scope: public
+  /accounts/{account_id}/reports/usage/maxTestRunConcurrency:
+    get:
+      tags:
+      - Reporting
+      summary: Query account daily maximum concurrent test runs
+      description: 'Same as `/workspaces/{workspace_id}/reports/usage/maxTestRunConcurrency` but returns one block per active workspace the authenticated caller has access to within the account. Each workspace''s response includes its own `configured_test_run_concurrency_limit`, which can differ across workspaces in the same account (for example, one workspace might have a higher browser quota than another). Use this endpoint for account-wide capacity dashboards or to flag which workspaces are running near their limit.
+
+
+        Scope to a single workspace by passing its identifier as the `workspace_id` query parameter while still authenticating with account-level credentials. Time range, `test_type`, and default-range semantics are identical to the workspace-level endpoint.'
+      operationId: queryAccountMaxTestRunConcurrency
+      parameters:
+      - name: account_id
+        in: path
+        description: The account ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: 'Inclusive start of the time range to report on, as Unix epoch milliseconds. Must be earlier than `end_time`. Optional: if both `start_time` and `end_time` are omitted, the endpoint returns the most recent 90 completed days. If `end_time` is provided but `start_time` is not, `start_time` defaults to 90 days before `end_time`. Any sub-day precision is snapped to midnight UTC of that day; the response echoes the snapped value.'
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: 'Exclusive end of the time range to report on, as Unix epoch milliseconds. Must be later than `start_time`. Optional: defaults to the start of the current calendar day in UTC (i.e. the end of the most recent completed day). The window `end_time - start_time` cannot exceed 90 days. Any sub-day precision is snapped to the start of the following UTC day; the response echoes the snapped value.'
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: test_type
+        in: query
+        description: Test type to report maximum test run concurrency for. Valid values are `browser` (UI automation), `api` (REST API tests), `mobile`, and `performance`. The returned `max_test_run_concurrency` values and the matching `configured_test_run_concurrency_limit` both reflect the selected test type. Defaults to `browser` when omitted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - api
+          - browser
+          - mobile
+          - performance
+      - name: workspace_id
+        in: query
+        description: Optional identifier of a single workspace within the account to scope the response to. When omitted, the response aggregates across every workspace the authenticated caller has access to in the account. When provided, the caller must still have access to that workspace and the workspace must belong to the account in the path parameter.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: include_configured_limit
+        in: query
+        description: Whether to compute and include each workspace's `configured_test_run_concurrency_limit`. Defaults to `true`. Set to `false` to skip the per-workspace quota lookups — a latency optimization for callers that only need `max_test_run_concurrency` and ignore the configured limit. When `false`, `configured_test_run_concurrency_limit` is omitted from each workspace block; the maximum-concurrency buckets are unaffected.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
+      responses:
+        '200':
+          description: Daily maximum concurrent test run data per workspace in the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountMaxTestRunConcurrencyResponse'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Report
+      x-mabl-scope: public
+  /results/testRun/{test_run_id}:
+    get:
+      tags:
+      - Reporting
+      summary: Get a test run summary
+      description: Retrieve detailed information about a test run and its outcome.
+      operationId: getTestRunResult
+      parameters:
+      - name: test_run_id
+        in: path
+        description: The test run ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: advanced_metrics
+        in: query
+        description: Flag for whether to include test-level advanced metrics like performance and accessibility in results
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: advanced_metrics_by_flow
+        in: query
+        description: Flag for whether to include flow-level advanced metrics like performance and accessibility in results
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: Test run summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunResultSummary'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestRun
+      x-mabl-scope: public
+  /results/planRun/{plan_run_id}:
+    get:
+      tags:
+      - Reporting
+      summary: Get a plan run summary
+      description: Retrieve detailed information about this plan run, including each of its test runs.
+      operationId: getPlanRunResult
+      parameters:
+      - name: plan_run_id
+        in: path
+        description: The plan run ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: advanced_metrics
+        in: query
+        description: Flag for whether to include advanced metrics like performance and accessibility in results
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: Plan run summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanRunResultSummary'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: The provided ID does not correspond to a plan run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::PlanRun
+      x-mabl-scope: public
+  /results/workspace/{workspace_id}/testRuns:
+    get:
+      tags:
+      - Reporting
+      summary: Get test run summaries over a time range
+      description: Get results for a batch of test runs, with filtering available for time range, test/plan labels, test ID, plan ID, application ID, environment ID, and status.
+      operationId: getBatchTestRunResults
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Application ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: environment_id
+        in: query
+        description: Environment ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_id
+        in: query
+        description: Test ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_label
+        in: query
+        description: Test label
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_id
+        in: query
+        description: Plan ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_label
+        in: query
+        description: Plan label
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: outcomes
+        in: query
+        description: The result outcomes of test runs to include
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestRunResultOutcomeEnum'
+      - name: earliest_run_start_time
+        in: query
+        description: Earliest test run start time in epoch milliseconds. The range from earliest_run_start_time to latest_run_start_time cannot exceed 400 days. Test runs are retained for 400 days, so earlier start times return no results. Required when latest_run_start_time is supplied; when both are omitted the most recent 30 days are returned.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: latest_run_start_time
+        in: query
+        description: Latest test run start time in epoch milliseconds, defaulting to the current time. The range from earliest_run_start_time to latest_run_start_time cannot exceed 400 days.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: advanced_metrics
+        in: query
+        description: Flag for whether to include advanced metrics like performance and accessibility in results
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        description: Maximum number of runs to return in a single response.  Additional pages of results can be retrieved by passing the cursor (returned in the results) on a subsequent call
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 2000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 500
+      - name: cursor
+        in: query
+        description: Opaque pagination cursor returned by a previous call. Pass it back unchanged to fetch the next page; do not construct or modify it. A cursor is valid only for the same filters and time range; a value this endpoint did not return is rejected with HTTP 400.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Test run results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunResults'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::TestRun
+      x-mabl-scope: public
+  /report/runArtifacts/testRun/{test_run_id}:
+    post:
+      tags:
+      - Reporting
+      summary: Create an export of test run artifacts
+      description: Initiate an asynchronous export of specified test run artifacts, such as screenshots or HAR logs. This endpoint returns an export ID. Use the export ID with the get export endpoint to retrieve the download URL.
+      operationId: createTestRunArtifactExport
+      parameters:
+      - name: test_run_id
+        in: path
+        description: Test run ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Type of test run artifact data as a partial export description
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestRunArtifactExport'
+        required: true
+      responses:
+        '201':
+          description: Export request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunArtifactExport'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Artifact
+      x-mabl-scope: public
+  /workspaces/{workspace_id}/reports/activityFeed:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve activity feed entries
+      description: Query the activity feed for a workspace.
+      operationId: queryActivityFeed
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: action_type
+        in: query
+        description: Type of action taken.  Can be create, update, delete, or recover.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_type
+        in: query
+        description: Type of object that was acted on
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_name
+        in: query
+        description: Name of the entity acted on for substring matching, wrap in double quotes for exact matching
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: actor_id
+        in: query
+        description: Id of the user or api key that performed the action
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: actor_is_mabl_employee
+        in: query
+        description: Filter activity logs by mabl employees.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: start_time
+        in: query
+        description: Start time of the activity feed data, in epoch milliseconds.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End time of the activity feed data, in epoch milliseconds.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: is_automator_event
+        in: query
+        description: Filter activity logs by automator events.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        description: Maximum number of runs to return in a single response. Additional pages of results can be retrieved by passing the cursor (returned in the results) on a subsequent call.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of activity feed entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityFeed'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-scope: public
+      x-mabl-action: Read::Report
+  /companies/{company_id}/reports/activityFeed:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve company activity feed entries
+      description: Query the activity feed for a company. This feed covers company-owned entities such as Link agents and company api keys; activity on entities owned by the company's workspaces stays in the workspace activity feed.
+      operationId: queryCompanyActivityFeed
+      parameters:
+      - name: company_id
+        in: path
+        description: Company id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: action_type
+        in: query
+        description: Type of action taken.  Can be create, update, delete, or recover.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_type
+        in: query
+        description: Type of object that was acted on
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: actor_id
+        in: query
+        description: Id of the user or api key that performed the action
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: actor_is_mabl_employee
+        in: query
+        description: Filter activity logs by mabl employees.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: start_time
+        in: query
+        description: Start time of the activity feed data, in epoch milliseconds.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End time of the activity feed data, in epoch milliseconds.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        description: Maximum number of entries to return in a single response. Additional pages of results can be retrieved by passing the cursor (returned in the results) on a subsequent call.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of activity feed entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityFeed'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/concurrentUsers/monthlySummary:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve Workspace summary for concurrent users
+      description: Summary of Workspace concurrent user activity
+      operationId: queryWorkspaceMonthlyConcurrentUsersSummary
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: month
+        in: query
+        description: Month to query. Defaults to current month.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: year
+        in: query
+        description: Year to query. Defaults to current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Concurrent users activity for the specified Workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceMonthlyConcurrentUsersSummary'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/concurrentUsers/monthlySummary:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve Account summary for concurrent users
+      description: Summary of Account concurrent user activity
+      operationId: queryAccountMonthlyConcurrentUsersSummary
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: month
+        in: query
+        description: Month to query. Defaults to current month.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: year
+        in: query
+        description: Year to query. Defaults to current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: workspace_id
+        in: query
+        description: Optional workspace ID to scope results to a single workspace within the account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: workspace_ids
+        in: query
+        description: Optional comma-separated list of workspace IDs to scope results within the account. Combined with workspace_id when both are given.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Concurrent users activity for the specified Account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountMonthlyConcurrentUsersSummary'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/concurrentUsers/annualSummary:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve Workspace summary for concurrent users
+      description: Summary of Workspace concurrent user activity
+      operationId: queryWorkspaceAnnualConcurrentUsersSummary
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: year
+        in: query
+        description: Starting year. Defaults to the current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: month
+        in: query
+        description: Starting month. Defaults to the first month of the year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Concurrent users activity for the specified Workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceAnnualConcurrentUsersSummary'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/concurrentUsers/annualSummary:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve Account summary for concurrent users
+      description: Summary of Account concurrent user activity
+      operationId: queryAccountAnnualConcurrentUsersSummary
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: year
+        in: query
+        description: Starting year. Defaults to the current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: month
+        in: query
+        description: Starting month. Defaults to the first month of the year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Concurrent users activity for the specified Account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountAnnualConcurrentUsersSummary'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/userActivity:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve user activity summary for a workspace
+      description: Query user activity (automator events) for a workspace within a time range. Returns each user's total edit count based on automator event criteria.
+      operationId: queryWorkspaceUserActivity
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Start time of the activity data, in epoch milliseconds.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End time of the activity data, in epoch milliseconds.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: limit
+        in: query
+        description: Maximum number of users to return per page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 500
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Cursor for pagination. Pass the cursor from a previous response to get the next page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User activity summary for the specified workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceUserActivity'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/userActivity/annualSummary:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve annual user activity summary for a workspace
+      description: Query annual user activity (automator events) for a workspace. Returns user activity counts for a 12-month period starting from the specified month and year.
+      operationId: queryWorkspaceAnnualUserActivity
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: year
+        in: query
+        description: Starting year for the 12-month period. Defaults to current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: month
+        in: query
+        description: Starting month for the 12-month period (1-12). Defaults to January (1). For example, month=6 with year=2025 returns data from June 2025 through May 2026.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: limit
+        in: query
+        description: Maximum number of users to return per page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 500
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Cursor for pagination. Pass the cursor from a previous response to get the next page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Annual user activity summary for the specified workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceAnnualUserActivity'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/userActivity/monthlySummary:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve monthly user activity summary for an account
+      description: Query monthly user activity (automator events) for an account. Returns each user's total edit count for the specified month across all workspaces in the account.
+      operationId: queryAccountMonthlyUserActivity
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: month
+        in: query
+        description: Month to query. Defaults to current month.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: year
+        in: query
+        description: Year to query. Defaults to current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: limit
+        in: query
+        description: Maximum number of users to return per page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 500
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Cursor for pagination. Pass the cursor from a previous response to get the next page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Monthly user activity summary for the specified account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountUserActivity'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/userActivity/annualSummary:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve annual user activity summary for an account
+      description: Query annual user activity (automator events) for an account. Returns user activity counts for a 12-month period starting from the specified month and year across all workspaces in the account.
+      operationId: queryAccountAnnualUserActivity
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: year
+        in: query
+        description: Starting year for the 12-month period. Defaults to current year.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: month
+        in: query
+        description: Starting month for the 12-month period (1-12). Defaults to January (1). For example, month=6 with year=2025 returns data from June 2025 through May 2026.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: limit
+        in: query
+        description: Maximum number of users to return per page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 500
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Cursor for pagination. Pass the cursor from a previous response to get the next page.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Annual user activity summary for the specified account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountAnnualUserActivity'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/users/{id}/activity:
+    get:
+      tags:
+      - Reporting
+      summary: Retrieve a user's activity across an account
+      description: Last-active time and recent action counts for a single user, binned by each workspace in the account where the user was active over the given time range. Restricted to company administrators and company-scoped API keys (USER_MANAGEMENT or REPORTING); the returned totals cover all workspaces in the account.
+      operationId: getAccountUserActivity
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: The user ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Start of the time range in epoch milliseconds. Defaults to 30 days before end_time.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End of the time range in epoch milliseconds. Defaults to now.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: The user's activity across the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAccountActivity'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: User is not a member of this account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+      x-mabl-scope: public
+  /report/runArtifacts/export/{export_id}:
+    get:
+      tags:
+      - Reporting
+      summary: Get a test run artifact export
+      description: Get test run artifact exports using the export ID returned by the create export endpoint. Once the export status is completed, the response includes a temporary signed URL for downloading the artifact ZIP file.
+      operationId: getTestRunArtifactExport
+      parameters:
+      - name: export_id
+        in: path
+        description: The ID for an export
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Test run artifact export description
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunArtifactExport'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Artifact
+      x-mabl-scope: public
+components:
+  schemas:
+    AgentType:
+      type: string
+      enum:
+      - test_authoring
+      - flow_authoring
+      - test_creation_planning
+      - test_planning
+      - agent_review
+      - app_summary
+      - test_run_analysis
+      - test_recovery
+      - runtime_recovery_summary_agent
+      - plan_run_analysis
+      - deployment_analysis
+      - workspace_results_analysis
+      - results_auto_analysis
+      - workspace_assistant
+      - app_modeling
+      - app_modeling_run
+      - file_assertion
+      - test_impact
+      - test_impact_shadow
+      - repair_notes
+      - external_agent
+      - exploratory_qa
+    AccountUserActivity:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Id of the associated account for this summary
+        interval_start:
+          type: integer
+          description: Starting time of the interval in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the interval in epoch milliseconds
+          format: int64
+        users:
+          type: array
+          description: List of users with their activity counts
+          items:
+            $ref: '#/components/schemas/UserActivitySummary'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results. Null if no more results.
+      description: User activity summary for an account over a time range
+    BaseTestRunResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Test run id
+          x-mabl-scope: public
+        test_ref_id:
+          type: string
+          description: reference to this test in another system
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: workspace Id
+          x-mabl-scope: public
+        started_time:
+          type: integer
+          description: Time test run was started, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        completed_time:
+          type: integer
+          description: Time test run was completed, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        journey_id:
+          type: string
+          description: (deprecated, use test_id) Test id
+          readOnly: true
+          x-mabl-scope: public
+        test_id:
+          type: string
+          description: Test id
+          readOnly: true
+          x-mabl-scope: public
+        test_labels:
+          type: array
+          description: Test labels
+          items:
+            type: string
+          x-mabl-scope: public
+        test_name:
+          type: string
+          description: Test name
+          x-mabl-scope: public
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        failure_summary:
+          $ref: '#/components/schemas/TestRunFailureSummary'
+        failure_categorization:
+          $ref: '#/components/schemas/FailureCategorization'
+        test_cases:
+          type: array
+          description: User provided external test cases
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ExternalTestCase'
+          x-mabl-scope: public
+        timing_summary:
+          $ref: '#/components/schemas/TimingSummary'
+        execution_source:
+          $ref: '#/components/schemas/TestSource'
+        status:
+          type: string
+          description: The current status of this test run
+          enum:
+          - awaiting_precondition
+          - skipped
+          - rate_limited
+          - queued
+          - running
+          - completed
+          - failed
+          - terminating
+          - terminated
+          x-mabl-scope: public
+        status_cause:
+          type: string
+          description: Cause for setting given status, such as failure cause. Updated in pairs with Status.
+          x-mabl-scope: public
+        outcome:
+          $ref: '#/components/schemas/TestRunResultOutcomeEnum'
+        customer_log_uri:
+          type: string
+          description: Customer facing output log (formerly output_log_uri)
+      description: Results of a test run
+    WorkspaceAnnualConcurrentUsersSummary:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Id of the associated workspace for this summary
+        interval_start:
+          type: integer
+          description: Starting time of the time-series in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the time-series in epoch milliseconds
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonthlyConcurrentUsersSummary'
+      description: Monthly time-series summary of concurrent workspace user activity over the specified year
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    AdvancedFlowMetrics:
+      type: object
+      properties:
+        cumulative_speed_index:
+          type: number
+          description: Cumulative app load time in milliseconds across all the steps of a flow averaged across all flow instances
+          format: double
+          readOnly: true
+          x-mabl-scope: public
+        cumulative_speed_index_by_flow_instance:
+          type: array
+          description: Cumulative app load time in milliseconds across all the steps of a flow per instance
+          items:
+            type: number
+            format: double
+          x-mabl-scope: public
+        cumulative_api_response_time:
+          type: number
+          description: Cumulative API response time in milliseconds across all the requests of an API flow averaged across all flow instances
+          format: double
+          readOnly: true
+          x-mabl-scope: public
+        cumulative_api_response_time_by_flow_instance:
+          type: array
+          description: Cumulative API response time in milliseconds across all the steps of a flow per instance
+          items:
+            type: number
+            format: double
+          x-mabl-scope: public
+        accessibility_rule_violations:
+          $ref: '#/components/schemas/RuleViolations'
+      description: Advanced flow metrics
+    TestRunResultOutcomeEnum:
+      type: string
+      enum:
+      - passed
+      - failed
+      - stopped
+    WorkspaceUserActivity:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Id of the associated workspace for this summary
+        interval_start:
+          type: integer
+          description: Starting time of the interval in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the interval in epoch milliseconds
+          format: int64
+        users:
+          type: array
+          description: List of users with their activity counts
+          items:
+            $ref: '#/components/schemas/UserActivitySummary'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results. Null if no more results.
+      description: User activity summary for a workspace over a time range
+    AccountMonthlyConcurrentUsersSummary:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Id of the associated account for this summary
+        interval_start:
+          type: integer
+          description: Starting time of the time-series in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the time-series in epoch milliseconds
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CumulativeDailyConcurrentUsersSummary'
+      description: Daily time-series summary of concurrent account user activity over the specified month
+    PerformanceTestBulkMetrics:
+      type: object
+      properties:
+        load_start_time:
+          type: integer
+          description: start time of load in Unix epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        load_ramp_up_end_time:
+          type: integer
+          description: start time of load in Unix epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        load_end_time:
+          type: integer
+          description: end time of load in Unix epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        concurrency:
+          type: integer
+          description: Concurrent users configured for the test run
+          format: int64
+          x-mabl-scope: public
+        functional_test_run_count:
+          type: integer
+          description: count of total functional test runs
+          format: int64
+          x-mabl-scope: public
+        functional_failure_rate:
+          type: number
+          description: performance tests only, percentage of functional test runs that failed [0-100]
+          format: double
+          x-mabl-scope: public
+      description: Performance metrics returned by the bulk query endpoint
+    TimingSummary:
+      type: object
+      properties:
+        find_time_ms:
+          type: integer
+          description: Total time spent in finds for this run
+          format: int64
+        find_extra_wait_time_ms:
+          type: integer
+          description: Extra wait time added by intelligent waiting in finds
+          format: int64
+      description: Sumamry of various timing measures for this run
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    TestRunResults:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Workspace ID
+          readOnly: true
+          x-mabl-scope: public
+        workspace_name:
+          type: string
+          description: Workspace name
+          readOnly: true
+          x-mabl-scope: public
+        earliest_run_start_time:
+          type: integer
+          description: Beginning of the time range used to identify runs
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        latest_run_start_time:
+          type: integer
+          description: End of the time range used to identify runs
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        number_of_runs:
+          type: integer
+          description: Number of runs in this page, equal to the length of test_results. This is not a total for the requested time range and can be smaller than limit, even zero, when a cursor is returned; follow cursor until it is absent to enumerate every run in the range. number_of_successful_runs and number_of_failed_runs do not necessarily sum to this value, because runs in any other status count toward neither.
+          format: int32
+          readOnly: true
+          x-mabl-scope: public
+        number_of_successful_runs:
+          type: integer
+          description: Number of runs in this page that completed successfully
+          format: int32
+          readOnly: true
+          x-mabl-scope: public
+        number_of_failed_runs:
+          type: integer
+          description: Number of runs in this page that failed
+          format: int32
+          readOnly: true
+          x-mabl-scope: public
+        test_results:
+          type: array
+          description: Summaries for each test run
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestRunResultBulkSummary'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Opaque cursor for the next page, absent when there are no more results. Pass it unchanged as the cursor query parameter.
+          readOnly: true
+          x-mabl-scope: public
+      description: One page of test runs matching the provided filters within a time range. The counts describe this page, not the whole time range.
+    WorkspaceAnnualUserActivity:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Id of the associated workspace for this summary
+        interval_start:
+          type: integer
+          description: Starting time of the interval in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the interval in epoch milliseconds
+          format: int64
+        users:
+          type: array
+          description: List of users with their activity counts
+          items:
+            $ref: '#/components/schemas/UserActivitySummary'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results. Null if no more results.
+      description: Annual user activity summary for a workspace with monthly breakdown
+    ActivityFeedEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the activity log entry
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: Workspace id associated with the action. Populated for workspace-owned entities; company-owned entities carry company_id instead.
+          x-mabl-scope: public
+        company_id:
+          type: string
+          description: Company id associated with the action. Populated for company-owned entities (for example Link agents); workspace-owned entities carry workspace_id instead.
+        entity_id:
+          type: string
+          description: Id of the entity acted on
+          x-mabl-scope: public
+        entity_previous_id:
+          type: string
+          description: Entity id of the entity acted on, prior to the action
+          x-mabl-scope: public
+        entity_invariant_id:
+          type: string
+          description: Invariant id of the entity acted on, only populated for versioned entities
+          x-mabl-scope: public
+        entity_canonical_id:
+          type: string
+          description: Canonical id of the entity acted on, consistent across object versions.  Always populated.
+          x-mabl-scope: public
+        entity_name:
+          type: string
+          description: Name of the entity immediately after being acted on
+          x-mabl-scope: public
+        entity_previous_name:
+          type: string
+          description: Name of the entity immediately before the action
+          x-mabl-scope: public
+        entity_type:
+          type: string
+          description: Type of the entity acted on
+          x-mabl-scope: public
+        actor_id:
+          type: string
+          description: Id for the user or api key performing the action
+          x-mabl-scope: public
+        actor_is_mabler:
+          type: boolean
+          description: Defines if this activity log entry was performed by a mabl employee.
+          x-mabl-scope: public
+        agent_type:
+          $ref: '#/components/schemas/AgentType'
+        agent_caller:
+          type: string
+          description: 'Who the agent acting for the actor was: mabl''s own agent or an external agent connected to mabl, such as a coding agent over MCP. Null for actions not performed by an agent.'
+          enum:
+          - mabl
+          - external
+          x-mabl-scope: public
+        agent_session_id:
+          type: string
+          description: Id of the agent session that performed the action. Null for actions not performed by an agent.
+          x-mabl-scope: public
+        on_behalf_of:
+          type: string
+          description: Id of the user or api key the agent acted on behalf of. Null for actions not performed by an agent.
+        action_type:
+          type: string
+          description: Action type taken on the entity. Can be create, update, delete, or recover.
+          x-mabl-scope: public
+        action_subtype:
+          type: string
+          description: Subtype of the action taken on the entity
+        action_timestamp:
+          type: integer
+          description: Time the action occurred, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time the entity acted on was created, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        entity_json:
+          type: string
+          description: Json of the entity acted on
+        entity_previous_json:
+          type: string
+          description: Json of the entity immediately after being acted on
+        entity_version_number:
+          type: integer
+          description: Version of the entity acted on, only populated for versioned types
+          format: int64
+          x-mabl-scope: public
+        entity_previous_version_number:
+          type: integer
+          description: Version of the entity before the action, only populated for versioned types
+          format: int64
+        is_automator_event:
+          type: boolean
+          description: Defines if this activity log entry meets the basic definition of an automator event
+          x-mabl-scope: public
+      description: Single entry for the activity log
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    CumulativeDailyConcurrentUsersSummary:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date of the summary. ISO-8601 format (uuuu-MM-dd)
+        cumulative_total_automators:
+          type: integer
+          description: Cumulative total number of automators in the workspace for the specified date
+          format: int32
+        cumulative_total_participants:
+          type: integer
+          description: Cumulative total number of participants in the workspace for the specified date
+          format: int32
+      description: Cumulative daily summary of concurrent workspace user activity
+    UsageReportGroupBy:
+      type: string
+      description: Dimension applied to break usage report results down by. `plan` emits one bucket per (time period, plan_id); `application` emits one bucket per (time period, application_id); `workspace` emits one bucket per (time period, workspace_id) and only appears on account-level responses.
+      enum:
+      - workspace
+      - plan
+      - application
+      x-mabl-scope: public
+    AccountAnnualUserActivity:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Id of the associated account for this summary
+        interval_start:
+          type: integer
+          description: Starting time of the interval in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the interval in epoch milliseconds
+          format: int64
+        users:
+          type: array
+          description: List of users with their activity counts
+          items:
+            $ref: '#/components/schemas/UserActivitySummary'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results. Null if no more results.
+      description: Annual user activity summary for an account with monthly breakdown
+    UsageTestRunCountBucket:
+      type: object
+      properties:
+        bucket_start_time:
+          type: integer
+          description: Inclusive start of the time bucket as Unix epoch milliseconds. Aligned to midnight UTC, Monday 00:00 UTC, or first-of-month 00:00 UTC per the selected granularity.
+          format: int64
+          x-mabl-scope: public
+        bucket_end_time:
+          type: integer
+          description: Exclusive end of the time bucket as Unix epoch milliseconds. Equal to the `bucket_start_time` of the following period for that bucket size.
+          format: int64
+          x-mabl-scope: public
+        group_id:
+          type: string
+          description: ID of the grouping dimension value. Only present when the request specifies `group_by`; omitted otherwise. The value is a plan ID when `group_by=plan`, an application ID when `group_by=application`, or a workspace ID when `group_by=workspace` (account-level endpoints only). Without `group_by` you get one bucket per time period; with `group_by` you get one bucket per (time period x dimension value), so consumers can break down counts or minutes by plan, application, or workspace.
+          x-mabl-scope: public
+        group_name:
+          type: string
+          description: Human-readable name of the group corresponding to `group_id`. Populated on a best-effort basis — may be absent for deleted or otherwise unresolvable entities. Not guaranteed unique; use `group_id` for joins.
+          x-mabl-scope: public
+        total_test_runs:
+          type: integer
+          description: Total number of test runs that started within this bucket and match all filters on the request. Includes runs that are still in flight (have started but not yet completed).
+          format: int64
+          x-mabl-scope: public
+        passed_test_runs:
+          type: integer
+          description: Subset of `total_test_runs` that completed successfully (status is `completed` and `success` is true). In-flight runs are excluded.
+          format: int64
+          x-mabl-scope: public
+        failed_test_runs:
+          type: integer
+          description: 'Subset of `total_test_runs` that did not pass — this covers runs that completed with `success: false`, runs that were terminated, and runs that are still in flight (counted as not-yet-passed). `passed_test_runs` plus `failed_test_runs` equals `total_test_runs`.'
+          format: int64
+          x-mabl-scope: public
+      description: Aggregated test run counts for a single time bucket, optionally further scoped to a single grouping dimension value when `group_by` is set on the request.
+      x-mabl-scope: public
+    AdvancedMetricsByFlow:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          description: Flow ID
+          readOnly: true
+          x-mabl-scope: public
+        flow_name:
+          type: string
+          description: Flow name
+          readOnly: true
+          x-mabl-scope: public
+        metrics:
+          $ref: '#/components/schemas/AdvancedFlowMetrics'
+      description: Advanced metrics by Flow
+    FailureRootCauseAnalysis:
+      type: object
+      properties:
+        headline:
+          type: string
+          description: The short summary of the run analysis; typically limited to one sentence
+          readOnly: true
+          x-mabl-scope: public
+        summary:
+          type: string
+          description: The summary of the analysis for the run failure
+          readOnly: true
+          x-mabl-scope: public
+        failure_category_id:
+          type: string
+          description: The suggested failure category if applicable
+          readOnly: true
+          x-mabl-scope: public
+        evidence_details:
+          type: string
+          description: Agent-generated detailed evidence supporting the analysis, if available
+          readOnly: true
+          x-mabl-scope: public
+    WorkspaceMaxTestRunConcurrencyResponse:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Identifier of the workspace this block describes. Always populated with this block's workspace identifier.
+          x-mabl-scope: public
+        start_time:
+          type: integer
+          description: Inclusive start of the queried time range as Unix epoch milliseconds, echoed from the request (or the default-derived value when the request omits it).
+          format: int64
+          x-mabl-scope: public
+        end_time:
+          type: integer
+          description: Exclusive end of the queried time range as Unix epoch milliseconds, echoed from the request (or the default-derived value when the request omits it).
+          format: int64
+          x-mabl-scope: public
+        configured_test_run_concurrency_limit:
+          type: integer
+          description: The workspace's configured maximum concurrent test runs for the requested `test_type` at the time of the query. For `browser`, this is the sum of the workspace's Linux, macOS, and Windows browser quotas. For `api`, `mobile`, or `performance`, this is the single numeric quota for that resource. Returns `0` if the workspace has no configured quota for the requested test type. Compare `max_test_run_concurrency` against this value to see how close the workspace is running to its purchased capacity.
+          format: int64
+          x-mabl-scope: public
+        time_buckets:
+          type: array
+          description: Daily-only time buckets for this endpoint. One entry per UTC calendar day in the queried range that had any runs of the requested test type. Ordered by `bucket_start_time` ascending. Days with no runs are omitted.
+          items:
+            $ref: '#/components/schemas/UsageMaxTestRunConcurrencyBucket'
+          x-mabl-scope: public
+      description: Daily maximum concurrent test run data for a single workspace, along with the workspace's configured test run concurrency limit for comparison. On the workspace endpoint this is the top-level response object. On the account endpoint it appears once per workspace within the `workspaces` array.
+      x-mabl-scope: public
+    UserWorkspaceActivity:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Id of the workspace
+          x-mabl-scope: public
+        action_count:
+          type: integer
+          description: Number of automator events by this user in the workspace in the time range
+          format: int64
+          x-mabl-scope: public
+        last_active_time:
+          type: integer
+          description: The user's most recent activity in this workspace in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+      description: A user's activity within a single workspace
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    TestRunResultBulkSummary:
+      allOf:
+      - $ref: '#/components/schemas/TestRunResultSummaryBase'
+      - $ref: '#/components/schemas/PerformanceTestBulkMetrics'
+    AccountAnnualConcurrentUsersSummary:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: Id of the associated account for this summary
+        interval_start:
+          type: integer
+          description: Starting time of the time-series in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the time-series in epoch milliseconds
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonthlyConcurrentUsersSummary'
+      description: Monthly time-series summary of concurrent account user activity over the specified year
+    TestSource:
+      type: string
+      description: Where the test lives
+      enum:
+      - mabl_cloud
+      - external
+      - mabl_local
+      - mabl_agent
+      x-mabl-scope: public
+    TestRunArtifactExport:
+      required:
+      - artifact_types
+      type: object
+      properties:
+        id:
+          type: string
+          description: Export ID
+          readOnly: true
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Export request time (epoch milliseconds)
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Export last updated time (epoch milliseconds)
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: Workspace ID
+          readOnly: true
+          x-mabl-scope: public
+        status:
+          type: string
+          description: Export status
+          readOnly: true
+          enum:
+          - queued
+          - running
+          - completed
+          - failed
+          - terminated
+          default: queued
+          x-mabl-scope: public
+        test_run_id:
+          type: string
+          description: ID of the test run exported
+          readOnly: true
+          x-mabl-scope: public
+        artifact_types:
+          minItems: 1
+          type: array
+          description: Requested export artifact types
+          items:
+            type: string
+            enum:
+            - console_logs
+            - doms
+            - hars
+            - screenshots
+            - traces
+            - xray_json
+            - variables
+          x-mabl-scope: public
+        export_signed_url:
+          type: string
+          description: Signed download URL (populated when status is completed)
+          readOnly: true
+          x-mabl-scope: public
+    RuleViolations:
+      type: object
+      properties:
+        critical:
+          type: integer
+          description: The count of critical rule violations by rule and page
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        serious:
+          type: integer
+          description: The count of serious rule violations by rule and page
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        moderate:
+          type: integer
+          description: The count of moderate rule violations by rule and page
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        minor:
+          type: integer
+          description: The count of minor rule violations by rule and page
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+      description: The count of accessibility rule violations per severity level
+    AssertFailure:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Assert failure description without expected/found values to eliminate the need for parsing downstream
+          x-mabl-scope: public
+        expected:
+          type: string
+          description: Expected value where applicable
+          x-mabl-scope: public
+        found:
+          type: string
+          description: Value actually found during test execution
+          x-mabl-scope: public
+      description: Details about assert failure
+    UsageTestRunCountsResponse:
+      type: object
+      properties:
+        start_time:
+          type: integer
+          description: Inclusive start of the queried time range as Unix epoch milliseconds, echoed from the request.
+          format: int64
+          x-mabl-scope: public
+        end_time:
+          type: integer
+          description: Exclusive end of the queried time range as Unix epoch milliseconds, echoed from the request.
+          format: int64
+          x-mabl-scope: public
+        granularity:
+          $ref: '#/components/schemas/UsageReportGranularity'
+        group_by:
+          $ref: '#/components/schemas/UsageReportGroupBy'
+        time_buckets:
+          type: array
+          description: Time-bucketed count results. Ordered by `bucket_start_time` ascending, then by `group_id` ascending when `group_by` is set. Buckets with zero matching runs are omitted — if you expect a continuous series, fill gaps on the consumer side using the request `start_time`/`end_time` and `granularity`.
+          items:
+            $ref: '#/components/schemas/UsageTestRunCountBucket'
+          x-mabl-scope: public
+      description: Response payload for the test run counts endpoint. Contains the resolved query range, the granularity and `group_by` dimension that were applied, and one entry in `time_buckets` per (time period, group_id) combination.
+      x-mabl-scope: public
+    TestRunResultSummaryBase:
+      type: object
+      description: Detailed information about a test run and its outcome that is common across test types
+      allOf:
+      - $ref: '#/components/schemas/BaseTestRunResult'
+      - type: object
+        properties:
+          workspace_name:
+            type: string
+            description: Workspace name
+            readOnly: true
+            x-mabl-scope: public
+          application_id:
+            type: string
+            description: Application ID
+            readOnly: true
+            x-mabl-scope: public
+          application_name:
+            type: string
+            description: Application name
+            readOnly: true
+            x-mabl-scope: public
+          environment_id:
+            type: string
+            description: Environment ID
+            readOnly: true
+            x-mabl-scope: public
+          environment_name:
+            type: string
+            description: Environment name
+            readOnly: true
+            x-mabl-scope: public
+          initial_url:
+            type: string
+            description: Starting URL for the test run
+            readOnly: true
+            x-mabl-scope: public
+          browser:
+            type: string
+            description: Browser in which this run was executed, if any
+            readOnly: true
+            x-mabl-scope: public
+          browser_version:
+            type: string
+            description: Browser version, if any
+            readOnly: true
+            x-mabl-scope: public
+          execution_runner_type:
+            type: string
+            description: Execution runner used by this run
+            readOnly: true
+            enum:
+            - unified
+            - legacy
+            - performance_testing
+            - unknown
+            x-mabl-scope: public
+          scenario_name:
+            type: string
+            description: Scenario name associated with this run, if any
+            readOnly: true
+            x-mabl-scope: public
+          plan_id:
+            type: string
+            description: Plan ID, if any
+            readOnly: true
+            x-mabl-scope: public
+          plan_labels:
+            type: array
+            description: Plan labels
+            readOnly: true
+            items:
+              type: string
+            x-mabl-scope: public
+          plan_name:
+            type: string
+            description: Plan name, if any
+            readOnly: true
+            x-mabl-scope: public
+          plan_run_id:
+            type: string
+            description: Plan run ID, if any
+            readOnly: true
+            x-mabl-scope: public
+          test_version:
+            type: integer
+            description: Test version
+            format: int64
+            readOnly: true
+            x-mabl-scope: public
+          branch:
+            type: string
+            description: Branch the test ran against, if any
+            readOnly: true
+            x-mabl-scope: public
+          test_run_id:
+            type: string
+            description: Test run ID
+            readOnly: true
+            x-mabl-scope: public
+          test_run_app_url:
+            type: string
+            description: URL for viewing the test run in the mabl app
+            readOnly: true
+            x-mabl-scope: public
+          is_ad_hoc_run:
+            type: boolean
+            description: True if the run is a manually-triggered ad hoc run
+            readOnly: true
+            x-mabl-scope: public
+          start_time:
+            type: integer
+            description: Time this test run started (epoch milliseconds)
+            format: int64
+            readOnly: true
+            x-mabl-scope: public
+          end_time:
+            type: integer
+            description: Time this test run ended (epoch milliseconds)
+            format: int64
+            readOnly: true
+            x-mabl-scope: public
+          run_time:
+            type: integer
+            description: The execution time of this test run (milliseconds)
+            format: int64
+            readOnly: true
+            x-mabl-scope: public
+          success:
+            type: boolean
+            description: True if the test run completed successfully
+            readOnly: true
+            x-mabl-scope: public
+          failure_category:
+            type: string
+            description: Failure category, if any
+            readOnly: true
+            x-mabl-scope: public
+          trigger_type:
+            type: string
+            description: The type of trigger scheduling this test run
+            readOnly: true
+            enum:
+            - manual
+            - retry
+            - schedule
+            - customer_event
+            - insight
+            x-mabl-scope: public
+          triggering_deployment_event_id:
+            type: string
+            description: Deployment event ID triggering this run, if any
+            readOnly: true
+            x-mabl-scope: public
+          emulation_mode:
+            type: string
+            description: Desktop or mobile web emulation used by this run
+            readOnly: true
+            x-mabl-scope: public
+          metrics:
+            $ref: '#/components/schemas/AdvancedMetrics'
+          failure_analysis:
+            $ref: '#/components/schemas/FailureRootCauseAnalysis'
+      x-mabl-scope: public
+    UsageExecutionSecondsResponse:
+      type: object
+      properties:
+        start_time:
+          type: integer
+          description: Inclusive start of the queried time range as Unix epoch milliseconds, echoed from the request.
+          format: int64
+          x-mabl-scope: public
+        end_time:
+          type: integer
+          description: Exclusive end of the queried time range as Unix epoch milliseconds, echoed from the request.
+          format: int64
+          x-mabl-scope: public
+        granularity:
+          $ref: '#/components/schemas/UsageReportGranularity'
+        group_by:
+          $ref: '#/components/schemas/UsageReportGroupBy'
+        time_buckets:
+          type: array
+          description: Time-bucketed execution second results. Ordered by `bucket_start_time` ascending, then `group_id` ascending when `group_by` is set. Buckets with zero matching completed runs are omitted.
+          items:
+            $ref: '#/components/schemas/UsageExecutionSecondsBucket'
+          x-mabl-scope: public
+      description: Response payload for the execution seconds endpoint. Contains the resolved query range, granularity, and `group_by` dimension, plus one `time_buckets` entry per (time period, group_id) combination with at least one completed run.
+      x-mabl-scope: public
+    AccountMaxTestRunConcurrencyResponse:
+      type: object
+      properties:
+        start_time:
+          type: integer
+          description: Inclusive start of the queried time range as Unix epoch milliseconds, echoed from the request (or the default-derived value when the request omits it).
+          format: int64
+          x-mabl-scope: public
+        end_time:
+          type: integer
+          description: Exclusive end of the queried time range as Unix epoch milliseconds, echoed from the request (or the default-derived value when the request omits it).
+          format: int64
+          x-mabl-scope: public
+        workspaces:
+          type: array
+          description: One entry per workspace in the account the caller has access to (or the single entry corresponding to the `workspace_id` query parameter when that is set). Each entry is a full `WorkspaceMaxTestRunConcurrencyResponse` including its own daily maximum test run concurrency buckets and configured limit.
+          items:
+            $ref: '#/components/schemas/WorkspaceMaxTestRunConcurrencyResponse'
+          x-mabl-scope: public
+      description: Daily maximum concurrent test run data for every workspace the caller has access to within an account. Each workspace carries its own `configured_test_run_concurrency_limit`, which may differ across workspaces in the same account.
+      x-mabl-scope: public
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    AdvancedMetrics:
+      type: object
+      properties:
+        cumulative_speed_index:
+          type: number
+          description: Cumulative app load time in milliseconds across all the steps of a browser test
+          format: double
+          readOnly: true
+          x-mabl-scope: public
+        cumulative_api_response_time:
+          type: number
+          description: Cumulative API response time in milliseconds across all the requests of an API test
+          format: double
+          readOnly: true
+          x-mabl-scope: public
+        accessibility_rule_violations:
+          $ref: '#/components/schemas/RuleViolations'
+      description: Advanced metrics
+    TestRunFailureSummary:
+      type: object
+      properties:
+        flow_id:
+          type: string
+          description: ID of the flow in which the failure occurred
+          x-mabl-scope: public
+        flow_name:
+          type: string
+          description: Name of the flow in which the failure occurred, if any
+          x-mabl-scope: public
+        step_number:
+          type: integer
+          description: Step number within the flow where the failure occurred
+          format: int32
+          x-mabl-scope: public
+        step_id:
+          type: string
+          description: ID of the step (with respect to the flow) where the failure occurred
+          x-mabl-scope: public
+        step_id_in_test:
+          type: string
+          description: ID of the step (with respect to the test) where the failure occurred
+          x-mabl-scope: public
+        step_display_number:
+          type: string
+          description: Display number of the failing step in nested dotted notation (e.g. "2.7" or "2.7.3"). Null when unavailable; only populated for runs executed after this field shipped (not present on backfilled historical runs).
+        error:
+          type: string
+          description: Unexpected error or formatted assertion failure that was recorded
+          x-mabl-scope: public
+        image_uri:
+          type: string
+          description: URL of an image showing the error
+          x-mabl-scope: public
+        image_href:
+          type: string
+          description: URL of an image showing the error
+          x-mabl-scope: public
+        image_artifact_url:
+          type: string
+          description: API url of the image that will redirect to a newly signed image url
+          x-mabl-scope: public
+        assert_failure:
+          $ref: '#/components/schemas/AssertFailure'
+      description: Information useful for diagnosing test run failures
+    UserAccountActivity:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: The user's ID
+          x-mabl-scope: public
+        email:
+          type: string
+          description: The user's email address
+          x-mabl-scope: public
+        name:
+          type: string
+          description: The user's full name
+          x-mabl-scope: public
+        account_id:
+          type: string
+          description: Id of the account
+          x-mabl-scope: public
+        interval_start:
+          type: integer
+          description: Starting time of the interval in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        interval_end:
+          type: integer
+          description: Ending time of the interval in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        last_active_time:
+          type: integer
+          description: The user's most recent activity across the account in epoch milliseconds. Omitted when there is no activity in the range.
+          format: int64
+          x-mabl-scope: public
+        total_actions:
+          type: integer
+          description: Total number of automator events by this user across the account in the time range
+          format: int64
+          x-mabl-scope: public
+        by_workspace:
+          type: array
+          description: Per-workspace activity for this user, limited to workspaces in the account where the user was active
+          items:
+            $ref: '#/components/schemas/UserWorkspaceActivity'
+          x-mabl-scope: public
+      description: A single user's activity across an account's workspaces
+    UsageReportGranularity:
+      type: string
+      description: Time bucket size used for grouping test run results. `daily` aligns buckets to midnight UTC. `weekly` aligns to Monday 00:00 UTC of each ISO-8601 week. `monthly` aligns to the first day of each calendar month at 00:00 UTC.
+      enum:
+      - daily
+      - weekly
+      - monthly
+    PerformanceTestMetrics:
+      type: object
+      properties:
+        api_virtual_user_hours_consumed:
+          type: number
+          description: The number of virtual user hours consumed by performance test run
+          format: double
+          readOnly: true
+          x-mabl-scope: public
+        api_concurrent_user_count:
+          type: integer
+          description: The number of concurrent users used by performance test run
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        api_average_response_time:
+          type: integer
+          description: The average response time in milliseconds from performance test run
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        api_requests_per_second:
+          type: integer
+          description: The average requests per second from performance test run
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        api_error_rate_percent:
+          type: number
+          description: The average error rate [0-100] from performance test run
+          format: double
+          readOnly: true
+          x-mabl-scope: public
+      description: Additional metrics for performance tests
+    TestRunResultSummary:
+      allOf:
+      - $ref: '#/components/schemas/TestRunResultSummaryBase'
+      - type: object
+        properties:
+          metrics_by_flow:
+            type: array
+            description: Advanced metric by flow
+            readOnly: true
+            items:
+              $ref: '#/components/schemas/AdvancedMetricsByFlow'
+            x-mabl-scope: public
+          performance_test_metrics:
+            $ref: '#/components/schemas/PerformanceTestMetrics'
+        description: Detailed information about a test run and its outcome
+        x-mabl-scope: public
+    FailureCategorization:
+      type: object
+      properties:
+        failure_category_id:
+          type: string
+          description: A failure category id
+        failure_synopsis:
+          type: string
+          description: DEPRECATED -- Now persisted as FailureAnalysis -- A synopsis of the failure summary
+          deprecated: true
+        failure_summary_text:
+          type: string
+          description: A summary describing the test run failure and potential root cause
+        is_failure_category_generated:
+          type: boolean
+          description: Indicates if the failure category was generated by AI
+        is_failure_summary_generated:
+          type: boolean
+          description: Indicates if the failure summary was generated by AI
+        suggested_failure_category_id:
+          type: string
+          description: Failure category ID suggested by automated analysis. Server-managed; client-supplied values are ignored on write.
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who updated the categorization of this failure
+          readOnly: true
+        last_updated_time:
+          type: integer
+          description: time the failure categorization was last updated
+          format: int64
+          readOnly: true
+        failure_reason_assignment_source:
+          type: string
+          description: How the failure reason was assigned to this test run. Server-managed; client-supplied values are ignored on write.
+          enum:
+          - manual
+          - auto
+        failure_reason_assigned_by_id:
+          type: string
+          description: The ID of the user or system that assigned the failure reason. Server-managed; client-supplied values are ignored on write.
+        failure_reason_assigned_time:
+          type: integer
+          description: Timestamp in epoch milliseconds when the failure reason was assigned. Server-managed; client-supplied values are ignored on write.
+          format: int64
+      description: Information describing the cause of a test run failure
+    PlanRunResultSummary:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Workspace ID
+          readOnly: true
+          x-mabl-scope: public
+        workspace_name:
+          type: string
+          description: Workspace name
+          readOnly: true
+          x-mabl-scope: public
+        plan_id:
+          type: string
+          description: Plan ID
+          readOnly: true
+          x-mabl-scope: public
+        plan_run_id:
+          type: string
+          description: Plan run ID
+          readOnly: true
+          x-mabl-scope: public
+        plan_name:
+          type: string
+          description: Plan name
+          readOnly: true
+          x-mabl-scope: public
+        plan_labels:
+          type: array
+          description: Plan labels
+          readOnly: true
+          items:
+            type: string
+          x-mabl-scope: public
+        trigger_type:
+          type: string
+          description: Type of trigger that caused this plan run
+          readOnly: true
+          enum:
+          - manual
+          - retry
+          - schedule
+          - customer_event
+          - insight
+          x-mabl-scope: public
+        triggering_deployment_event_id:
+          type: string
+          description: Deployment event ID that triggered this plan run, if any
+          readOnly: true
+          x-mabl-scope: public
+        application_id:
+          type: string
+          description: Application ID
+          readOnly: true
+          x-mabl-scope: public
+        application_name:
+          type: string
+          description: Application name
+          readOnly: true
+          x-mabl-scope: public
+        environment_id:
+          type: string
+          description: Environment ID
+          readOnly: true
+          x-mabl-scope: public
+        environment_name:
+          type: string
+          description: Environment name
+          readOnly: true
+          x-mabl-scope: public
+        status:
+          type: string
+          description: Current status of the plan run
+          readOnly: true
+          enum:
+          - queued
+          - pre_execution
+          - scheduling
+          - scheduled
+          - succeeded
+          - failed
+          - cancelled
+          - post_execution
+          - completed
+          - terminated
+          x-mabl-scope: public
+        success:
+          type: boolean
+          description: True if this plan run completed successfully
+          readOnly: true
+          x-mabl-scope: public
+        failure_analysis:
+          $ref: '#/components/schemas/FailureRootCauseAnalysis'
+        test_results:
+          type: array
+          description: Summaries for each test run in this plan run
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestRunResultSummary'
+          x-mabl-scope: public
+      description: Detailed information about a plan run and its test runs
+    WorkspaceMonthlyConcurrentUsersSummary:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Id of the associated workspace for this summary
+        interval_start:
+          type: integer
+          description: Starting time of the time-series in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the time-series in epoch milliseconds
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CumulativeDailyConcurrentUsersSummary'
+      description: Daily time-series summary of concurrent workspace user activity over the specified month
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    UsageMaxTestRunConcurrencyBucket:
+      type: object
+      properties:
+        bucket_start_time:
+          type: integer
+          description: Inclusive start of the day (midnight UTC) as Unix epoch milliseconds. Maximum test run concurrency is always computed against UTC calendar days.
+          format: int64
+          x-mabl-scope: public
+        bucket_end_time:
+          type: integer
+          description: Exclusive end of the day (midnight UTC of the next day) as Unix epoch milliseconds. Always 24 hours after `bucket_start_time`.
+          format: int64
+          x-mabl-scope: public
+        max_test_run_concurrency:
+          type: integer
+          description: Maximum number of test runs of the queried `test_type` that were executing simultaneously at any instant during this day. Computed via a sweep-line over run start/end times in the underlying billable events data.
+          format: int64
+          x-mabl-scope: public
+      description: Maximum concurrent test runs observed during a single UTC calendar day. One bucket is emitted per day in the queried range that had at least one matching run.
+      x-mabl-scope: public
+    TestTypeEnum:
+      type: string
+      description: Type of test
+      enum:
+      - api
+      - browser
+      - performance
+      - mobile
+      - desktop
+      x-mabl-scope: public
+    UsageExecutionSecondsBucket:
+      type: object
+      properties:
+        bucket_start_time:
+          type: integer
+          description: Inclusive start of the time bucket as Unix epoch milliseconds. Aligned to midnight UTC, Monday 00:00 UTC, or first-of-month 00:00 UTC per the selected granularity.
+          format: int64
+          x-mabl-scope: public
+        bucket_end_time:
+          type: integer
+          description: Exclusive end of the time bucket as Unix epoch milliseconds. Equal to the `bucket_start_time` of the following period for that bucket size.
+          format: int64
+          x-mabl-scope: public
+        group_id:
+          type: string
+          description: ID of the grouping dimension value. Only present when the request specifies `group_by`; omitted otherwise. The value is a plan ID when `group_by=plan`, an application ID when `group_by=application`, or a workspace ID when `group_by=workspace` (account-level endpoints only). Without `group_by` you get one bucket per time period; with `group_by` you get one bucket per (time period x dimension value), so consumers can break down counts or minutes by plan, application, or workspace.
+          x-mabl-scope: public
+        group_name:
+          type: string
+          description: Human-readable name of the group corresponding to `group_id`. Populated on a best-effort basis — may be absent for deleted or otherwise unresolvable entities. Not guaranteed unique; use `group_id` for joins.
+          x-mabl-scope: public
+        total_execution_seconds:
+          type: integer
+          description: Sum of (end_time - start_time) in whole seconds across every completed run whose `start_time` falls within the bucket. Measures time spent executing, not time queued. In-flight runs are excluded.
+          format: int64
+          x-mabl-scope: public
+        total_test_runs:
+          type: integer
+          description: Number of completed runs contributing to `total_execution_seconds`. Excludes in-flight runs. This is NOT the same as the equivalent field on `testRunCounts`, which includes in-flight runs.
+          format: int64
+          x-mabl-scope: public
+      description: Aggregated execution time for a single time bucket, optionally scoped to a grouping dimension value when `group_by` is set. Only completed runs are included in this bucket's totals.
+      x-mabl-scope: public
+    ActivityFeed:
+      type: object
+      properties:
+        entries:
+          type: array
+          description: All activity logs that match the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ActivityFeedEntry'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+    MonthlyConcurrentUsersSummary:
+      type: object
+      properties:
+        month:
+          type: string
+          description: Date string of the summary including the month and year (uuuu-MM)
+        automators:
+          type: integer
+          description: Total number of automators in the workspace for the specified month
+          format: int32
+        participants:
+          type: integer
+          description: Total number of participants in the workspace for the specified month
+          format: int32
+      description: Monthly summary of concurrent workspace users
+    UserActivitySummary:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: The user's ID
+        email:
+          type: string
+          description: The user's email address
+        name:
+          type: string
+          description: The user's full name
+        activity_count:
+          type: integer
+          description: Total number of automator events (edits) by this user in the time range
+          format: int32
+        last_activity_time:
+          type: integer
+          description: Timestamp of the user's most recent activity in epoch milliseconds
+          format: int64
+      description: Activity summary for a single user
+    ExternalTestCase:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id associated with this test case
+          x-mabl-scope: public
+      description: External test case
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

@@ -1,0 +1,603 @@
+openapi: 3.2.0
+info:
+  title: mabl Database Connection API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: DatabaseConnection
+paths:
+  /database/connections:
+    get:
+      tags:
+      - DatabaseConnection
+      summary: Get database connections by workspace
+      description: Returns database connections configured in a workspace
+      operationId: queryDatabaseConnections
+      parameters:
+      - name: workspace_id
+        in: query
+        description: ID of Workspace in which to query database connections
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Database connections in a given workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseConnectionListingResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DatabaseConnection
+      x-mabl-scope: public
+    post:
+      tags:
+      - DatabaseConnection
+      summary: Create database connection
+      description: Create a new database connection
+      operationId: createDatabaseConnection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatabaseConnection'
+        required: true
+      responses:
+        '201':
+          description: Database connection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseConnection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::DatabaseConnection
+      x-mabl-scope: public
+  /database/connections/{id}:
+    get:
+      tags:
+      - DatabaseConnection
+      summary: Get database connection
+      description: Get database connection information by ID
+      operationId: getDatabaseConnection
+      parameters:
+      - name: id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Database connection with given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseConnection'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DatabaseConnection
+      x-mabl-scope: public
+    delete:
+      tags:
+      - DatabaseConnection
+      summary: Remove database connection
+      description: 'Remove an existing database connection. Warning: Deleting an existing database connection will cause associated queries to no longer function. We recommend reviewing all associated queries and tests that use them in the mabl UI before proceeding.'
+      operationId: deleteDatabaseConnection
+      parameters:
+      - name: id
+        in: path
+        description: Database connection ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No content; database connection successfully deleted
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::DatabaseConnection
+      x-mabl-scope: public
+    patch:
+      tags:
+      - DatabaseConnection
+      summary: Update database connection
+      description: Update an existing database connection
+      operationId: updateDatabaseConnection
+      parameters:
+      - name: id
+        in: path
+        description: Database connection ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatabaseConnection'
+        required: true
+      responses:
+        '200':
+          description: Database connection updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseConnection'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::DatabaseConnection
+      x-mabl-scope: public
+  /database/connections/test:
+    post:
+      tags:
+      - DatabaseConnection
+      summary: Test database connection
+      description: Test an existing database connection to validate connection parameters
+      operationId: testDatabaseConnection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatabaseConnectionTestParameters'
+        required: true
+      responses:
+        '200':
+          description: Database query execution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseQueryExecution'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '408':
+          $ref: '#/components/responses/ErrorResponse408'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DatabaseConnection
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse408:
+      description: Request timed out
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    DatabaseExecutionCommand:
+      type: string
+      description: Command to run against database
+      enum:
+      - get_schema
+      - test_connection
+    DatabaseConnectionTestParameters:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Workspace ID
+        environment_id:
+          type: string
+          description: Environment ID
+        database_connection:
+          $ref: '#/components/schemas/DatabaseConnection'
+      description: Entity containing the connection details that will be used for testing a database connection
+    DatabaseType:
+      type: string
+      enum:
+      - mariadb
+      - mongodb
+      - mssql
+      - mysql
+      - oracle
+      - postgres
+    DatabaseQueryParameterType:
+      type: string
+      description: Parameter datatype. Defaults to string if not provided. (optional)
+      enum:
+      - String
+      - Number
+      - Boolean
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    DatabaseConnection:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Database connection ID
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: Workspace ID
+          x-mabl-scope: public
+        name:
+          type: string
+          description: Database name
+          x-mabl-scope: public
+        description:
+          type: string
+          description: Databaes description
+          x-mabl-scope: public
+        database_type:
+          $ref: '#/components/schemas/DatabaseType'
+        connection_properties:
+          $ref: '#/components/schemas/DatabaseConnectionProperties'
+        connection_overrides:
+          type: array
+          description: Set of connection_property overrides that apply to this database connection
+          items:
+            $ref: '#/components/schemas/DatabaseConnectionPropertiesOverride'
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          format: int64
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          format: int64
+          x-mabl-scope: public
+        deleted_by_id:
+          type: string
+          x-mabl-scope: public
+        deleted_time:
+          type: integer
+          format: int64
+          x-mabl-scope: public
+      description: Entity containing the connection details for a configured database
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasId
+      - HasWorkspaceId
+    DatabaseConnectionPropertiesOverride:
+      type: object
+      properties:
+        environment_id:
+          type: string
+          description: Environment ID associated with override
+          x-mabl-scope: public
+        connection_properties:
+          $ref: '#/components/schemas/DatabaseConnectionProperties'
+      description: An override to the default connection properties of a database connection
+    DatabaseQueryResultMetadata:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Query results status
+          enum:
+          - success
+          - failed
+          - error
+        duration:
+          type: integer
+          description: Duration of query in milliseconds
+        message:
+          type: string
+          description: Message returned from database on a successful query, if any
+        error_message:
+          type: string
+          description: Error message returned from database query, if any
+        row_count:
+          type: integer
+          description: Row count in result set
+        column_count:
+          type: integer
+          description: Columns count in result set
+        rows_affected:
+          type: integer
+          description: Count of rows affacted count by query
+        additional_properties:
+          type: object
+          description: Key value map for additional properties
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    DatabaseQueryParameter:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Parameter ID
+        type:
+          $ref: '#/components/schemas/DatabaseQueryParameterType'
+        value:
+          type: string
+          description: String value of provided parameter
+      description: Parameter passed to database query execution as an argument
+    DatabaseConnectionListingResult:
+      type: object
+      properties:
+        database_connections:
+          type: array
+          description: All database connections for a given Workspace
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/DatabaseConnection'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Pagination cursor
+          readOnly: true
+          x-mabl-scope: public
+      description: Result envelope for listing database connections
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    DatabaseConnectionProperties:
+      type: object
+      properties:
+        host:
+          type: string
+          description: Host address of database connection
+          x-mabl-scope: public
+        port:
+          type: integer
+          description: Port number of database connection
+          x-mabl-scope: public
+        database:
+          type: string
+          description: Database name
+          x-mabl-scope: public
+        credentials_id:
+          type: string
+          description: Credential ID to use when connecting to database
+          x-mabl-scope: public
+        link_agent_label:
+          type: string
+          description: DEPRECATED - use link_agent_labels
+          deprecated: true
+          x-mabl-scope: public
+        link_agent_labels:
+          type: array
+          description: Link agent override to use when connecting to database (optional)
+          items:
+            type: string
+          x-mabl-scope: public
+        driver_properties:
+          type: object
+          description: Additional database connection properties
+          x-mabl-scope: public
+      description: Database connection details
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    DatabaseQueryExecution:
+      type: object
+      properties:
+        id:
+          type: string
+          description: DatabaseQueryExecution ID
+        workspace_id:
+          type: string
+          description: Workspace ID
+        database_connection_id:
+          type: string
+          description: Database connection ID
+        environment_id:
+          type: string
+          description: Environment ID
+        execution_command:
+          $ref: '#/components/schemas/DatabaseExecutionCommand'
+        snippet_id:
+          type: string
+          description: ID of reusable SQL query to execute
+        query:
+          type: string
+          description: Base64 encoded SQL query to execute
+        query_parameters:
+          type: array
+          description: Runtime query parameters to apply
+          items:
+            $ref: '#/components/schemas/DatabaseQueryParameter'
+        status:
+          type: string
+          description: Current status of query execution
+          enum:
+          - scheduled
+          - running
+          - complete
+          - failure
+        results_metadata:
+          $ref: '#/components/schemas/DatabaseQueryResultMetadata'
+        results_uri:
+          type: string
+          description: GCS storage bucket location of the query results
+        test_context_id:
+          type: string
+          description: The test run id if the query is being executed during a cloud run or the user's id for a local run
+        test_run_id:
+          type: string
+          description: 'The test run executing this query, when there is one. A run that opted into use_personal_link_agent routes the query through the calling user''s personal Link tunnels, as it does the run''s other traffic.
+
+            '
+        created_time:
+          type: integer
+          format: int64
+        created_by_id:
+          type: string
+        last_updated_time:
+          type: integer
+          format: int64
+        last_updated_by_id:
+          type: string
+        completed_time:
+          type: integer
+          format: int64
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasId
+      - HasWorkspaceId
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

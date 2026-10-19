@@ -1,0 +1,765 @@
+openapi: 3.2.0
+info:
+  title: mabl Issue API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Issue
+paths:
+  /issues:
+    post:
+      tags:
+      - Issue
+      summary: Create issue
+      operationId: createIssue
+      parameters:
+      - name: issue_tracker_id
+        in: query
+        description: id of existing issue in issue tracker system to link this issue to
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Issue to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Issue'
+        required: true
+      responses:
+        '201':
+          description: Created issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Issue
+      x-mabl-scope: public
+  /issues/{issue_id}:
+    get:
+      tags:
+      - Issue
+      summary: Get issue
+      operationId: getIssue
+      parameters:
+      - name: issue_id
+        in: path
+        description: Issue id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Issue with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Issue
+      x-mabl-scope: public
+    delete:
+      tags:
+      - Issue
+      summary: Remove issue
+      operationId: removeIssue
+      parameters:
+      - name: issue_id
+        in: path
+        description: Issue id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: soft_delete
+        in: query
+        description: If true, the issue will be soft-deleted, otherwise it will be permanently deleted.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: workspace_id
+        in: query
+        description: Workspace id to which the issue belongs to
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: integration_id
+        in: query
+        description: Integration that issued the external id, used only with soft_delete. An external issue id is unique only within the tracker that issued it, so a workspace with two integrations against the same provider can hold two issues with the same id. Supplying this disambiguates them. Optional for backward compatibility; when omitted the oldest match in the workspace is used, which is the historical behavior.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Issue has been deleted
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Issue
+      x-mabl-scope: public
+    patch:
+      tags:
+      - Issue
+      summary: Updates issue
+      description: Updates an issue and marks it to indicate that it needs to be synced to the issue tracker.
+      operationId: updateIssue
+      parameters:
+      - name: issue_id
+        in: path
+        description: Issue id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The issue update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Issue'
+        required: false
+      responses:
+        '200':
+          description: Updated issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '412':
+          description: If-Match header did not match current entity version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Issue
+      x-mabl-scope: public
+  /issues/{issue_id}/committed:
+    patch:
+      tags:
+      - Issue
+      summary: Updates the given issue without clearing the committed flag
+      description: Called by the issue tracker to update an issue
+      operationId: updateCommitted
+      parameters:
+      - name: issue_id
+        in: path
+        description: Issue id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The issue update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Issue'
+        required: false
+      responses:
+        '200':
+          description: Updated issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '412':
+          description: If-Match header did not match current entity version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Issue
+  /issues/{issue_id}/commit:
+    post:
+      tags:
+      - Issue
+      summary: Marks the given issue as committed
+      description: Called by the issue tracker to indicate that it has committed all changes from this issue (If-Match header is required)
+      operationId: commit
+      parameters:
+      - name: issue_id
+        in: path
+        description: Issue id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Updated issue
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '412':
+          description: If-Match header did not match current entity version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Issue
+  /workspaces/{workspace_id}/issues:
+    get:
+      tags:
+      - Issue
+      summary: Query workspace issues
+      operationId: queryIssuesByWorkspaceId
+      parameters:
+      - name: workspace_id
+        in: path
+        description: workspace id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: open
+        in: query
+        description: If specified, only matches issues with the given open status
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: linkedTo
+        in: query
+        description: If specified, only matches issues linked with the given entity ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Issues matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Issue
+      x-mabl-scope: public
+  /integrations/{integration_id}/issues/suggestions:
+    get:
+      tags:
+      - Issue
+      summary: Gets a set of issues to display in an issue picker
+      operationId: getIssueSuggestions
+      parameters:
+      - name: integration_id
+        in: path
+        description: integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        description: project id to retrieve issues from
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: query
+        in: query
+        description: text query to search for issues by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '201':
+          description: The issues to
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueSuggestions'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Issue
+  /integrations/{integration_id}/issues/uncommitted:
+    get:
+      tags:
+      - Issue
+      summary: Query uncommitted issues by integration ID
+      operationId: queryUncommittedByIntegrationId
+      parameters:
+      - name: integration_id
+        in: path
+        description: integration id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: IDs of issues matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueIdQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Issue
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    IssueSuggestions:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message about the number of issue suggestions found and returned.
+        issues:
+          type: array
+          description: The list of suggested issues of this type
+          items:
+            $ref: '#/components/schemas/IssueSuggestionsIssues'
+    IssueSuggestionsIssues:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The issue id
+          format: int64
+        key:
+          type: string
+          description: The issue key
+        summary:
+          type: string
+          description: The issue's summary. Jira returns the phrase containing the query string in HTML format, with the string highlighted with HTML bold tags; Azure Boards returns the work item title as plain text. Render it as text.
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    IssueIdQueryResult:
+      required:
+      - issueIds
+      type: object
+      properties:
+        issueIds:
+          type: array
+          description: The IDs of all issues that matched the query
+          readOnly: true
+          items:
+            type: string
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    IssueQueryResult:
+      required:
+      - issues
+      type: object
+      properties:
+        issues:
+          type: array
+          description: All issues that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Issue'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+    Issue:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this issue within mabl
+          readOnly: true
+          x-mabl-scope: public
+        open:
+          type: boolean
+          description: Flag indicating that this issue is open; the definition of open depends on the specific issue tracker integration.
+          x-mabl-scope: public
+        committed:
+          type: boolean
+          description: Flag indicating that this issue has been fully committed to the external issue tracker; any update from mabl will reset this flag to false.
+          readOnly: true
+          x-mabl-scope: public
+        integration_id:
+          type: string
+          description: ID of the integration associated with this issue
+          x-mabl-scope: public
+        schema_id:
+          type: string
+          description: ID of the schema associated with this issue
+          x-mabl-scope: public
+        issue_tracker_invariant_id:
+          type: string
+          description: The issue tracker's globally unique ID for this issue
+          x-mabl-scope: public
+        issue_tracker_variant_id:
+          type: string
+          description: The issue tracker's ID for this issue which is either scoped to another entity and/or human-friendly
+          x-mabl-scope: public
+        issue_tracker_link:
+          type: string
+          description: A link to this issue in any external issue tracking system
+          x-mabl-scope: public
+        issue_tracker_revision:
+          type: integer
+          description: The issue tracker's revision of the issue that open was last read from. Set by mabl; ignored on writes.
+          format: int32
+        tracker_state_changed_time:
+          type: integer
+          description: When mabl last saw the tracker change this issue's open or deleted state. Set by mabl; ignored on writes.
+          format: int64
+        issue_fields:
+          type: object
+          additionalProperties: true
+          x-mabl-scope: public
+        created_from_entity:
+          type: object
+          properties:
+            id:
+              type: string
+              description: ID of the entity from which this issue was created, e.g. a test run ID
+              x-mabl-scope: public
+            type:
+              type: string
+              description: The type of entity referenced by created_from_entity_id
+              enum:
+              - plan
+              - test
+              - test_run
+              x-mabl-scope: public
+        linked_entities:
+          type: array
+          description: Generated union of all linked entity IDs
+          readOnly: true
+          items:
+            type: string
+          x-mabl-scope: public
+        linked_plans:
+          type: array
+          description: Array of plan IDs that are linked to this issue
+          items:
+            type: string
+            x-mabl-scope: public
+        linked_tests:
+          type: array
+          description: Array of test IDs that are linked to this issue
+          items:
+            type: string
+            x-mabl-scope: public
+        linked_test_runs:
+          type: array
+          description: Array of test run IDs that are linked to this issue
+          items:
+            type: string
+            x-mabl-scope: public
+        linked_test_run_ai_failure_summaries:
+          type: array
+          description: Array of AI Generated Failure Summaries for linked test runs
+          items:
+            type: object
+            additionalProperties: true
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the issue was created
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this issue
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: time the issue was last updated
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this issue
+          readOnly: true
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: Associated workspace
+          x-mabl-scope: public
+        deleted_on_jira:
+          type: boolean
+          description: Flag indicating that this issue was deleted on the customer Jira instance
+          default: false
+          x-mabl-scope: public
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

@@ -1,0 +1,280 @@
+openapi: 3.2.0
+info:
+  title: mabl Mobile Device Configuration API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: MobileDeviceConfiguration
+paths:
+  /mobile/device/configuration:
+    get:
+      tags:
+      - MobileDeviceConfiguration
+      summary: Queries and returns device configurations available to run tests in the cloud
+      operationId: queryMobileDeviceConfigurations
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace id to query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Mobile device configurations matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileDeviceConfigurationQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::MobileDeviceConfiguration
+components:
+  schemas:
+    MobilePlatformEnum:
+      type: string
+      description: The mobile platform associated with this object
+      enum:
+      - android
+      - ios
+      x-mabl-scope: public
+    MobileDeviceConfigurationQueryResult:
+      type: object
+      properties:
+        configurations:
+          type: array
+          description: All mobile device configurations that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/MobileDeviceConfiguration'
+        default_android_os_version:
+          type: string
+          description: The default Android OS version
+          readOnly: true
+        default_ios_os_version:
+          type: string
+          description: The default iOS OS version
+          readOnly: true
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: Result envelope for mobile device configuration query results
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    MobileDeviceConfiguration:
+      required:
+      - device_manufacturer
+      - device_name
+      - os_version
+      - platform
+      - screen_dimensions
+      type: object
+      properties:
+        created_by_id:
+          type: string
+          description: The ID of the user who created this configuration
+        created_time:
+          type: integer
+          description: The time at which this configuration was created
+          format: int64
+        cloud_training_hot_pool_support:
+          type: boolean
+          description: Device is included in the cloud training hot pool
+        cloud_runner_hot_pool_support:
+          type: boolean
+          description: Device is included in the cloud runner hot pool
+          default: false
+        cloud_training_support:
+          type: boolean
+          description: Device supports cloud training
+        id:
+          maxLength: 50
+          type: string
+          description: The unique ID for this configuration entity
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this configuration
+        last_updated_time:
+          type: integer
+          description: The time at which this configuration was last updated
+          format: int64
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        device_manufacturer:
+          type: string
+          description: Device manufacturer (Apple, Google, Samsung)
+        device_name:
+          type: string
+          description: Device display name (iPhone 14, Pixel 7 Pro)
+        device_id:
+          type: string
+          description: Vendor unique device id (pixel_7_pro)
+        screen_dimensions:
+          $ref: '#/components/schemas/DeviceScreenDimensions'
+        os_version:
+          type: string
+          description: OS version (16.6.1, Oreo, 12.0)
+        retired:
+          type: boolean
+          description: The configuration is no longer supported for new runs. Retired configurations are still returned so that plans and tests already referencing them can be displayed, but they cannot be selected or executed.
+          default: false
+        android_configuration:
+          $ref: '#/components/schemas/AndroidDeviceConfiguration'
+      description: Represents a mobile device configuration (model, OS version) for executing mobile tests
+      x-implements-interface:
+      - HasId
+      - HasCreatedActivity
+    AndroidDeviceConfiguration:
+      type: object
+      properties:
+        api_level:
+          type: string
+          description: Version of API this device is running (34, 33).
+        abi:
+          type: string
+          description: Application boundary interface identifies combination of CPU and instruction set (x86, x86_64)
+      description: Android specific options
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    DeviceScreenDimensions:
+      required:
+      - height
+      - width
+      type: object
+      properties:
+        height:
+          type: integer
+          description: Height (pixels)
+          format: int32
+          x-mabl-scope: public
+        width:
+          type: integer
+          description: Width (pixels)
+          format: int32
+          x-mabl-scope: public
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

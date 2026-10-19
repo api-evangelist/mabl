@@ -1,0 +1,5162 @@
+openapi: 3.2.0
+info:
+  title: mabl Report API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Report
+paths:
+  /artifact:
+    get:
+      tags:
+      - Report
+      summary: download test artifact
+      description: Get a test artifact
+      operationId: getArtifact
+      parameters:
+      - name: path
+        in: query
+        description: The sub path to the artifact
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: kms_unsupported
+        in: query
+        description: KMS file download unsupported in client location
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '303':
+          description: Redirect to storage location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedirectResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Artifact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedirectResponse'
+      x-mabl-action: Read::Artifact
+  /artifact/url:
+    get:
+      tags:
+      - Report
+      summary: get test artifact url
+      description: Get a test artifact url
+      operationId: getArtifactUrl
+      parameters:
+      - name: path
+        in: query
+        description: The sub path to the artifact
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: kms_unsupported
+        in: query
+        description: KMS file download unsupported in client location
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: JSON blob containing signed URL for retrieving the artifact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedirectResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Artifact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Artifact
+  /artifact/check-access:
+    get:
+      tags:
+      - Report
+      summary: check artifact access
+      description: Check if the authenticated user has permission to access the specified artifact. Returns 204 if access is permitted. Does not return the artifact itself.
+      operationId: checkArtifactAccess
+      parameters:
+      - name: path
+        in: query
+        description: The GCS URI or sub path to the artifact
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Access is permitted
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+      x-mabl-action: Read::Artifact
+  /artifact/image/url:
+    get:
+      tags:
+      - Report
+      summary: get image urls
+      description: Get a set of image urls
+      operationId: getImageUrls
+      parameters:
+      - name: artifact_uri
+        in: query
+        description: The sub path to the artifact
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: kms_unsupported
+        in: query
+        description: KMS file download unsupported in client location
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: JSON blob containing signed URL for retrieving the artifact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUrls'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Artifact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Artifact
+  /workspaces/{workspace_id}/reports/activityLog:
+    get:
+      tags:
+      - Report
+      summary: Retrieve the activity log for the given workspace
+      description: (Deprecated - use '/workspaces/{workspace_id}/reports/activityLog') Query the activity log for a workspace. To test this endpoint, enter the word 'key', without the quotes, as the username, and paste your API key as the password for authentication.
+      operationId: queryWorkspaceActivity
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: action_type
+        in: query
+        description: Type of action taken.  Can be create, update, delete, or recover.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_type
+        in: query
+        description: Type of object that was acted on
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_name
+        in: query
+        description: Name of the entity acted on
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: actor_id
+        in: query
+        description: Id of the user or api key that performed the action
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: actor_is_mabl_employee
+        in: query
+        description: Filter activity logs by mabl employees.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: start_time
+        in: query
+        description: Start time of the activity log data, in epoch milliseconds.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End time of the activity log data, in epoch milliseconds.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: is_automator_event
+        in: query
+        description: Filter activity logs by automator events
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        description: Maximum number of runs to return in a single response. Additional pages of results can be retrieved by passing the cursor (returned in the results) on a subsequent call.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of activity log entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityFeed'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      deprecated: true
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/testSuiteStatus:
+    post:
+      tags:
+      - Report
+      summary: Retrieve the current status of the tests in your test suite
+      description: Used to retrieve the current status of each test, pass rate, etc.
+      operationId: queryTestSuiteStatus
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 500
+          minimum: 1
+          type: integer
+          format: int32
+          default: 300
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant tests in the test suite
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSuiteFilterOptions'
+        required: false
+      responses:
+        '200':
+          description: Current status of the test suite for the time range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSuiteStatusResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/testSuiteStatusOverTime:
+    post:
+      tags:
+      - Report
+      summary: Retrieve the status of tests in your test suite over a period of time
+      description: Used to retrieve the pass rate, count test runs, and failure reasons over time
+      operationId: queryTestSuiteStatusOverTime
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: timezone
+        in: query
+        description: IANA timezone/zone offset for aggregation boundary calculations only
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: America/Los_Angeles
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant tests in the test suite. Limit of 60 days.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSuiteFilterOptions'
+        required: true
+      responses:
+        '200':
+          description: Current status of the test suite for the time range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSuiteStatusOverTimeResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/testSuitePerformanceOverTime:
+    post:
+      tags:
+      - Report
+      summary: Retrieve the performance of the test suite over time averaged per step
+      description: Used to retrieve the test suite performance per step over time
+      operationId: queryTestSuitePerformanceOverTime
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: timezone
+        in: query
+        description: IANA timezone/zone offset for aggregation boundary calculations only
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: America/Los_Angeles
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant tests in the test suite. Limit of 60 days.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSuiteFilterOptions'
+        required: true
+      responses:
+        '200':
+          description: Performance of the test suite over time. Note count_runs in the result is count of steps in this case.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregateMetricDailyTrendResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/qualityMetricOverTime:
+    post:
+      tags:
+      - Report
+      summary: Retrieve the quality metric of the entity over time
+      description: Used to retrieve the entity quality metric over time
+      operationId: queryQualityMetricOverTime
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: journey_invariant_id
+        in: query
+        description: Test invariant id associated with the entity
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: entity_invariant_id
+        in: query
+        description: Entity id for which the metric is calculated
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: metric_type
+        in: query
+        description: Metric type
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - page_speed_index
+          - step_execution_time
+          - response_time
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 300
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant tests in the test suite. Limit of 90 days.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSuiteFilterOptions'
+        required: true
+      responses:
+        '200':
+          description: Performance of the entity over time.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityMetricOverTimeResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/qualityMetricsSummary:
+    get:
+      tags:
+      - Report
+      summary: Retrieve quality metric values associated with a test run
+      description: Used to retrieve quality metrics for a test run
+      operationId: queryQualityMetric
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: aggregation_run_id
+        in: query
+        description: Aggregation run id
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: group_id
+        in: query
+        description: Group id - the level of entity for which the metric is calculated
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: metric_types
+        in: query
+        description: Types of quality metric
+        required: true
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - page_speed_index
+            - step_execution_time
+            - response_time
+      responses:
+        '200':
+          description: Quality metric for the associated context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregateMetricResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/qualityMetrics/metricDailyTrend:
+    get:
+      tags:
+      - Report
+      summary: Retrieve daily quality metric values for a given time period
+      description: Used to retrieve quality metrics for an entity with daily values
+      operationId: queryAggregateDaily
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: The start time of the time period
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: The end time of the time period
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: timezone
+        in: query
+        description: Time zone for the daily aggregation
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: America/Los_Angeles
+      - name: metric_type
+        in: query
+        description: The type of quality metric
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: aggregation_invariant_id
+        in: query
+        description: Id for the context of the trend
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of daily quality metrics for the associated context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregateMetricDailyTrendResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /report/step/metricTrend:
+    post:
+      tags:
+      - Report
+      summary: Get a metric trend for a specific step
+      description: Gets a step metric trending over a time range based on the filters
+      operationId: getStepMetricTrend
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The ID of the workspace
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: step_id_in_flow
+        in: query
+        description: The ID of the step in the flow
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: flow_invariant_id
+        in: query
+        description: The ID of the flow invariant
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: step_id_in_test
+        in: query
+        description: The ID of the step in the test
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_invariant_id
+        in: query
+        description: The ID of the test invariant
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: metric_type
+        in: query
+        description: The metric type
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant accessibility checks. Limit of 90 days.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSuiteFilterOptions'
+        required: true
+      responses:
+        '200':
+          description: Step metric trend over time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepMetricTrendResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /report/settings:
+    get:
+      tags:
+      - Report
+      summary: Get all workspace report settings
+      description: Gets all of the ReportSetting objects for a given workspace
+      operationId: getReportSettings
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The ID of the workspace
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The ReportSettingQueryResult
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSettingQueryResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+    post:
+      tags:
+      - Report
+      summary: Create a new report setting for a workspace
+      description: Creates a new ReportSetting for the specified workspace
+      operationId: createReportSetting
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The ID of the workspace
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: The new report setting
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportSetting'
+        required: true
+      responses:
+        '200':
+          description: The ReportSetting that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSetting'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Create::Report
+  /report/settings/{id}:
+    delete:
+      tags:
+      - Report
+      summary: Deletes a report setting
+      description: Deletes a ReportSetting object
+      operationId: deleteReportSetting
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the report setting to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The ReportSetting was successfully deleted
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Delete::Report
+    patch:
+      tags:
+      - Report
+      summary: Update a report setting
+      description: Updates a ReportSetting object
+      operationId: updateReportSetting
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the report setting to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The partial report setting with the updates
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportSetting'
+        required: true
+      responses:
+        '200':
+          description: The ReportSetting resulting from the update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSetting'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: No such entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Edit::Report
+  /workspaces/{workspace_id}/reports/stepRuns/{step_run_id}/screenshot:
+    get:
+      tags:
+      - Report
+      summary: Get signed screenshot (and thumbnail) URLs for a given step run
+      description: Get a set of image urls
+      operationId: getStepRunScreenshotUrls
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID for the given step run
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: step_run_id
+        in: path
+        description: The ID of the step run for which to retrieve the screenshot
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: kms_unsupported
+        in: query
+        description: KMS file download unsupported in client location
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: JSON blob containing signed URLs for retrieving the screenshot and corresponding thumbnail images
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUrls'
+        '404':
+          description: The given step run does not have a screenshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Artifact
+  /workspaces/{workspace_id}/testData/urls:
+    post:
+      tags:
+      - Report
+      summary: Create signed upload and download URLS for temporary data needed to run a test
+      operationId: createTestDataUploadAndRetrievalUrls
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id for the workspace bucket the URL will grant access to
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: test_run_id
+        in: query
+        description: ID of the test run this data is associated with
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_invariant_id
+        in: query
+        description: ID of the functional test this data is associated with
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The upload and download URLs for the artifact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactUrls'
+        '404':
+          description: No such workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Create::Artifact
+  /workspaces/{workspace_id}/artifacts/urls:
+    post:
+      tags:
+      - Report
+      summary: Create signed upload and download urls
+      description: Create signed artifact upload and download urls
+      operationId: createArtifactUploadAndRetrievalUrls
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id for the workspace bucket the URL will grant access to
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: kms_unsupported
+        in: query
+        description: KMS file download unsupported in client location
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: The upload and download URLs for the artifact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactUrls'
+        '404':
+          description: No such workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Create::Artifact
+  /report/metrics:
+    get:
+      tags:
+      - Report
+      summary: retrieve metrics
+      description: Get a set of metrics
+      operationId: retrieveMetrics
+      parameters:
+      - name: organization_id
+        in: query
+        description: The organization id to retrieve metrics for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: metric_type
+        in: query
+        description: The metric type to retrieve
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: metric_id
+        in: query
+        description: The identifier of the metric to use
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: start
+        in: query
+        description: The start time range to get metrics for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end
+        in: query
+        description: The end time range to get metrics for.  Leave blank for most recent
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: The stats for this metric.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsSummary'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+    put:
+      tags:
+      - Report
+      summary: write metrics
+      description: Put a metrics object to datastore
+      operationId: putMetrics
+      requestBody:
+        description: The metric type to retrieve
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Metrics'
+        required: true
+      responses:
+        '200':
+          description: Metrics written.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metrics'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Edit::Report
+  /workspaces/{workspace_id}/reports/runStatusHistory:
+    get:
+      tags:
+      - Report
+      summary: Retrieve status history for journey runs in a workspace
+      description: Used to retrieve status history for journey runs in a workspace
+      operationId: queryTestRunStatusHistory
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: history_days
+        in: query
+        description: Number of days to calculate history of journey runs by status
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 31
+          minimum: 0
+          type: integer
+          format: int32
+          default: 14
+      - name: environment_id
+        in: query
+        description: Environment id filter
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Application id filter
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: timezone
+        in: query
+        description: IANA timezone or zone offset for daily bucket boundaries (e.g. Asia/Tokyo)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: UTC
+      responses:
+        '200':
+          description: Array of daily status of journey runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunStatusSummaryQueryResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/failureCategoryHistory:
+    get:
+      tags:
+      - Report
+      summary: Retrieve failure category history for journey runs in a workspace
+      description: Used to retrieve failure category history for journey runs in a workspace
+      operationId: queryTestRunFailureCategoryHistory
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace id to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: history_days
+        in: query
+        description: Number of days to calculate history of journey runs by status
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 31
+          minimum: 0
+          type: integer
+          format: int32
+          default: 14
+      - name: environment_id
+        in: query
+        description: Environment id filter
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Application id filter
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of daily failure category of journey runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureCategorySummaryQueryResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/failureCategoryHistory:
+    get:
+      tags:
+      - Report
+      summary: Retrieve failure category history across workspaces in an account
+      description: Aggregates daily failure category counts across all workspaces in an account. Optionally scoped to a single workspace within the account. Accessible to company admins, global admins, and clients with read:accounts scope.
+      operationId: queryAccountFailureCategoryHistory
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: history_days
+        in: query
+        description: Number of days of failure category history (default 14, max 31)
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 31
+          minimum: 0
+          type: integer
+          format: int32
+          default: 14
+      - name: environment_id
+        in: query
+        description: Environment id filter applied to each workspace query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: Application id filter applied to each workspace query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: Optional workspace ID to scope results to a single workspace within the account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Account-level failure category history with aggregated and per-workspace breakdown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountFailureCategoryHistoryResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized (requires company admin, global admin, or read:accounts API scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/accessibilityRuleViolationCountOverTime:
+    post:
+      tags:
+      - Report
+      summary: Retrieve accessibility violation history for latest test runs in a workspace…
+      description: Used to retrieve accessibility violation history for latest test runs in a workspace over a period of time
+      operationId: queryRuleViolationCountOverTime
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: timezone
+        in: query
+        description: Time zone for the daily aggregation
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: America/Los_Angeles
+      requestBody:
+        description: Filters to get the relevant accessibility checks. Limit of 60 days.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessibilityDashboardFilterOptions'
+        required: true
+      responses:
+        '200':
+          description: Array of accessibility rule violation counts per day
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccessibilityRuleViolationCount'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/accessibilityRuleViolations:
+    post:
+      tags:
+      - Report
+      summary: Retrieve accessibility violations for latest test runs in a workspace
+      description: Used to retrieve accessibility violations for latest test runs in a workspace
+      operationId: queryRuleViolations
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID to filter by
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant accessibility checks. Limit of 60 days.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessibilityDashboardFilterOptions'
+        required: true
+      responses:
+        '200':
+          description: Array of accessibility rule violations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessibilityRuleViolationResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/testFlakiness:
+    get:
+      tags:
+      - Report
+      summary: Retrieve test flakiness metrics for a workspace
+      description: 'Returns flakiness metrics for tests in a workspace over a specified time range.
+
+        Flakiness is calculated by grouping test runs by execution context (plan_run_id,
+
+        browser, mobile device/OS, scenario), then identifying groups with mixed outcomes
+
+        (both passes and fails within the same execution context).
+
+
+        The summary statistics reflect ALL matching tests in the workspace, while the
+
+        tests array is paginated. Use the cursor parameter to fetch additional pages.'
+      operationId: queryTestFlakiness
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Start of the query time range in epoch milliseconds
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End of the query time range in epoch milliseconds
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: application_id
+        in: query
+        description: Optional application ID to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_id
+        in: query
+        description: Optional plan ID to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: environment_id
+        in: query
+        description: Optional environment ID to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_id
+        in: query
+        description: Optional test ID (invariant ID) to filter by for single-test flakiness lookup
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: min_plan_runs
+        in: query
+        description: Minimum number of plan runs required for a test to be included (default 5)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 5
+      - name: limit
+        in: query
+        description: Maximum number of tests to return (default 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 100
+      - name: cursor
+        in: query
+        description: Pagination cursor from a previous response
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Test flakiness metrics for the specified time range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestFlakinessResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/testQuality:
+    get:
+      tags:
+      - Report
+      summary: Retrieve unified test quality metrics for a workspace
+      description: 'Returns multiple quality dimensions for tests in a workspace over a specified time range.
+
+        V1 includes flake rate and breakage rate. Flakiness is calculated by grouping test runs
+
+        by execution context and identifying groups with mixed outcomes. Breakage rate measures
+
+        how often a test transitions from passing to failing between consecutive runs.
+
+
+        The summary statistics reflect ALL matching tests in the workspace, while the
+
+        tests array is paginated. Use the cursor parameter to fetch additional pages.'
+      operationId: queryTestQuality
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Start of the query time range in epoch milliseconds
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End of the query time range in epoch milliseconds
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: application_id
+        in: query
+        description: Optional application ID to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: plan_id
+        in: query
+        description: Optional plan ID to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: environment_id
+        in: query
+        description: Optional environment ID to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_id
+        in: query
+        description: Optional test ID (invariant ID) to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_type
+        in: query
+        description: Optional test type to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/TestTypeEnum'
+      - name: browser
+        in: query
+        description: Optional browser to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: execution_source
+        in: query
+        description: Optional execution source to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/TestSource'
+      - name: plan_labels
+        in: query
+        description: Plan labels to filter by
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: sort_by_stability
+        in: query
+        description: 'Deprecated: use sort_by=stability_rate&sort_direction=ASC instead. When true and sort_by is not set, orders the tests array by stability (least stable first) instead of the default quality-score ordering. Summary statistics are unaffected.'
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      - name: min_plan_runs
+        in: query
+        description: Minimum number of plan runs required for a test to be included (default 5)
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 5
+      - name: limit
+        in: query
+        description: Maximum number of tests to return (default 100)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 100
+      - name: cursor
+        in: query
+        description: Pagination cursor from a previous response
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_ids
+        in: query
+        description: Optional test IDs (invariant IDs) to filter by, at most 200. Restricts the report to these tests, for callers that already know which tests they need and would otherwise have to page through the whole workspace report to find them. Combines with test_id and every other filter as AND. Summary statistics describe only the matching tests, not the whole workspace.
+        required: false
+        style: form
+        explode: false
+        schema:
+          maxItems: 200
+          type: array
+          items:
+            type: string
+      - name: mobile_platform
+        in: query
+        description: Optional mobile platform to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+      - name: sort_by
+        in: query
+        description: Column to sort the tests array by. When omitted, falls back to sort_by_stability if set to true, otherwise to quality_score ascending (worst first). Summary statistics are unaffected by sort order.
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/TestQualitySortColumn'
+      - name: sort_direction
+        in: query
+        description: Direction to sort by. Only used when sort_by is set; defaults to ASC when omitted. ASC is "worst first" for rate/score columns (quality_score, stability_rate, pass_rate, reliability_rate); callers sorting by total_plan_runs, consistent_pass_runs, last_run_time, or last_failed_run_time will usually want DESC explicitly.
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/SortDirectionEnum'
+      responses:
+        '200':
+          description: Unified test quality metrics for the specified time range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestQualityResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/flakyTestCounts:
+    post:
+      tags:
+      - Report
+      summary: Retrieve flaky and total test counts for a workspace, broken down by test type
+      description: 'Returns workspace-wide test counts and flaky-test counts, both overall and broken down
+
+        by test type, over a specified time range. A test is flaky when its flake_rate is 0.10
+
+        or higher (equivalently, stability_rate is 0.90 or lower) -- the same definition and
+
+        threshold as testQuality''s tests_above_flakiness_threshold summary field.
+
+
+        Unlike testQuality, this endpoint returns only aggregate counts, not per-test rows --
+
+        use it when a caller needs workspace-wide totals without paginating through every test.
+
+
+        POST + a request body (rather than query params, like the rest of this file''s query*
+
+        endpoints) because plan_labels is an unbounded array -- as a CSV query param it can grow
+
+        the URL past what a client, proxy, or load balancer will send.'
+      operationId: queryFlakyTestCounts
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlakyTestReportRequest'
+        required: true
+      responses:
+        '200':
+          description: Flaky and total test counts for the specified time range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlakyTestCounts'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /reports/test-authoring-metrics:
+    get:
+      tags:
+      - Report
+      summary: Retrieve test authoring metrics over time for a workspace
+      description: Returns daily counts of new and updated tests within the specified time range
+      operationId: queryTestAuthoringMetrics
+      parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace ID to filter by
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Start time of the query range in epoch milliseconds
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End time of the query range in epoch milliseconds
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: timezone
+        in: query
+        description: IANA timezone for daily bucket calculations (e.g., America/New_York)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: UTC
+      - name: application_ids
+        in: query
+        description: Application IDs to filter by (tests in plans configured with these applications)
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: test_name
+        in: query
+        description: Test name to filter by (partial match)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: test_labels
+        in: query
+        description: Test labels to filter by
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: plan_labels
+        in: query
+        description: Plan labels to filter by
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: test_type
+        in: query
+        description: Test type to filter by
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/TestTypeEnum'
+      responses:
+        '200':
+          description: Test authoring metrics for the specified time range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestAuthoringMetricsResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/qualityMetrics/statusOverTime:
+    post:
+      tags:
+      - Report
+      summary: Query quality metrics across all workspaces in account
+      description: Retrieve aggregated quality metrics (pass/fail/stopped counts) across all workspaces in an account over a time range. Only accessible by company admins.
+      operationId: queryAccountQualityMetricsStatusOverTime
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: timezone
+        in: query
+        description: IANA timezone/zone offset for aggregation boundary calculations only
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: America/Los_Angeles
+      - name: workspace_id
+        in: query
+        description: Optional workspace ID to scope results to a single workspace within the account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: workspace_ids
+        in: query
+        description: Optional comma-separated list of workspace IDs to scope results within the account. Combined with workspace_id when both are given.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters including time range (start_time, end_time) and optional filters
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSuiteFilterOptions'
+        required: false
+      responses:
+        '200':
+          description: Account quality metrics across all workspaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountQualityMetricsOverTimeResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized (not a company admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/testAuthoringMetrics:
+    post:
+      tags:
+      - Report
+      summary: Query test authoring metrics across all workspaces in account
+      description: Retrieve aggregated test authoring metrics (new/updated test counts) across all workspaces in an account over a time range. Only accessible by company admins.
+      operationId: queryAccountTestAuthoringMetrics
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: timezone
+        in: query
+        description: IANA timezone for daily bucket calculations (e.g., America/New_York)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: UTC
+      - name: workspace_id
+        in: query
+        description: Optional workspace ID to scope results to a single workspace within the account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: workspace_ids
+        in: query
+        description: Optional comma-separated list of workspace IDs to scope results within the account. Combined with workspace_id when both are given.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters including time range (start_time, end_time) and optional filters
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSuiteFilterOptions'
+        required: false
+      responses:
+        '200':
+          description: Account test authoring metrics across all workspaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTestAuthoringMetricsResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized (not a company admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/userActivity/activeUserCounts:
+    get:
+      tags:
+      - Report
+      summary: Query active user counts by workspace for an account
+      description: Retrieve the count of distinct active users per workspace in an account. Only accessible by company admins.
+      operationId: queryAccountActiveUserCountsByWorkspace
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Start of the query range in epoch milliseconds. Defaults to 30 days ago.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End of the query range in epoch milliseconds. Defaults to now.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: workspace_id
+        in: query
+        description: Optional workspace ID to scope results to a single workspace within the account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Active user counts per workspace in the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountActiveUserCountsResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized (not a company admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/userActivity/byUser:
+    get:
+      tags:
+      - Report
+      summary: Query per-user activity breakdown for an account
+      description: 'Retrieve per-user activity counts for an account, broken down by category
+
+        (test_authoring, test_maintenance, data_setup, plans_orchestration,
+
+        configuration). Only accessible by company admins.
+
+
+        Scope: this endpoint reports automation engineering activity (what users
+
+        build, maintain, and configure). Test execution events (ad-hoc test runs,
+
+        plan runs, results analysis) are not currently surfaced and may be added
+
+        in a future version.
+
+
+        Retention: the underlying activity log retains 400 days of data. The
+
+        maximum supported window is 365 days; older queries return partial data.'
+      operationId: queryAccountUserActivityByUser
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: start_time
+        in: query
+        description: Start of the query range in epoch milliseconds. Defaults to 30 days ago.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: end_time
+        in: query
+        description: End of the query range in epoch milliseconds. Defaults to now.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+      - name: workspace_id
+        in: query
+        description: Optional workspace ID to scope results to a single workspace within the account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Per-user activity breakdown for the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountUserActivityByUserResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized (not a company admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/eventMetrics:
+    get:
+      tags:
+      - Report
+      summary: Query account event metrics over a date range
+      description: Retrieve daily counts of registered account-level event metrics (e.g. auto_heal_insights) across workspaces in an account. Backed by the precomputed workspace_event_metric_daily fact table. Only accessible by company admins.
+      operationId: queryAccountEventMetrics
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: metric_names
+        in: query
+        description: Comma-separated list of metric names to return (e.g. auto_heal_insights). When omitted, returns all metrics with data in the date range.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: start_date
+        in: query
+        description: Inclusive start date (YYYY-MM-DD). Defaults to 30 days before end_date.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: end_date
+        in: query
+        description: Inclusive end date (YYYY-MM-DD). Defaults to yesterday (most recent fully-aggregated day).
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: workspace_ids
+        in: query
+        description: Optional comma-separated list of workspace IDs to scope results within the account.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Event metric series for the account over the date range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountEventMetricsResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized (not a company admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /workspaces/{workspace_id}/reports/eventMetrics:
+    get:
+      tags:
+      - Report
+      summary: Query workspace event metrics over a date range
+      description: Retrieve daily counts of registered event metrics (e.g. auto_heal_insights) for a single workspace. Each metric in the response carries customer-facing copy — a display name, description, benefit statement, benefit categories, and cost levers — so callers (e.g. the mabl MCP server) can present the data with consistent framing. Backed by the precomputed workspace_event_metric_daily fact table. Accessible to any workspace member (same authorization as quality metrics).
+      operationId: queryWorkspaceEventMetrics
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: metric_names
+        in: query
+        description: Comma-separated list of metric names to return (e.g. auto_heal_insights). When omitted, returns all metrics with data in the date range.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: start_date
+        in: query
+        description: Inclusive start date (YYYY-MM-DD). Defaults to 30 days before end_date.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: end_date
+        in: query
+        description: Inclusive end date (YYYY-MM-DD). Defaults to yesterday (most recent fully-aggregated day).
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Event metric series for the workspace over the date range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceEventMetricsResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized to access this workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/qualityMetrics/daily:
+    get:
+      tags:
+      - Report
+      summary: Query account quality metrics over a date range
+      description: Retrieve daily test-run and plan-run quality metrics (total/passed/failed/stopped/retried counts) across workspaces in an account. Backed by the precomputed workspace_quality_metric_daily fact table, populated daily by the event-metric-aggregator cron. Only accessible by company admins.
+      operationId: queryAccountQualityMetricsDaily
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: metric_names
+        in: query
+        description: Comma-separated list of metric names to return (e.g. test_runs_executed, plan_runs_executed). When omitted, returns all metrics with data in the date range.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: start_date
+        in: query
+        description: Inclusive start date (YYYY-MM-DD). Defaults to 30 days before end_date.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: end_date
+        in: query
+        description: Inclusive end date (YYYY-MM-DD). Defaults to yesterday (most recent fully-aggregated day).
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: workspace_ids
+        in: query
+        description: Optional comma-separated list of workspace IDs to scope results within the account.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Quality metric series for the account over the date range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountQualityMetricsDailyResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized (not a company admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+  /accounts/{account_id}/reports/assetCounts:
+    get:
+      tags:
+      - Report
+      summary: Query asset counts by workspace for an account
+      description: Retrieve point-in-time counts of tests, reusable flows, and datatables per workspace in an account. Only accessible by company admins.
+      operationId: queryAccountAssetCounts
+      parameters:
+      - name: account_id
+        in: path
+        description: Account ID to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: Optional workspace ID to scope results to a single workspace within the account
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Asset counts per workspace in the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountAssetCountsResult'
+        '400':
+          description: Invalid or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: User not authorized (not a company admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+      x-mabl-action: Read::Report
+components:
+  schemas:
+    TestAuthoringMetricsResult:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        start_time:
+          type: integer
+          description: Start of the query time range in epoch milliseconds
+          format: int64
+        end_time:
+          type: integer
+          description: End of the query time range in epoch milliseconds
+          format: int64
+        test_authoring_metrics_over_time:
+          type: array
+          description: Daily breakdown of test authoring metrics
+          items:
+            $ref: '#/components/schemas/TestAuthoringMetricsOverTime'
+        totals:
+          $ref: '#/components/schemas/TestAuthoringMetricsTotals'
+        by_test_type:
+          type: array
+          description: Breakdown of metrics by test type (only included when test_type filter is not applied)
+          items:
+            $ref: '#/components/schemas/TestAuthoringMetricsByTestType'
+      description: Result of querying test authoring metrics for a workspace
+    EventMetricSeries:
+      type: object
+      properties:
+        metric_name:
+          type: string
+          description: Stable identifier for the metric (e.g. auto_heal_insights)
+        buckets:
+          type: array
+          description: One bucket per calendar day in the range. Days with zero events across all in-scope workspaces are omitted (sparse encoding).
+          items:
+            $ref: '#/components/schemas/EventMetricBucket'
+      description: Daily-bucketed counts for a single metric across the requested date range
+    TestSuiteFilterOptions:
+      type: object
+      properties:
+        application_ids:
+          type: array
+          description: Application IDs to filter by
+          readOnly: true
+          items:
+            type: string
+        environment_ids:
+          type: array
+          description: Environment IDs to filter by
+          readOnly: true
+          items:
+            type: string
+        triggering_resource_ids:
+          type: array
+          description: Triggering resource IDs to filter by
+          readOnly: true
+          items:
+            type: string
+        test_name:
+          type: string
+          description: Test name to filter by (partial match)
+          readOnly: true
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        browser:
+          type: string
+          description: The browser for the run
+          readOnly: true
+        execution_source:
+          $ref: '#/components/schemas/TestSource'
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        test_labels:
+          type: array
+          description: Test labels to filter by
+          readOnly: true
+          items:
+            type: string
+        plan_labels:
+          type: array
+          description: Plan labels to filter by
+          readOnly: true
+          items:
+            type: string
+        start_time:
+          type: integer
+          description: The start time of the time period
+          format: int64
+          readOnly: true
+        end_time:
+          type: integer
+          description: The end time of the time period
+          format: int64
+          readOnly: true
+    QualityMetricSeries:
+      type: object
+      properties:
+        metric_name:
+          type: string
+          description: Stable identifier for the metric (e.g. test_runs_executed, plan_runs_executed)
+        buckets:
+          type: array
+          description: One bucket per calendar day in the range. Days with zero events across all in-scope workspaces are omitted (sparse encoding).
+          items:
+            $ref: '#/components/schemas/QualityMetricBucket'
+      description: Daily-bucketed quality counts for a single metric across the requested date range
+    WorkspaceQualityMetricCount:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        workspace_name:
+          type: string
+          description: The workspace name
+        total:
+          type: integer
+          description: Total runs for this workspace on this day
+          format: int64
+        passed:
+          type: integer
+          description: Passed runs
+          format: int64
+        failed:
+          type: integer
+          description: Failed runs
+          format: int64
+        stopped:
+          type: integer
+          description: Stopped (terminated mid-run) runs
+          format: int64
+        retried:
+          type: integer
+          description: Runs that were part of a retry
+          format: int64
+        by_test_type:
+          type: array
+          description: Optional sub-breakdown by test_type (browser / api / mobile). Present when the underlying metric is sub-keyed by test_type; omitted otherwise.
+          items:
+            $ref: '#/components/schemas/QualityMetricByTestType'
+      description: A workspace's contribution to a single quality-metric+day bucket
+    WorkspaceActiveUserCount:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        workspace_name:
+          type: string
+          description: The workspace name
+        active_user_count:
+          type: integer
+          description: Number of distinct active users in this workspace
+          format: int32
+      description: Active user count for a single workspace
+    WorkspaceFailureCategoryMetrics:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        workspace_name:
+          type: string
+          description: The workspace display name
+        metrics:
+          $ref: '#/components/schemas/FailureCategorySummaryQueryResult'
+      description: Failure category history for a single workspace
+    FlakyTestReportRequest:
+      required:
+      - end_time
+      - start_time
+      type: object
+      properties:
+        start_time:
+          type: integer
+          description: Start of the query time range in epoch milliseconds
+          format: int64
+        end_time:
+          type: integer
+          description: End of the query time range in epoch milliseconds
+          format: int64
+        application_id:
+          type: string
+          description: Optional application ID to filter by
+        plan_id:
+          type: string
+          description: Optional plan ID to filter by
+        environment_id:
+          type: string
+          description: Optional environment ID to filter by
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        browser:
+          $ref: '#/components/schemas/BrowserTypeEnum'
+        execution_source:
+          $ref: '#/components/schemas/TestSource'
+        plan_labels:
+          maxItems: 50
+          type: array
+          description: Plan labels to filter by (tests must belong to plans with these labels)
+          items:
+            maxLength: 256
+            type: string
+        min_plan_runs:
+          minimum: 1
+          type: integer
+          description: Minimum number of plan runs required for a test to be included
+          format: int32
+          default: 5
+      description: Filter and time-range parameters for queryFlakyTestCounts
+    AccountTestAuthoringMetricsResult:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The account ID
+        from_time:
+          type: integer
+          description: Start of the query time range in epoch milliseconds
+          format: int64
+        to_time:
+          type: integer
+          description: End of the query time range in epoch milliseconds
+          format: int64
+        aggregated:
+          $ref: '#/components/schemas/TestAuthoringMetricsResult'
+        by_workspace:
+          type: array
+          description: Per-workspace breakdown of test authoring metrics
+          items:
+            $ref: '#/components/schemas/WorkspaceTestAuthoringMetrics'
+      description: Test authoring metrics across all workspaces in an account
+    RunStatusSummary:
+      type: object
+      properties:
+        passed_journey_run_count:
+          type: integer
+          description: Total number of journey runs with status completed
+          format: int64
+        failed_journey_run_count:
+          type: integer
+          description: Total number of journey runs with status failed
+          format: int64
+        terminated_journey_run_count:
+          type: integer
+          description: Total number of journey runs with status terminated
+          format: int64
+      description: Test run status summmary for a single grouping/aggregation
+    AccountEventMetricsResult:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The account ID
+        start_date:
+          type: string
+          description: Inclusive start of the date range (YYYY-MM-DD)
+          format: date
+        end_date:
+          type: string
+          description: Inclusive end of the date range (YYYY-MM-DD)
+          format: date
+        series:
+          type: array
+          description: One entry per metric name, ordered by metric_name
+          items:
+            $ref: '#/components/schemas/EventMetricSeries'
+      description: Daily counts of registered event metrics across workspaces in an account
+    RunStatusSummaryQueryResult:
+      type: object
+      properties:
+        runStatusHistory:
+          type: array
+          description: A time series of run status summaries per day
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/RunStatusPeriodSummary'
+        timezone:
+          type: string
+          description: Normalized IANA timezone or zone offset used for day bucket boundaries
+    MetricsSummary:
+      type: object
+      properties:
+        metric_id:
+          type: string
+          description: Specific identifier for this metrics, regardless of point in time.  Exact value depends on metric type
+        metric_type:
+          type: string
+          description: Specific type/class of metric
+        organization_id:
+          type: string
+          description: organization this metric is for
+        appliction_id:
+          type: string
+          description: appication this metric is for
+        environment_id:
+          type: string
+          description: environment this metric is for
+        points:
+          type: array
+          description: instances of the metric at a point in time
+          items:
+            $ref: '#/components/schemas/MetricsSummaryPoints'
+      description: Summary of one or more individual metric points
+    AccountQualityMetricsDailyResult:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The account ID
+        start_date:
+          type: string
+          description: Inclusive start of the date range (YYYY-MM-DD)
+          format: date
+        end_date:
+          type: string
+          description: Inclusive end of the date range (YYYY-MM-DD)
+          format: date
+        series:
+          type: array
+          description: One entry per metric name, ordered by metric_name
+          items:
+            $ref: '#/components/schemas/QualityMetricSeries'
+      description: Daily quality metric breakdowns across workspaces in an account, with status sub-counts
+    TestSource:
+      type: string
+      description: Where the test lives
+      enum:
+      - mabl_cloud
+      - external
+      - mabl_local
+      - mabl_agent
+      x-mabl-scope: public
+    MobilePlatformEnum:
+      type: string
+      description: The mobile platform associated with this object
+      enum:
+      - android
+      - ios
+      x-mabl-scope: public
+    MetricsSummaryPoints:
+      type: object
+      properties:
+        interval_type:
+          type: string
+          description: Description of the interval type
+          enum:
+          - event
+          - day
+          - hour
+        interval_start:
+          type: integer
+          description: interval start time
+          format: int64
+        interval_end:
+          type: integer
+          description: interval end time
+          format: int64
+        execution_count:
+          type: integer
+          description: Count of executions
+        failed_count:
+          type: integer
+          description: Count of failures
+        passed_count:
+          type: integer
+          description: Count of passes
+        raw_value:
+          type: integer
+          description: Raw value used in anomaly detection
+          format: int64
+        tests_passing:
+          type: integer
+          description: Count of passes
+        tests_failing:
+          type: integer
+          description: Count of passes
+        scripts_passing:
+          type: integer
+          description: Count of passes
+        scripts_failing:
+          type: integer
+          description: Count of passes
+        run_time_sum_squared:
+          type: integer
+          description: Count of passes
+          format: int64
+        run_time_sum:
+          type: integer
+          description: Count of passes
+          format: int64
+    AccountQualityMetricsOverTimeResult:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The account ID
+        from_time:
+          type: integer
+          description: Start of the query time range in epoch milliseconds
+          format: int64
+        to_time:
+          type: integer
+          description: End of the query time range in epoch milliseconds
+          format: int64
+        aggregated:
+          $ref: '#/components/schemas/TestSuiteStatusOverTimeResult'
+        by_workspace:
+          type: array
+          description: Per-workspace breakdown of quality metrics
+          items:
+            $ref: '#/components/schemas/WorkspaceQualityMetrics'
+      description: Quality metrics across all workspaces in an account over a time range
+    AccountUserActivityByUserResult:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The account ID
+        interval_start:
+          type: integer
+          description: Start of the query time range in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: End of the query time range in epoch milliseconds
+          format: int64
+        by_user:
+          type: array
+          description: One row per user with activity in the window. Users with zero actions are not included.
+          items:
+            $ref: '#/components/schemas/UserActivityRow'
+      description: Per-user activity breakdown for an account over a time window
+    ActivityFeed:
+      type: object
+      properties:
+        entries:
+          type: array
+          description: All activity logs that match the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/ActivityFeedEntry'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+    ReportSettingQueryResult:
+      type: object
+      properties:
+        settings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportSetting'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: Multiple report settings that match a query
+    TestFlakinessSummary:
+      type: object
+      properties:
+        total_tests:
+          type: integer
+          description: Total number of tests matching the filters with sufficient data in the time range
+        flaky_tests:
+          type: integer
+          description: Number of tests with any flakiness (flake_rate > 0)
+        tests_above_threshold:
+          type: integer
+          description: Number of tests with flake_rate >= 10%
+        average_flake_rate:
+          type: number
+          description: Average flake rate across all tests (0.0 to 1.0)
+          format: double
+        total_flaky_plan_runs:
+          type: integer
+          description: Total number of plan runs with mixed outcomes across all tests
+      description: Aggregate flakiness statistics across ALL matching tests (not limited by pagination)
+    AccessibilityRuleViolation:
+      type: object
+      properties:
+        impact:
+          type: string
+          description: The impact of the rule
+        rule_id:
+          type: string
+          description: The rule ID associated with the check
+        path_pattern:
+          type: string
+          description: The path pattern associated with the check
+        test_run_ids:
+          type: array
+          description: The test run IDs associated with the check
+          items:
+            type: string
+        test_names:
+          type: array
+          description: The test names associated with test runs
+          items:
+            type: string
+    FailureCategoryCount:
+      type: object
+      properties:
+        failure_category:
+          type: string
+          description: The type of failure
+          readOnly: true
+        count:
+          type: integer
+          description: The count of the failure category
+          format: int32
+          readOnly: true
+      description: The count of a failure reason
+    RunStatusPeriodSummary:
+      type: object
+      properties:
+        time_interval_start:
+          type: integer
+          description: Start of the time interval (in epoch milliseconds)
+          format: int64
+        time_interval_end:
+          type: integer
+          description: End of the time interval (in epoch milliseconds)
+          format: int64
+        status_by_application:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/RunStatusSummary'
+        status_totals:
+          $ref: '#/components/schemas/RunStatusSummary'
+      description: Test run status summmary for a particular time period
+    TestAuthoringMetricsTotals:
+      type: object
+      properties:
+        new_test_count:
+          type: integer
+          description: Total number of new tests created
+          format: int64
+        updated_test_count:
+          type: integer
+          description: Total number of existing tests updated
+          format: int64
+      description: Aggregate totals for test authoring metrics
+    RedirectResponse:
+      type: object
+      properties:
+        redirectUrl:
+          type: string
+          x-mabl-scope: public
+    TestSuiteStatusSummary:
+      type: object
+      properties:
+        tests_with_runs:
+          type: integer
+          description: Number of tests with at least one run in the window
+          format: int64
+          readOnly: true
+        tests_passing_latest:
+          type: integer
+          description: Number of tests whose latest run passed
+          format: int64
+          readOnly: true
+        tests_failing_latest:
+          type: integer
+          description: Number of tests whose latest run failed
+          format: int64
+          readOnly: true
+        new_tests:
+          type: integer
+          description: Number of tests with a run in the window that were created in the window
+          format: int64
+          readOnly: true
+        updated_tests:
+          type: integer
+          description: Number of tests with a run in the window that were updated in the window
+          format: int64
+          readOnly: true
+        by_test_type:
+          type: array
+          description: The same counts broken down by test type
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestSuiteStatusTypeSummary'
+      description: Whole filtered set, identical on every page; latest = each test's most recent run in the window
+    QualityMetricBucket:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Calendar day for this bucket (YYYY-MM-DD)
+          format: date
+        total:
+          type: integer
+          description: Sum of total_count across all in-scope workspace+test_type rows for the day
+          format: int64
+        passed:
+          type: integer
+          description: Sum of passed_count across all in-scope workspace+test_type rows for the day
+          format: int64
+        failed:
+          type: integer
+          description: Sum of failed_count across all in-scope workspace+test_type rows for the day
+          format: int64
+        stopped:
+          type: integer
+          description: Sum of stopped_count across all in-scope workspace+test_type rows for the day
+          format: int64
+        retried:
+          type: integer
+          description: Sum of retried_count across all in-scope workspace+test_type rows for the day
+          format: int64
+        by_workspace:
+          type: array
+          description: Per-workspace contribution to this bucket. Workspaces with zero total for the day are omitted. Status sub-counts within each workspace are summed across test_type sub-rows.
+          items:
+            $ref: '#/components/schemas/WorkspaceQualityMetricCount'
+      description: A single (date, account-total, per-workspace breakdown) tuple for one quality metric on one day
+    EventMetricBucket:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Calendar day for this bucket (YYYY-MM-DD)
+          format: date
+        count:
+          type: integer
+          description: Sum of the metric across all in-scope workspaces for the day
+          format: int64
+        by_workspace:
+          type: array
+          description: Per-workspace contribution to count for this day. Workspaces with zero events for the day are omitted.
+          items:
+            $ref: '#/components/schemas/WorkspaceEventMetricCount'
+      description: A single (date, account-total, per-workspace breakdown) tuple for one metric
+    QualityMetricByTestType:
+      type: object
+      properties:
+        test_type:
+          type: string
+          description: browser | api | mobile
+        total:
+          type: integer
+          format: int64
+        passed:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        stopped:
+          type: integer
+          format: int64
+        retried:
+          type: integer
+          format: int64
+      description: A workspace's quality counts for one test_type on one day
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    QualityMetricOverTime:
+      type: object
+      properties:
+        entry_time:
+          type: integer
+          description: the time of the metric being calculated (in epoch milliseconds)
+          format: int64
+        journey_run_id:
+          type: string
+          description: the journey run id associated with the metric
+        quality_metric:
+          type: number
+          description: the quality metric value associated with the entity (in epoch milliseconds)
+          format: double
+    AccessibilityRuleViolationResult:
+      type: object
+      properties:
+        accessibility_rule_violations:
+          type: array
+          description: All outstanding rule violations that match the filters
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/AccessibilityRuleViolation'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    QualityMetricOverTimeResult:
+      type: object
+      properties:
+        quality_metric_over_time:
+          type: array
+          description: Quality metric over time for the associated context, env, and app
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/QualityMetricOverTime'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    TestStatus:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The ID of the workspace
+          readOnly: true
+        test_id:
+          type: string
+          description: The ID of the test
+          readOnly: true
+        test_name:
+          type: string
+          description: The name of the test
+          readOnly: true
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        test_created_time:
+          type: integer
+          description: The time the test was created
+          format: int64
+          readOnly: true
+        test_updated_time:
+          type: integer
+          description: The time the test was most recently updated
+          format: int64
+          readOnly: true
+        current_pass_rate:
+          type: number
+          description: The current pass rate for the test (percent)
+          format: double
+          readOnly: true
+        recent_run_id:
+          type: string
+          description: The ID of the most recent test run
+          readOnly: true
+        recent_status:
+          type: string
+          description: The most recent test run status
+          readOnly: true
+          enum:
+          - completed
+          - failed
+          - terminated
+          - no_status
+        recent_start_time:
+          type: integer
+          description: The start time of the most recent run
+          format: int64
+          readOnly: true
+        first_start_time:
+          type: integer
+          description: The start time of the earliest run
+          format: int64
+          readOnly: true
+        app_load_time_change:
+          type: number
+          description: The relative change (percent) in cumulative speed index between the first and last half of the time range
+          format: double
+          readOnly: true
+        earliest_app_load_run_count:
+          type: integer
+          description: The number of runs considered in app load time calculations from the first half of the specified date range
+          format: int64
+          readOnly: true
+        latest_app_load_run_count:
+          type: integer
+          description: The number of runs considered in app load time calculations from the second half of the specified date range
+          format: int64
+          readOnly: true
+        response_time_change:
+          type: number
+          description: The relative change (percent) in cumulative API response time between the first and last half of the time range
+          format: double
+          readOnly: true
+        earliest_response_time_run_count:
+          type: integer
+          description: The number of runs considered in API response time time calculations from the first half of the specified date range
+          format: int64
+          readOnly: true
+        latest_response_time_run_count:
+          type: integer
+          description: The number of runs considered in API response time calculations from the second half of the specified date range
+          format: int64
+          readOnly: true
+        app_load_time_ms:
+          type: number
+          description: The average test app load time in milliseconds
+          format: double
+        response_time_ms:
+          type: number
+          description: The average test response time in milliseconds
+          format: double
+        run_time_ms:
+          type: number
+          description: The average test run time in milliseconds
+          format: double
+          readOnly: true
+        number_of_runs:
+          type: integer
+          description: The number of test runs
+          format: int64
+    TestSuiteStatusOverTimeResult:
+      type: object
+      properties:
+        test_suite_status_over_time:
+          type: array
+          description: Status of the test suite at discrete times in the range
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestSuiteStatus'
+        status_by_deployment:
+          type: boolean
+          description: True if deployment event IDs supplied in filters, otherwise false
+          readOnly: true
+        end_time:
+          type: integer
+          description: The latest time represented in these results
+          format: int64
+          readOnly: true
+        start_time:
+          type: integer
+          description: The earliest time represented in these results
+          format: int64
+          readOnly: true
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+        total_distinct_tests:
+          type: integer
+          description: The total count of distinct tests across the entire date range
+          format: int32
+          readOnly: true
+        total_active_plans:
+          type: integer
+          description: The total count of distinct active plans across the entire date range
+          format: int32
+        total_plan_runs:
+          type: integer
+          description: The total count of plan runs across the entire date range
+          format: int32
+        retried_test_run_count:
+          type: integer
+          description: Count of test runs within the date range whose parent plan run was a retry. Used to show how many test executions were covered by retry-on-failure.
+          format: int64
+        retried_test_run_passed_count:
+          type: integer
+          description: Subset of retried_test_run_count whose final status was success. The ratio indicates how often retry-on-failure successfully avoids human triage.
+          format: int64
+    TestSuiteStatusTypeSummary:
+      type: object
+      properties:
+        test_type:
+          type: string
+          description: The test type
+          readOnly: true
+        tests_with_runs:
+          type: integer
+          description: Number of tests of this type with at least one run in the window
+          format: int64
+          readOnly: true
+        tests_passing_latest:
+          type: integer
+          description: Number of tests of this type whose latest run passed
+          format: int64
+          readOnly: true
+      description: Whole filtered set, identical on every page; latest = each test's most recent run in the window
+    FailureCategorySummaryQueryResult:
+      type: object
+      properties:
+        failureCategoryHistory:
+          type: array
+          description: A time series of failure category per day
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/FailureCategoryPeriodSummary'
+    WorkspaceQualityMetrics:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        workspace_name:
+          type: string
+          description: The workspace name
+        metrics:
+          $ref: '#/components/schemas/TestSuiteStatusOverTimeResult'
+      description: Quality metrics for a single workspace
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    ArtifactUrls:
+      type: object
+      properties:
+        signed_download_url:
+          type: string
+          description: signed url to download the artifact
+        signed_upload_url:
+          type: string
+          description: signed url to upload the artifact
+      description: Signed artifact urls for uploading and downloading
+    StepMetricTrendResult:
+      type: object
+      properties:
+        step_metric_data_points:
+          type: array
+          description: Each step metric value
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/StepMetricDataPoint'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    TestTypeEnum:
+      type: string
+      description: Type of test
+      enum:
+      - api
+      - browser
+      - performance
+      - mobile
+      - desktop
+      x-mabl-scope: public
+    TestTypeCounts:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of tests matching the filters
+        flaky:
+          type: integer
+          description: Number of tests with flake_rate >= 0.10 (stability_rate <= 0.90) -- same definition as testQuality's tests_above_flakiness_threshold summary field
+      description: Total and flaky test counts, either workspace-wide or for a single test type
+    TestQualityResult:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: ID of the workspace
+        interval_start:
+          type: integer
+          description: Starting time of the reporting window in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the reporting window in epoch milliseconds
+          format: int64
+        summary:
+          $ref: '#/components/schemas/TestQualitySummary'
+        tests:
+          type: array
+          description: List of tests with their quality metrics, ordered by quality score ascending then flake rate descending
+          items:
+            $ref: '#/components/schemas/TestQualityItem'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results. Null if no more results.
+      description: Unified test quality metrics for a workspace over a time range
+    UserActivityRow:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: The user ID
+        email:
+          type: string
+          description: The user's email address
+        name:
+          type: string
+          description: The user's display name
+        total_actions:
+          type: integer
+          description: Total user actions in the window after exclusions. Equals the sum of all category fields.
+          format: int64
+        active_days:
+          type: integer
+          description: Number of distinct UTC dates on which the user took at least one counted action.
+          format: int64
+        by_category:
+          $ref: '#/components/schemas/UserActivityCategoryCounts'
+        workspaces_touched:
+          type: array
+          description: IDs of workspaces in which this user took at least one counted action
+          items:
+            type: string
+      description: Activity row for a single user over the query window
+    SortDirectionEnum:
+      type: string
+      description: Direction of sort when ordering query results
+      enum:
+      - ASC
+      - DESC
+      x-mabl-scope: public
+    FailureCategoryPeriodSummary:
+      type: object
+      properties:
+        time_interval_start:
+          type: integer
+          description: Start of the time interval (in epoch milliseconds)
+          format: int64
+        time_interval_end:
+          type: integer
+          description: End of the time interval (in epoch milliseconds)
+          format: int64
+        failure_category_by_application:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/FailureCategorySummary'
+        failure_category_totals:
+          $ref: '#/components/schemas/FailureCategorySummary'
+      description: Test failure category summmary for a particular time period
+    BrowserTypeEnum:
+      type: string
+      description: The browser used to execute a test
+      enum:
+      - chrome
+      - edge
+      - firefox
+      - internet_explorer
+      - safari
+      - webkit
+    TestAuthoringMetricsByTestType:
+      type: object
+      properties:
+        test_type:
+          $ref: '#/components/schemas/TestTypeEnum'
+        new_test_count:
+          type: integer
+          description: Number of new tests of this type
+          format: int64
+        updated_test_count:
+          type: integer
+          description: Number of updated tests of this type
+          format: int64
+      description: Test authoring metrics breakdown by test type
+    FailureCategorySummary:
+      type: object
+      additionalProperties:
+        type: integer
+        format: int64
+      description: Test failure category summary for a single grouping/aggregation
+    AccountActiveUserCountsResult:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The account ID
+        interval_start:
+          type: integer
+          description: Start of the query time range in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: End of the query time range in epoch milliseconds
+          format: int64
+        by_workspace:
+          type: array
+          description: Per-workspace active user counts
+          items:
+            $ref: '#/components/schemas/WorkspaceActiveUserCount'
+      description: Active user counts per workspace in an account
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    FlakyTestCounts:
+      description: Workspace-wide test and flaky-test counts, overall and broken down by test type
+      allOf:
+      - $ref: '#/components/schemas/TestTypeCounts'
+      - type: object
+        properties:
+          by_type:
+            type: object
+            properties:
+              browser:
+                $ref: '#/components/schemas/TestTypeCounts'
+              mobile:
+                $ref: '#/components/schemas/TestTypeCounts'
+              api:
+                $ref: '#/components/schemas/TestTypeCounts'
+              performance:
+                $ref: '#/components/schemas/TestTypeCounts'
+    WorkspaceEventMetricDailyCount:
+      type: object
+      properties:
+        date:
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          type: string
+          description: Calendar day (YYYY-MM-DD)
+        count:
+          type: integer
+          description: Count of events for this metric in the workspace on this day
+          format: int64
+      description: Count of one metric in one workspace on one calendar day
+    Metrics:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Object id.  Derived from metric properties.
+        metric_id:
+          type: string
+          description: Specific identifier for this metrics, regardless of point in time.  Exact value depends on metric type
+        metric_type:
+          type: string
+          description: Specific type/class of metric
+        interval_type:
+          type: string
+          description: Description of the interval type
+          enum:
+          - event
+          - day
+          - hour
+        interval_start:
+          type: integer
+          description: interval start time
+          format: int64
+        interval_end:
+          type: integer
+          description: interval end time
+          format: int64
+        organization_id:
+          type: string
+          description: organization this metric is for
+        appliction_id:
+          type: string
+          description: appication this metric is for
+        environment_id:
+          type: string
+          description: environment this metric is for
+        execution_count:
+          type: integer
+          description: Count of executions
+        failed_count:
+          type: integer
+          description: Count of failures
+        passed_count:
+          type: integer
+          description: Count of passes
+        raw_value:
+          type: integer
+          description: Raw value used in anomaly detection
+          format: int64
+        tests_passing:
+          type: integer
+          description: Count of passes
+        tests_failing:
+          type: integer
+          description: Count of passes
+        scripts_passing:
+          type: integer
+          description: Count of passes
+        scripts_failing:
+          type: integer
+          description: Count of passes
+        run_time_sum_squared:
+          type: integer
+          description: Count of passes
+          format: int64
+        run_time_sum:
+          type: integer
+          description: Count of passes
+          format: int64
+      description: A single Metrics object
+    TestQualitySortColumn:
+      type: string
+      description: Column to sort queryTestQuality's tests array by
+      enum:
+      - quality_score
+      - stability_rate
+      - total_plan_runs
+      - consistent_pass_runs
+      - pass_rate
+      - reliability_rate
+      - last_run_time
+      - last_failed_run_time
+      default: quality_score
+    TestFlakinessResult:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: ID of the workspace
+        interval_start:
+          type: integer
+          description: Starting time of the reporting window in epoch milliseconds
+          format: int64
+        interval_end:
+          type: integer
+          description: Ending time of the reporting window in epoch milliseconds
+          format: int64
+        summary:
+          $ref: '#/components/schemas/TestFlakinessSummary'
+        tests:
+          type: array
+          description: List of tests with their flakiness metrics, ordered by flake rate descending
+          items:
+            $ref: '#/components/schemas/TestFlakinessSummaryItem'
+        cursor:
+          type: string
+          description: Cursor for fetching the next page of results. Null if no more results.
+      description: Test flakiness metrics for a workspace over a time range
+    AccountAssetCountsResult:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The account ID
+        aggregated:
+          $ref: '#/components/schemas/AssetCounts'
+        by_workspace:
+          type: array
+          description: Per-workspace asset counts
+          items:
+            $ref: '#/components/schemas/WorkspaceAssetCounts'
+      description: Asset counts across workspaces in an account
+    TestQualitySummary:
+      type: object
+      properties:
+        total_tests:
+          type: integer
+          description: Total number of tests matching the filters with sufficient data in the time range
+        flaky_tests:
+          type: integer
+          description: Number of tests with any flakiness (flake_rate > 0)
+        tests_above_flakiness_threshold:
+          type: integer
+          description: Number of tests with flake_rate >= 10%
+        average_flake_rate:
+          type: number
+          description: Average flake rate across all tests (0.0 to 1.0)
+          format: double
+        total_flaky_plan_runs:
+          type: integer
+          description: Total number of plan runs with mixed outcomes across all tests
+        breakage_tests:
+          type: integer
+          description: Number of tests with any breakage (breakage_rate > 0)
+        average_breakage_rate:
+          type: number
+          description: Average breakage rate across all tests (0.0 to 1.0)
+          format: double
+        total_pass_to_fail_transitions:
+          type: integer
+          description: Total number of pass-to-fail transitions across all tests
+        average_stability_rate:
+          type: number
+          description: Average stability rate across all tests (0.0 to 1.0). Stability = 1 - flake_rate.
+          format: double
+        average_reliability_rate:
+          type: number
+          description: Average reliability rate across all tests (0.0 to 1.0). Reliability = 1 - breakage_rate.
+          format: double
+        average_quality_score:
+          type: number
+          description: Average composite quality score across all tests (0 to 100).
+          format: double
+      description: Aggregate quality statistics across ALL matching tests (not limited by pagination)
+    AggregateMetricDailyTrend:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: Id for the workspace
+        application_id:
+          type: string
+          description: Id for the application
+        environment_id:
+          type: string
+          description: Id for the environment
+        metric_date:
+          type: integer
+          description: The date timestamp for the metric aggregation
+          format: int64
+        metric_type:
+          type: string
+          description: The metric type that is being aggregated daily
+        metric_daily_min:
+          type: number
+          description: The min of the metric values of each step
+          format: double
+        metric_daily_max:
+          type: number
+          description: The max of the metric values of each step
+          format: double
+        metric_daily_average:
+          type: number
+          description: The average of the metric values of each step
+          format: double
+        aggregation_type:
+          type: string
+          description: The type associated with the context of aggregation
+        aggregation_id:
+          type: string
+          description: The id associated with the context of aggregation
+        group_type:
+          type: string
+          description: The type associated with the group being aggregated
+        group_id:
+          type: string
+          description: The id associated with the group being aggregated
+        group_complete:
+          type: boolean
+          description: Represents whether the groups aggregated are complete or not.
+        count_runs:
+          type: integer
+          description: The number of individual group metric values combined for this aggregation
+          format: int64
+        min_test_run_id:
+          type: string
+          description: The test run id associated with the min metric value
+        max_test_run_id:
+          type: string
+          description: The test run id associated with the min metric value
+      description: Aggregated daily quality metric for trends in a given context
+    StepMetricDataPoint:
+      type: object
+      properties:
+        metric_value:
+          type: number
+          description: The value of the metric
+          format: double
+        metric_time:
+          type: integer
+          description: The time the metric was calculated
+          format: int64
+        test_run_id:
+          type: string
+          description: The ID of the test run related to this metric value
+        step_run_id:
+          type: string
+          description: The ID related to the step run for this metric value
+      description: A metric value for a step intended for trend chart
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    TestSuiteStatusResult:
+      type: object
+      properties:
+        test_status:
+          type: array
+          description: Status of each test in the test suite
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/TestStatus'
+        end_time:
+          type: integer
+          description: The time at which the test statuses are current
+          format: int64
+          readOnly: true
+        start_time:
+          type: integer
+          description: The start of the timeframe for statuses like pass rate
+          format: int64
+          readOnly: true
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+        summary:
+          $ref: '#/components/schemas/TestSuiteStatusSummary'
+    WorkspaceEventMetricsResult:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        start_date:
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          type: string
+          description: Inclusive start of the date range (YYYY-MM-DD)
+        end_date:
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          type: string
+          description: Inclusive end of the date range (YYYY-MM-DD)
+        metrics:
+          type: array
+          description: One entry per metric name, ordered by metric_name. Each entry carries the total count for the range, an optional daily breakdown, and the metric's customer-facing copy.
+          items:
+            $ref: '#/components/schemas/WorkspaceEventMetric'
+      description: Daily counts of registered event metrics for a single workspace, enriched with customer-facing copy for each metric.
+    AggregateMetric:
+      type: object
+      properties:
+        entry_time:
+          type: integer
+          description: The time of the step group aggregation
+          format: int64
+        created_time:
+          type: integer
+          description: The time of the row being created in Spanner
+          format: int64
+        workspace_id:
+          type: string
+          description: ID for the workspace
+        application_id:
+          type: string
+          description: ID for the associated application, if any
+        environment_id:
+          type: string
+          description: ID for the associated environment, if any
+        aggregation_entity_type:
+          type: string
+          description: Level of aggregation of a step group and associated metric
+          enum:
+          - deployment
+          - plan
+          - test
+          - flow
+          - custom_step_group
+        aggregation_run_id:
+          type: string
+          description: Run ID for the entity used in this aggregation
+        aggregation_invariant_id:
+          type: string
+          description: Invariant ID for entity associated with the run ID
+        aggregation_id:
+          type: string
+          description: ID for entity associated with the run ID
+        group_entity_type:
+          type: string
+          description: Type of grouping that is aggregated
+          enum:
+          - test
+          - flow
+          - custom_step_group
+        group_invariant_id:
+          type: string
+          description: Invariant ID for the associated grouping
+        group_id:
+          type: string
+          description: ID for the associated grouping
+        group_complete:
+          type: boolean
+          description: Whether this aggregate is for complete group values or incomplete group values
+        metric_type:
+          type: string
+          description: The metric type that is being aggregated
+          enum:
+          - page_speed_index
+          - step_execution_time
+          - response_time
+        metric_sum:
+          type: number
+          description: The sum of the metric values of each step
+          format: double
+        metric_min:
+          type: number
+          description: The min of the metric values of each step
+          format: double
+        metric_max:
+          type: number
+          description: The max of the metric values of each step
+          format: double
+        metric_average:
+          type: number
+          description: The average of the metric values of each step
+          format: double
+        count_groups:
+          type: integer
+          description: The number of group values that are combined in this aggregate
+          format: int64
+        count_steps:
+          type: integer
+          description: The number of steps that are grouped in this aggregate
+          format: int64
+        count_steps_interactive:
+          type: integer
+          description: The number of interactive steps that are grouped in this aggregate
+          format: int64
+        journey_run_id:
+          type: string
+          description: ID for the test run, if relevant
+        journey_id:
+          type: string
+          description: ID for the test associated with the run, if relevant
+        incomplete:
+          type: boolean
+          description: True if the aggregated values are based on an incomplete set of measurements
+        aggregate_measurement_id:
+          type: string
+          description: ID for the measurement that initiated the aggregation
+        expected_atomic_ids:
+          type: array
+          description: The list of IDs that need to be aggregated for a complete metric
+          items:
+            type: string
+        included_atomic_ids:
+          type: array
+          description: The IDs that are a part of the current aggregation
+          items:
+            type: string
+      description: Aggregated quality metric associated with a set of steps in a test run
+    AgentType:
+      type: string
+      enum:
+      - test_authoring
+      - flow_authoring
+      - test_creation_planning
+      - test_planning
+      - agent_review
+      - app_summary
+      - test_run_analysis
+      - test_recovery
+      - runtime_recovery_summary_agent
+      - plan_run_analysis
+      - deployment_analysis
+      - workspace_results_analysis
+      - results_auto_analysis
+      - workspace_assistant
+      - app_modeling
+      - app_modeling_run
+      - file_assertion
+      - test_impact
+      - test_impact_shadow
+      - repair_notes
+      - external_agent
+      - exploratory_qa
+    AccessibilityDashboardFilterOptions:
+      type: object
+      properties:
+        severity_level:
+          type: string
+          description: Violation severity level to filter by
+          readOnly: true
+          enum:
+          - critical
+          - serious
+          - moderate
+          - minor
+        rule_ids:
+          type: array
+          description: Rule IDs to filter by
+          readOnly: true
+          items:
+            type: string
+        test_labels:
+          type: array
+          description: Test labels to filter by
+          readOnly: true
+          items:
+            type: string
+        application_ids:
+          type: array
+          description: Application IDs to filter by
+          readOnly: true
+          items:
+            type: string
+        environment_ids:
+          type: array
+          description: Environment IDs to filter by
+          readOnly: true
+          items:
+            type: string
+        start_time:
+          type: integer
+          description: The start time of the time period (in epoch milliseconds)
+          format: int64
+          readOnly: true
+        end_time:
+          type: integer
+          description: The end time of the time period (in epoch milliseconds)
+          format: int64
+          readOnly: true
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    WorkspaceEventMetric:
+      type: object
+      properties:
+        metric_name:
+          type: string
+          description: Stable identifier for the metric (e.g. auto_heal_insights)
+        display_name:
+          type: string
+          description: Customer-facing label for the metric, matching the Account Value dashboard (e.g. "Auto-heals applied")
+        aggregation:
+          type: string
+          description: 'How this metric aggregates over the date range. "sum" (the default for count metrics) means `count` is the additive total and daily values are counts. "max" means the metric is a daily maximum: `peak` carries the single highest day, `count` is not populated, and daily values are maxima that must not be summed with each other or with sum metrics.'
+          enum:
+          - sum
+          - max
+        count:
+          type: integer
+          description: Total count of this metric in the workspace across the date range. Present only for aggregation "sum" metrics; omitted for "max" metrics (use `peak`).
+          format: int64
+        peak:
+          type: integer
+          description: The single highest daily value over the range, for aggregation "max" metrics (e.g. peak concurrent runs). Present only when aggregation is "max". Do not sum this with other metrics — it is a maximum, not a total.
+          format: int64
+        daily_counts:
+          type: array
+          description: Per-day values within the range. Days with zero activity are omitted (sparse). Returned in date-ascending order. For "sum" metrics these are counts; for "max" metrics these are that day's maximum.
+          items:
+            $ref: '#/components/schemas/WorkspaceEventMetricDailyCount'
+        description:
+          type: string
+          description: One- or two-sentence explanation of what the metric counts. Customer-facing.
+        benefit:
+          type: string
+          description: One- or two-sentence statement of what mabl is doing for the customer when this metric increments. Customer-facing.
+        benefit_categories:
+          type: array
+          description: Tags grouping the metric by operational outcome (e.g. false_failure_prevented, defect_escape_reduced, engineering_time_saved). Consumers can group metrics by category to compose audience-appropriate reports.
+          items:
+            type: string
+        cost_levers:
+          type: array
+          description: Tags grouping the metric by what kind of cost it reduces (e.g. labor_cost, defect_cost, opportunity_cost). Consumers can roll up metrics by lever when converting activity to dollar figures.
+          items:
+            type: string
+      description: Event metric counts and customer-facing copy for a single metric in a workspace
+    WorkspaceTestAuthoringMetrics:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        workspace_name:
+          type: string
+          description: The workspace name
+        metrics:
+          $ref: '#/components/schemas/TestAuthoringMetricsResult'
+      description: Test authoring metrics for a single workspace
+    AggregateMetricDailyTrendResult:
+      type: object
+      properties:
+        quality_metric_values:
+          type: array
+          description: Each daily quality metric for the associated context, env, and app
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/AggregateMetricDailyTrend'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ReportSetting:
+      type: object
+      properties:
+        id:
+          type: string
+          description: the ID of the setting
+        workspace_id:
+          type: string
+          description: the ID of the workspace corresponding to this setting
+        created_by_id:
+          type: string
+          description: the ID of the user that most recently updated this setting
+        created_time:
+          type: integer
+          description: the time this setting was most recently updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: the ID of the user that most recently updated this setting
+        last_updated_time:
+          type: integer
+          description: the time this setting was most recently updated
+          format: int64
+        type:
+          type: string
+          description: the type of report setting
+          enum:
+          - release_coverage_tests_run
+          - accessibility_rule_violations
+        threshold:
+          type: number
+          description: setting threshold value if relevant
+          format: double
+      description: Individual setting for workspace reporting
+    AccessibilityRuleViolationCount:
+      type: object
+      properties:
+        date:
+          type: integer
+          description: The date timestamp for the rule violation
+          format: int64
+        critical_violation_count:
+          type: integer
+          description: The number of critical rule violations by rule and page
+          format: int64
+        serious_violation_count:
+          type: integer
+          description: The number of serious rule violations by rule and page
+          format: int64
+        moderate_violation_count:
+          type: integer
+          description: The number of moderate rule violations by rule and page
+          format: int64
+        minor_violation_count:
+          type: integer
+          description: The number of minor rule violations by rule and page
+          format: int64
+    UserActivityCategoryCounts:
+      type: object
+      properties:
+        test_authoring:
+          type: integer
+          description: Creates of test, reusable flow (reusable=true), or snippet
+          format: int64
+        test_maintenance:
+          type: integer
+          description: Updates and deletes of test, reusable flow (reusable=true), or snippet
+          format: int64
+        data_setup:
+          type: integer
+          description: Activity on data_table, credentials, file_upload, mailbox, database_connection
+          format: int64
+        plans_orchestration:
+          type: integer
+          description: Activity on plan, environment, branch
+          format: int64
+        workspace_configuration:
+          type: integer
+          description: Account-, workspace-, role-, and integration-level configuration activity
+          format: int64
+      description: 'Per-category counts for a single user. The sum of all five fields equals
+
+        total_actions. See the API documentation for category definitions.
+
+        '
+    TestFlakinessSummaryItem:
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The test's invariant ID
+        flake_rate:
+          type: number
+          description: True flake rate (0.0 to 1.0). Calculated as flaky_plan_runs / total_plan_runs.
+          format: double
+        total_plan_runs:
+          type: integer
+          description: Total number of plan runs that included this test in the time range
+        flaky_plan_runs:
+          type: integer
+          description: Number of plan runs with mixed outcomes (both passes and fails)
+        consistent_pass_runs:
+          type: integer
+          description: Number of plan runs where all attempts passed
+        consistent_fail_runs:
+          type: integer
+          description: Number of plan runs where all attempts failed (likely real failures, not flakiness)
+        last_flaky_time:
+          type: integer
+          description: Timestamp of the most recent flaky plan run in epoch milliseconds. Null if no flaky runs.
+          format: int64
+      description: Flakiness metrics for a single test
+    TestSuiteStatus:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The ID of the workspace
+          readOnly: true
+        start_time:
+          type: integer
+          description: Earliest time associated with this test suite status summary, deployment event time if applicable
+          format: int64
+          readOnly: true
+        end_time:
+          type: integer
+          description: Latest time associated with this test suite status summary, deployment event time if applicable
+          format: int64
+          readOnly: true
+        deployment_event_id:
+          type: string
+          description: The deployment event associated with this status summary, if applicable
+          readOnly: true
+        count_tests_pass:
+          type: integer
+          description: The count of passing test runs associated with this summary
+          format: int32
+          readOnly: true
+        count_tests_fail:
+          type: integer
+          description: The count of failing test runs associated with this summary
+          format: int32
+          readOnly: true
+        count_tests_stopped:
+          type: integer
+          description: The count of stopped test runs associated with this summary
+          format: int32
+          readOnly: true
+        count_tests_distinct:
+          type: integer
+          description: The count of distinct tests whose runs are associated with this summary
+          format: int32
+        count_active_plans:
+          type: integer
+          description: The count of distinct active plans (plans with at least one test run) associated with this summary
+          format: int32
+        count_plan_runs:
+          type: integer
+          description: The count of plan runs associated with this summary
+          format: int32
+        count_plan_runs_failed:
+          type: integer
+          description: The count of failed plan runs associated with this summary
+          format: int32
+        categorized_failures:
+          type: array
+          description: The counts of each failure category
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/FailureCategoryCount'
+    AccountFailureCategoryHistoryResult:
+      type: object
+      properties:
+        account_id:
+          type: string
+          description: The account ID
+        history_days:
+          type: integer
+          description: Number of days requested
+          format: int32
+        aggregated:
+          $ref: '#/components/schemas/FailureCategorySummaryQueryResult'
+        by_workspace:
+          type: array
+          description: Per-workspace breakdown of failure category history
+          items:
+            $ref: '#/components/schemas/WorkspaceFailureCategoryMetrics'
+      description: Failure category history across workspaces in an account
+    AggregateMetricResult:
+      type: object
+      properties:
+        quality_metric_values:
+          type: array
+          description: Quality metrics for the associated context
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/AggregateMetric'
+    WorkspaceEventMetricCount:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        workspace_name:
+          type: string
+          description: The workspace name
+        count:
+          type: integer
+          description: Count of events for this metric in this workspace on this day
+          format: int64
+      description: A workspace's contribution to a single metric+day bucket
+    ImageUrls:
+      type: object
+      properties:
+        fullImageUrl:
+          type: string
+          description: signed url to the full image
+        thumbnailImageUrl:
+          type: string
+          description: signed url to the thumbnail image
+      description: Signed image urls for a given base image
+    TestQualityItem:
+      type: object
+      properties:
+        test_id:
+          type: string
+          description: The test's invariant ID
+        total_plan_runs:
+          type: integer
+          description: Total number of plan runs that included this test in the time range. Capped at the per-test analysis limit; see runs_capped.
+        runs_capped:
+          type: boolean
+          description: True if this test had more runs than the per-test analysis limit in the time range, so its metrics (including total_plan_runs and the transition counts) reflect only the most recent runs rather than the full history. False when the full history was analyzed.
+        flake_rate:
+          type: number
+          description: True flake rate (0.0 to 1.0). Calculated as flaky_plan_runs / total_plan_runs.
+          format: double
+        flaky_plan_runs:
+          type: integer
+          description: Number of plan runs with mixed outcomes (both passes and fails)
+        consistent_pass_runs:
+          type: integer
+          description: Number of plan runs where all attempts passed
+        consistent_fail_runs:
+          type: integer
+          description: Number of plan runs where all attempts failed
+        last_flaky_time:
+          type: integer
+          description: Timestamp of the most recent flaky plan run in epoch milliseconds. Null if no flaky runs.
+          format: int64
+        breakage_rate:
+          type: number
+          description: Breakage rate (0.0 to 1.0). Calculated as pass_to_fail_transitions / passing_plan_runs.
+          format: double
+        passing_plan_runs:
+          type: integer
+          description: Number of plan runs where the previous run was passing (opportunities to break)
+        pass_to_fail_transitions:
+          type: integer
+          description: Number of times this test went from passing to failing between consecutive runs
+        fail_to_pass_transitions:
+          type: integer
+          description: Number of times this test went from failing to passing between consecutive runs
+        last_breakage_time:
+          type: integer
+          description: Timestamp of the most recent pass-to-fail transition in epoch milliseconds. Null if no breakages.
+          format: int64
+        pass_rate:
+          type: number
+          description: Pass rate (0.0 to 1.0). Fraction of plan runs where all attempts passed.
+          format: double
+        stability_rate:
+          type: number
+          description: Stability rate (0.0 to 1.0). Calculated as 1 - flake_rate. Higher is better.
+          format: double
+        reliability_rate:
+          type: number
+          description: Reliability rate (0.0 to 1.0). Calculated as 1 - breakage_rate. Higher is better.
+          format: double
+        quality_score:
+          type: integer
+          description: Composite quality score (0-100). Geometric mean with aggressive exponents, calculated as round(100 * pass_rate^1.2 * stability_rate^1.0 * reliability_rate^0.9).
+        last_run_time:
+          type: integer
+          description: Timestamp of this test's most recent plan run in the time range, in epoch milliseconds. Subject to the same runs_capped limit as total_plan_runs -- for a capped test, reflects only its most recent runs_capped-eligible runs.
+          format: int64
+        last_failed_run_time:
+          type: integer
+          description: Timestamp of the most recent plan run with a non-passing outcome (FAIL or MIXED) in epoch milliseconds. Null if every run in range passed cleanly. Subject to the same runs_capped limit as total_plan_runs -- for a capped test, only runs within the retained window are considered, so this can be null or stale even if an earlier, uncounted run in the full time range actually failed.
+          format: int64
+      description: Quality metrics for a single test including flakiness and breakage
+    TestAuthoringMetricsOverTime:
+      type: object
+      properties:
+        start_time:
+          type: integer
+          description: Start of the time bucket in epoch milliseconds
+          format: int64
+        end_time:
+          type: integer
+          description: End of the time bucket in epoch milliseconds
+          format: int64
+        new_test_count:
+          type: integer
+          description: Number of new tests created in this time bucket
+          format: int64
+        updated_test_count:
+          type: integer
+          description: Number of existing tests updated in this time bucket
+          format: int64
+      description: Test authoring metrics for a single time bucket
+    AssetCounts:
+      type: object
+      properties:
+        test_count:
+          type: integer
+          description: Total number of tests (by invariant ID)
+          format: int64
+        reusable_flow_count:
+          type: integer
+          description: Total number of reusable flows (by invariant ID)
+          format: int64
+        datatable_count:
+          type: integer
+          description: Total number of datatables
+          format: int64
+        plan_count:
+          type: integer
+          description: Total number of plans (existing, non-deleted)
+          format: int64
+      description: Counts of tests, reusable flows, datatables, and plans
+    ActivityFeedEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of the activity log entry
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: Workspace id associated with the action. Populated for workspace-owned entities; company-owned entities carry company_id instead.
+          x-mabl-scope: public
+        company_id:
+          type: string
+          description: Company id associated with the action. Populated for company-owned entities (for example Link agents); workspace-owned entities carry workspace_id instead.
+        entity_id:
+          type: string
+          description: Id of the entity acted on
+          x-mabl-scope: public
+        entity_previous_id:
+          type: string
+          description: Entity id of the entity acted on, prior to the action
+          x-mabl-scope: public
+        entity_invariant_id:
+          type: string
+          description: Invariant id of the entity acted on, only populated for versioned entities
+          x-mabl-scope: public
+        entity_canonical_id:
+          type: string
+          description: Canonical id of the entity acted on, consistent across object versions.  Always populated.
+          x-mabl-scope: public
+        entity_name:
+          type: string
+          description: Name of the entity immediately after being acted on
+          x-mabl-scope: public
+        entity_previous_name:
+          type: string
+          description: Name of the entity immediately before the action
+          x-mabl-scope: public
+        entity_type:
+          type: string
+          description: Type of the entity acted on
+          x-mabl-scope: public
+        actor_id:
+          type: string
+          description: Id for the user or api key performing the action
+          x-mabl-scope: public
+        actor_is_mabler:
+          type: boolean
+          description: Defines if this activity log entry was performed by a mabl employee.
+          x-mabl-scope: public
+        agent_type:
+          $ref: '#/components/schemas/AgentType'
+        agent_caller:
+          type: string
+          description: 'Who the agent acting for the actor was: mabl''s own agent or an external agent connected to mabl, such as a coding agent over MCP. Null for actions not performed by an agent.'
+          enum:
+          - mabl
+          - external
+          x-mabl-scope: public
+        agent_session_id:
+          type: string
+          description: Id of the agent session that performed the action. Null for actions not performed by an agent.
+          x-mabl-scope: public
+        on_behalf_of:
+          type: string
+          description: Id of the user or api key the agent acted on behalf of. Null for actions not performed by an agent.
+        action_type:
+          type: string
+          description: Action type taken on the entity. Can be create, update, delete, or recover.
+          x-mabl-scope: public
+        action_subtype:
+          type: string
+          description: Subtype of the action taken on the entity
+        action_timestamp:
+          type: integer
+          description: Time the action occurred, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time the entity acted on was created, in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        entity_json:
+          type: string
+          description: Json of the entity acted on
+        entity_previous_json:
+          type: string
+          description: Json of the entity immediately after being acted on
+        entity_version_number:
+          type: integer
+          description: Version of the entity acted on, only populated for versioned types
+          format: int64
+          x-mabl-scope: public
+        entity_previous_version_number:
+          type: integer
+          description: Version of the entity before the action, only populated for versioned types
+          format: int64
+        is_automator_event:
+          type: boolean
+          description: Defines if this activity log entry meets the basic definition of an automator event
+          x-mabl-scope: public
+      description: Single entry for the activity log
+    WorkspaceAssetCounts:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID
+        workspace_name:
+          type: string
+          description: The workspace name
+        counts:
+          $ref: '#/components/schemas/AssetCounts'
+      description: Asset counts for a single workspace
+  responses:
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

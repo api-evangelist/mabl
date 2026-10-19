@@ -1,0 +1,331 @@
+openapi: 3.2.0
+info:
+  title: mabl Variable Row API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: VariableRow
+paths:
+  /variables/rows:
+    post:
+      tags:
+      - VariableRow
+      summary: Create VariableRow
+      operationId: createVariableRow
+      requestBody:
+        description: The provided skeleton from which to construct the VariableRow
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariableRow'
+        required: true
+      responses:
+        '201':
+          description: The VariableRow that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableRow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::DataTable
+  /variables/rows/{variable_row_id}:
+    get:
+      tags:
+      - VariableRow
+      summary: Get VariableRow
+      description: Used to get a VariableRow
+      operationId: getVariableRow
+      parameters:
+      - name: variable_row_id
+        in: path
+        description: ID of desired VariableRow
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableRow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::DataTable
+    delete:
+      tags:
+      - VariableRow
+      summary: Remove Row
+      description: Used to remove a VariableRow
+      operationId: removeVariableRow
+      parameters:
+      - name: variable_row_id
+        in: path
+        description: The ID of the VariableRow to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The variable row that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableRow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::DataTable
+    patch:
+      tags:
+      - VariableRow
+      summary: Update VariableRow
+      description: Used to update existing an existing variable row
+      operationId: updateVariableRow
+      parameters:
+      - name: variable_row_id
+        in: path
+        description: The ID of the variable row to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariableRow'
+        required: true
+      responses:
+        '200':
+          description: The updated row
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableRow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::DataTable
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    VariableRow:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the VariableRow
+        table_id:
+          type: string
+          description: The ID of the VariableRow's parent table
+        row:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variable'
+        created_time:
+          type: integer
+          description: Time at which the VariableRow was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this VariableRow
+        last_updated_time:
+          type: integer
+          description: Time at which the VariableRow was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this VariableRow
+        organization_id:
+          type: string
+          description: The ID of the organization associated with this VariableRow
+        scenario_id:
+          type: string
+          description: The ID of the particular scenario to differentiate between rows in a VariableTable
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    Variable:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The variable name
+          x-mabl-scope: public
+        value:
+          type: string
+          description: The value associated with the variable defined in the "name" field
+          x-mabl-scope: public
+      x-mabl-scope: public
+      x-implements-interface:
+      - HasName
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

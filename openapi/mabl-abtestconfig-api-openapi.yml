@@ -1,0 +1,210 @@
+openapi: 3.2.0
+info:
+  title: mabl Ab Test Config API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: AbTestConfig
+paths:
+  /abTestConfig:
+    get:
+      tags:
+      - AbTestConfig
+      summary: Read the hot-editable A/B-test config
+      description: Returns the singleton A/B-test config holding operator-tunable platform knobs (e.g. the generic authoring rollout percentage). Restricted to global admins or clients with global diagnostics write scope.
+      operationId: getAbTestConfig
+      responses:
+        '200':
+          description: The current A/B-test config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbTestConfigView'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::AbTestConfig
+    put:
+      tags:
+      - AbTestConfig
+      summary: Update the hot-editable A/B-test config
+      description: Updates the singleton A/B-test config. Only the knobs present in the request change; the others keep their stored values. The generic authoring rollout percentage is clamped to the range [0, 100]. Restricted to global admins or clients with global diagnostics write scope.
+      operationId: setAbTestConfig
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbTestConfigView'
+        required: true
+      responses:
+        '200':
+          description: The updated A/B-test config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbTestConfigView'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::AbTestConfig
+components:
+  responses:
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    AbTestConfigView:
+      type: object
+      properties:
+        generic_authoring_rollout_percent:
+          maximum: 100
+          minimum: 0
+          type: integer
+          description: Percentage (0-100) of new test-authoring sessions assigned to the generic authoring arm
+        external_agent_mode:
+          $ref: '#/components/schemas/ExternalAgentMode'
+        external_agent_enforce_email_domains:
+          type: array
+          description: Email domains whose people's external agents are enforced while the mode is shadow
+          items:
+            type: string
+        external_agent_enforce_emails:
+          type: array
+          description: Email addresses of people whose external agents are enforced while the mode is shadow
+          items:
+            type: string
+        external_agent_enforce_api_key_ids:
+          type: array
+          description: API key ids whose exchanged external agent tokens are enforced while the mode is shadow
+          items:
+            type: string
+        external_agent_enforce_workspace_ids:
+          type: array
+          description: Workspace ids whose API keys' exchanged external agent tokens are enforced while the mode is shadow
+          items:
+            type: string
+      description: Singleton set of hot-editable, operator-tunable A/B-test platform knobs.
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ExternalAgentMode:
+      type: string
+      description: How external agent limits apply. off treats an external agent's token as its person's or API key's own, with no agent attribution. shadow attributes the agent and logs each limit that would refuse, but allows what the person or key could do. enforce applies the limits. Unset means shadow.
+      enum:
+      - 'off'
+      - shadow
+      - enforce
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

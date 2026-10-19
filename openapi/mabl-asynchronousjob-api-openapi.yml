@@ -1,0 +1,624 @@
+openapi: 3.2.0
+info:
+  title: mabl Asynchronous Job API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: AsynchronousJob
+paths:
+  /async-jobs:
+    get:
+      tags:
+      - AsynchronousJob
+      summary: Query Asynchronous Jobs
+      description: Queries Jobs
+      operationId: queryJobs
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The Workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: The Status of the AsynchronousJob
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+      - name: job_type
+        in: query
+        description: The Type of the AsynchronousJob
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - xray_sync
+          - testrail_sync
+          - zephyr_sync
+          - workspace_copy
+      - name: associated_entities
+        in: query
+        description: The Entities associated with the AsynchronousJob
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/AsynchronousJobAssociatedEntity'
+      - name: limit
+        in: query
+        description: maximum number of jobs to return
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 50
+      - name: cursor
+        in: query
+        description: The Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The query result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsynchronousJobQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::AsyncJob
+    post:
+      tags:
+      - AsynchronousJob
+      summary: Create an Asynchronous job
+      description: Creates a new Asynchronous Job
+      operationId: createJob
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The Workspace ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsynchronousJob'
+        required: true
+      responses:
+        '201':
+          description: Created AsynchronousJob
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsynchronousJob'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::AsyncJob
+  /async-jobs/{job_id}:
+    get:
+      tags:
+      - AsynchronousJob
+      summary: Get an asynchronous job
+      description: Fetches jobs
+      operationId: getJob
+      parameters:
+      - name: job_id
+        in: path
+        description: Job ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Job retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsynchronousJob'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::AsyncJob
+    patch:
+      tags:
+      - AsynchronousJob
+      summary: Update an asynchronous job
+      description: Updates Job
+      operationId: updateJob
+      parameters:
+      - name: job_id
+        in: path
+        description: Job ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsynchronousJob'
+        required: true
+      responses:
+        '200':
+          description: Job updated Successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsynchronousJob'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '412':
+          description: If-Match header did not match current entity version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::AsyncJob
+  /async-jobs/{job_id}/lock:
+    post:
+      tags:
+      - AsynchronousJob
+      summary: Acquire a lock for an asynchronous job
+      description: Acquires a lock for a pending asynchronous job to start processing. Returns the lock details including the lock_key which is required to release the lock.
+      operationId: acquireJobLock
+      parameters:
+      - name: job_id
+        in: path
+        description: Job ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Lock acquired successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncJobLock'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        '409':
+          description: Job is not in a lockable state (e.g., already running, completed, or failed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::AsyncJob
+    delete:
+      tags:
+      - AsynchronousJob
+      summary: Release a lock for an asynchronous job
+      description: Releases a previously acquired lock for an asynchronous job. Requires the lock_key that was returned when the lock was acquired.
+      operationId: releaseJobLock
+      parameters:
+      - name: job_id
+        in: path
+        description: Job ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: lock_key
+        in: query
+        description: The lock key returned when the lock was acquired
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Lock released successfully.
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::AsyncJob
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    AsynchronousJob:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the TestCase
+        workspace_id:
+          type: string
+          description: Unique identifier for the associated Workspace
+        job_type:
+          type: string
+          description: Type of AsynchronousJob
+          enum:
+          - xray_sync
+          - testrail_sync
+          - zephyr_sync
+          - workspace_copy
+        status:
+          type: string
+          description: Current status of the AsynchronousJob
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+        associated_entities:
+          type: array
+          description: Type of Entity this AsynchronousJob is associated with
+          items:
+            $ref: '#/components/schemas/AsynchronousJobAssociatedEntity'
+        created_time:
+          type: integer
+          description: Time the AsynchronousJob was created
+          format: int64
+        created_by_id:
+          type: string
+          description: Identifier of the user who created the AsynchronousJob
+        last_updated_time:
+          type: integer
+          description: Time the AsynchronousJob was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: Identifier of the user who last updated the AsynchronousJob
+        error_message:
+          type: string
+          description: If failed, an optional error message associated with the failure
+        job_source:
+          type: string
+          description: What triggered this job
+          enum:
+          - test_run
+          - plan_run
+        completion_details:
+          description: Structured outcome of a test case management sync, written by the consumer with the terminal status. Absent on jobs of other types and on jobs completed before the consumer recorded it. Replaced whole on every write.
+          allOf:
+          - $ref: '#/components/schemas/TcmSyncCompletionDetails'
+          x-dao-serialize: true
+      description: An AsynchronousJob to track and provide insight into long-running background job
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+    AsynchronousJobAssociatedEntity:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of Entity this AsynchronousJob is associated with
+          enum:
+          - workspace
+          - plan_run
+        id:
+          type: string
+          description: Unique identifier for the associated Entity
+      description: Represent an entity that is associated with an AsynchronousJob
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    TcmSyncTargetRun:
+      required:
+      - run_id
+      type: object
+      properties:
+        run_id:
+          maxLength: 64
+          type: string
+          description: The platform's run identifier (TestRail run id; Xray Test Execution key; Zephyr test cycle key).
+        url:
+          maxLength: 500
+          type: string
+          description: Deep link into the platform, built from the host the results were recorded against. Omitted rather than truncated when it would exceed the cap.
+        project_id:
+          maxLength: 64
+          type: string
+        suite_id:
+          maxLength: 64
+          type: string
+        created:
+          type: boolean
+          description: True when this sync created the run; false when it reused one from an earlier sync.
+        workspace_integration_id:
+          maxLength: 64
+          type: string
+          description: The integration the run belongs to, for workspaces with more than one.
+      description: An external run holding results from this plan run.
+    TcmSyncSkippedCase:
+      required:
+      - link
+      - reason
+      type: object
+      properties:
+        link:
+          maxLength: 64
+          type: string
+          description: 'Display value: the case link as it appears on the mabl test, trimmed and clipped to 64 characters. Not guaranteed to be the exact original when the original is longer.'
+        reason:
+          $ref: '#/components/schemas/TcmSyncSkipReasonEnum'
+        detail:
+          maxLength: 200
+          type: string
+          description: The platform's own message when it has one. Never required to render.
+        test_run_id:
+          maxLength: 64
+          type: string
+          description: The mabl test run the link was read from, for link-shape skips.
+        workspace_integration_id:
+          maxLength: 64
+          type: string
+          description: Set for platform-side skips; absent for link-shape skips, which apply to every integration.
+      description: A case link that produced no result on the external platform.
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    AsyncJobLock:
+      required:
+      - acquired_time
+      - job_id
+      - lock_key
+      type: object
+      properties:
+        job_id:
+          type: string
+          description: The ID of the job this lock is for
+        lock_key:
+          type: string
+          description: The unique key required to release or update this lock
+        acquired_time:
+          type: integer
+          description: Timestamp when the lock was acquired
+          format: int64
+      description: Lock information for an asynchronous job
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    TcmSyncCompletionDetails:
+      required:
+      - external_tcm_platform
+      - recorded_case_count
+      - skipped_case_count
+      type: object
+      properties:
+        external_tcm_platform:
+          $ref: '#/components/schemas/ExternalTcmPlatformTypeEnum'
+        recorded_case_count:
+          type: integer
+          description: Distinct (integration, case) pairs holding a result from this plan run, recorded by this sync or confirmed from an earlier one.
+        skipped_case_count:
+          type: integer
+          description: Distinct skipped entries, excluding other_platform links, which belong to another system; skipped_cases lists at most the first 50 entries of either kind.
+        skipped_cases:
+          maxItems: 50
+          type: array
+          items:
+            $ref: '#/components/schemas/TcmSyncSkippedCase'
+        run_count:
+          type: integer
+          description: External runs that received results; runs lists at most the first 20.
+        runs:
+          maxItems: 20
+          type: array
+          items:
+            $ref: '#/components/schemas/TcmSyncTargetRun'
+      description: What a test case management sync did, so the UI can report it without parsing text. Counts are always the full totals; the lists are capped and may be shorter than their count.
+    TcmSyncSkipReasonEnum:
+      type: string
+      description: 'Why a case link produced no result. not_a_case_id: blank, or not a case id shape for the platform. unknown_case: the platform reports no such case. unresolvable_suite: the case exists but its suite or project could not be resolved. not_in_run: the reused run does not include the case and could not be widened. platform_rejected: a per-case rejection fitting none of the above. no_outcome: every contributing mabl test run was stopped or skipped and the platform has no status for that. project_not_configured: the case belongs to a project the integration is not configured to write to. other_platform: the link belongs to another system (for example a Jira key in the shared Test Case ID field); listed for context, not counted in skipped_case_count.'
+      enum:
+      - not_a_case_id
+      - unknown_case
+      - unresolvable_suite
+      - not_in_run
+      - platform_rejected
+      - no_outcome
+      - project_not_configured
+      - other_platform
+    ExternalTcmPlatformTypeEnum:
+      type: string
+      description: Supported external test case management platforms
+      enum:
+      - xray
+      - testrail
+      - zephyr
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    AsynchronousJobQueryResult:
+      type: object
+      properties:
+        jobs:
+          type: array
+          description: All AsynchronousJobs that match query
+          items:
+            $ref: '#/components/schemas/AsynchronousJob'
+        cursor:
+          type: string
+          description: Pagination cursor
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

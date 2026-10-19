@@ -1,0 +1,583 @@
+openapi: 3.2.0
+info:
+  title: mabl Execution Cluster API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: ExecutionCluster
+paths:
+  /execution/clusters:
+    post:
+      tags:
+      - ExecutionCluster
+      summary: Create new Execution Cluster
+      description: Create Execution Cluster for tracking a cluster of execution hosts or runners
+      operationId: createExecutionCluster
+      requestBody:
+        description: Cluster details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExecutionClusterRequest'
+        required: true
+      responses:
+        '201':
+          description: Execution Cluster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionCluster'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: Execution Host with ID already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::ExecutionCluster
+  /execution/clusters/workspace/{workspace_id}:
+    get:
+      tags:
+      - ExecutionCluster
+      summary: Query Execution Cluster
+      description: Query Execution Clusters, sorted last updated time descending
+      operationId: queryExecutionClusters
+      parameters:
+      - name: workspace_id
+        in: path
+        description: workspace owning the runners
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: cluster type
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/ExecutionClusterType'
+      - name: operating_system
+        in: query
+        description: optional matching OS
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/ExecutionHostOperatingSystem'
+      - name: limit
+        in: query
+        description: max entities to return, max/default of 100
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution Host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionClusterQueryResult'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ExecutionCluster
+  /execution/clusters/{id}:
+    get:
+      tags:
+      - ExecutionCluster
+      summary: Fetch Execution Cluster
+      operationId: getExecutionCluster
+      parameters:
+      - name: id
+        in: path
+        description: cluster ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Execution Cluster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionCluster'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: No such Execution Cluster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::ExecutionCluster
+    patch:
+      tags:
+      - ExecutionCluster
+      summary: Patch Execution Cluster
+      description: Update Execution Cluster
+      operationId: updateExecutionCluster
+      parameters:
+      - name: id
+        in: path
+        description: cluster ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24 - use to ensure atomic updates, pass "version" from etag
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Updated cluster detail
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchExecutionClusterRequest'
+        required: true
+      responses:
+        '200':
+          description: Execution Cluster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionCluster'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: No such Execution Cluster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: Conflict with If-Match header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::ExecutionCluster
+  /execution/clusters/{id}/deployConfig:
+    patch:
+      tags:
+      - ExecutionCluster
+      summary: Deploy Execution Cluster Config
+      description: Deploys new configuration to the execution cluster. This method returns when the new config has been accepted. Deployment happens asynchronously in a rolling manner
+      operationId: deployExecutionClusterConfig
+      parameters:
+      - name: id
+        in: path
+        description: cluster ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24 - use to ensure atomic updates, pass "version" from etag
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Updated cluster state
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionClusterState'
+        required: true
+      responses:
+        '200':
+          description: Execution Cluster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionCluster'
+        '401':
+          description: Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '403':
+          description: Actor is not authorized to make this call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: No such Execution Cluster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: Conflict with If-Match header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::ExecutionCluster
+components:
+  schemas:
+    ExecutionHostOperatingSystem:
+      type: string
+      description: Operation system used in the runtime
+      enum:
+      - windows
+      - linux
+      - osx
+    ExecutionClusterQueryResult:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/PaginatedResponse'
+      - type: object
+        properties:
+          items:
+            type: array
+            description: Results
+            readOnly: true
+            items:
+              $ref: '#/components/schemas/ExecutionCluster'
+    ExecutionClusterState:
+      type: object
+      properties:
+        instance_type:
+          type: string
+          description: Unique identifies for the instance type (e.g. mac1.metal)
+        size:
+          type: integer
+          description: Size of the cluster
+          format: int32
+        node_state:
+          $ref: '#/components/schemas/ExecutionNodeState'
+      description: Execution cluster state
+    ExecutionClusterType:
+      type: string
+      description: type of execution cluster
+      enum:
+      - cloud_function
+      - managed_host
+      - vms
+      - kubernetes
+    ExecutionClusterUpdateConfig:
+      type: object
+      properties:
+        max_unavailable:
+          maximum: 100
+          type: integer
+          description: Maximum number of nodes that can be unavailable at once during updates
+      description: Configuration for updating execution cluster
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    CreateExecutionClusterRequest:
+      required:
+      - name
+      - provider
+      - workspace_id
+      type: object
+      properties:
+        labels:
+          type: array
+          description: Cluster labels
+          items:
+            type: string
+        name:
+          type: string
+          description: name of the cluster
+        os:
+          $ref: '#/components/schemas/ExecutionHostOperatingSystem'
+        provider:
+          $ref: '#/components/schemas/ExecutionHostProvider'
+        region:
+          type: string
+          description: region the execution cluster is in
+        cluster_type:
+          $ref: '#/components/schemas/ExecutionClusterType'
+        target_state:
+          $ref: '#/components/schemas/ExecutionClusterState'
+        update_config:
+          $ref: '#/components/schemas/ExecutionClusterUpdateConfig'
+        workspace_id:
+          type: string
+          description: Id of workspace this host is assigned to or 'mabl' for general purpose
+        zones:
+          type: array
+          description: zones the execution cluster is in
+          items:
+            type: string
+      description: Cluster of execution runners
+    ExecutionCluster:
+      required:
+      - created_by_id
+      - created_time
+      - id
+      - last_updated_by_id
+      - last_updated_time
+      - workspace_id
+      type: object
+      description: Cluster of execution runners
+      allOf:
+      - $ref: '#/components/schemas/CreateExecutionClusterRequest'
+      - $ref: '#/components/schemas/PatchExecutionClusterRequest'
+      - type: object
+        properties:
+          id:
+            type: string
+            description: API generated globally unique ID
+          etag:
+            type: string
+            description: API version etag
+          created_time:
+            type: integer
+            description: Creation time, epoch millis
+            format: int64
+          created_by_id:
+            type: string
+            description: Creation principal ID
+          last_updated_time:
+            type: integer
+            description: Last updated time, epoch millis
+            format: int64
+          last_updated_by_id:
+            type: string
+            description: Last updating principal ID
+          deleted_time:
+            type: integer
+            description: Deletion time, epoch millis
+            format: int64
+          deleted_by_id:
+            type: string
+            description: Deletion principal ID
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    ExecutionNodeState:
+      type: object
+      properties:
+        versions:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of software versions running on the cluster
+        lastUpdatedTime:
+          type: integer
+          format: int64
+      description: Execution node state
+    PaginatedResponse:
+      required:
+      - count
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Number of items returned in this response, maybe 0 if count == limit on last call
+          format: int32
+        limit:
+          type: integer
+          description: Limit applied to this query
+          format: int32
+        cursor:
+          type: string
+          description: Cursor that can be used to fetch the next page, count <= limit
+      description: Common paginated response result holder
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    ExecutionHostProvider:
+      type: string
+      description: Cloud where execution host resides
+      enum:
+      - google_cloud
+      - amazon_web_services
+      - customer
+    PatchExecutionClusterRequest:
+      type: object
+      properties:
+        current_state:
+          $ref: '#/components/schemas/ExecutionClusterState'
+        labels:
+          type: array
+          description: Cluster labels
+          items:
+            type: string
+        name:
+          type: string
+          description: name of the cluster
+        zones:
+          type: array
+          description: zones the execution cluster is in
+          items:
+            type: string
+      description: Patch select Execution Host properties
+  responses:
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

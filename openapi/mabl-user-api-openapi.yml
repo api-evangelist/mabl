@@ -1,0 +1,2165 @@
+openapi: 3.2.0
+info:
+  title: mabl User API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: User
+paths:
+  /self:
+    get:
+      tags:
+      - User
+      summary: Retrieve current user based on bearer token
+      description: Used to retrieve information about the current user based on the bearer token presented in the Authentication header
+      operationId: getSelf
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          description: Unrecognized user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+    patch:
+      tags:
+      - User
+      summary: Update user metadata from authentication service
+      description: Used to pull updated information about the current user from the authentication service
+      operationId: updateSelf
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /users:
+    get:
+      tags:
+      - User
+      summary: Query users
+      description: Query for users
+      operationId: queryUsers
+      parameters:
+      - name: email
+        in: query
+        description: E-Mail address to query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: workspace_id
+        in: query
+        description: Workspace ID to query. Must be provided and match the workspace of the api key provided.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Maximum number of users to return in a single response. Additional pages of results can be retrieved by passing the cursor (returned in the results) on a subsequent call.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: include_historic
+        in: query
+        description: Include all users with audit history in the workspace, such as former workspace users.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+      x-mabl-scope: public
+    post:
+      tags:
+      - User
+      summary: Register new user
+      description: Used to register a new user
+      operationId: registerUser
+      requestBody:
+        description: The registration request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+        required: true
+      responses:
+        '201':
+          description: User registered
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '409':
+          description: User with this email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::User
+  /users/workspaceAssociations:
+    get:
+      tags:
+      - User
+      summary: Query all non-tombstoned Users.
+      description: Used to query User-to-Workspace associations
+      operationId: queryWorkspaceUserAssociations
+      parameters:
+      - name: limit
+        in: query
+        description: Maximum number of users to return in a single response. Additional pages of results can be retrieved by passing the cursor (returned in the results) on a subsequent call.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserIdAndRolesResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+  /users/companyAdmins:
+    get:
+      tags:
+      - User
+      summary: Query admins for a specified company
+      operationId: queryCompanyAdmins
+      parameters:
+      - name: company_id
+        in: query
+        description: Company ID to query.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Maximum number of users to return in a single response. Additional pages of results can be retrieved by passing the cursor (returned in the results) on a subsequent call.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 200
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+  /users/withAllAttributes:
+    get:
+      tags:
+      - User
+      summary: Query Users with all the attributes
+      description: Used to query users with all the attributes
+      operationId: queryUsersWithAllAttributes
+      parameters:
+      - name: email
+        in: query
+        description: The E-Mail address to query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: organization_id
+        in: query
+        description: The organization ID to query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithAllAttributesQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+  /users/reactivate:
+    post:
+      tags:
+      - User
+      summary: Restarts the activation flow for a new user
+      description: Used to reactivate a user who lost a previous activation email/token
+      operationId: reactivateUser
+      requestBody:
+        description: The reactivation request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactivateUserRequest'
+        required: true
+      responses:
+        '202':
+          description: User reactivated
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /workspaces/{workspace_id}/users/batch:
+    post:
+      tags:
+      - User
+      summary: Resolve workspace users by ID
+      description: Batch-resolve users (current or historic members) within a workspace by their IDs. Users with no association to the workspace are omitted from the result.
+      operationId: getWorkspaceUsersBatch
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The IDs of the workspace users to resolve
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceUsersBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: The resolved workspace users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserQueryResult'
+        '400':
+          description: Invalid request - more than 100 user IDs requested, or no IDs provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+  /workspaces/{workspace_id}/users/{id}:
+    get:
+      tags:
+      - User
+      summary: Get workspace user
+      description: Retrieve a user in the context of a workspace. This will also retrieve high-level user information for any users that were historically in the workspace. Users not in the workspace will be filtered out.
+      operationId: getWorkspaceUser
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: ID of the user to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Read::User
+    delete:
+      tags:
+      - User
+      summary: Remove a user from a workspace
+      description: Remove a user's role in a workspace. The user's memberships in other workspaces are unaffected. This operation is idempotent - removing a user who is not a member of the workspace returns 204. Available to workspace owners, company owners, and properly permissioned API keys.
+      operationId: removeWorkspaceUser
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: ID of the user to remove from the workspace
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24. Allows for enforced atomic updates, to prevent update collisions
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The user holds no role in the workspace, either because it was just removed or because it was already absent
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: No user exists with the given id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: Removal conflicts with workspace constraints, such as removing the last owner or an If-Match header version mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Delete::User
+    patch:
+      tags:
+      - User
+      summary: Change a workspace member's role
+      description: Change a user's role within a workspace. The user must already be a member of the workspace. Available to workspace owners, company owners, and properly permissioned API keys.
+      operationId: updateWorkspaceUserRole
+      parameters:
+      - name: workspace_id
+        in: path
+        description: Workspace ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: ID of the user whose role should be changed
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24. Allows for enforced atomic updates, to prevent update collisions
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The new role for the user in this workspace
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceRoleUpdate'
+        required: true
+      responses:
+        '200':
+          description: The user's role in this workspace after applying the update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User is not a member of this workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: Update conflicts with workspace constraints, such as demoting the last owner or an If-Match header version mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Edit::User
+  /users/{id}:
+    get:
+      tags:
+      - User
+      summary: Retrieve User
+      description: Used to retrieve existing users
+      operationId: getUser
+      parameters:
+      - name: id
+        in: path
+        description: ID of the user to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+    delete:
+      tags:
+      - User
+      summary: Remove User
+      description: Used to remove existing users
+      operationId: removeUser
+      parameters:
+      - name: id
+        in: path
+        description: The user ID to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The user that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::User
+    patch:
+      tags:
+      - User
+      summary: Update User
+      description: Used to update existing users
+      operationId: updateUser
+      parameters:
+      - name: id
+        in: path
+        description: The user ID to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24. Allows for enforced atomic updates, to prevent update collisions
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The user fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /users/withAllAttributes/{id}:
+    get:
+      tags:
+      - User
+      summary: Retrieve User
+      description: Used to retrieve existing users
+      operationId: getUserWithAllAttributes
+      parameters:
+      - name: id
+        in: path
+        description: The user ID to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The user that was retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithAllAttributes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+  /user-roles/{id}:
+    get:
+      tags:
+      - User
+      summary: Get User Roles
+      description: Used to get all of a user's roles
+      operationId: getUserRoles
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the user whose roles should be retrieved
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The complete list of roles for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+    patch:
+      tags:
+      - User
+      summary: Update User Roles
+      description: Used to modify roles for a user. Available to global write clients, owners or company owners of all affected workspaces, API keys with write:users scope on every affected workspace, and to the user themselves for removals only. Adding a role in a workspace where the user already holds one returns 409.
+      operationId: updateUserRoles
+      parameters:
+      - name: id
+        in: path
+        description: The user ID to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24. Allows for enforced atomic updates, to prevent update collisions
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The user roles to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleUpdate'
+        required: true
+      responses:
+        '200':
+          description: The complete list of roles after applying this update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /user-company-roles/{id}:
+    get:
+      tags:
+      - User
+      summary: Get User's Company Roles
+      description: Used to get all of a user's company roles
+      operationId: getUserCompanyRoles
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the user whose company roles should be retrieved
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The complete list of company roles for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCompanyRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+    patch:
+      tags:
+      - User
+      summary: Update User's Company Roles
+      description: Used to modify company roles for a user
+      operationId: updateUserCompanyRoles
+      parameters:
+      - name: id
+        in: path
+        description: The user ID to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24. Allows for enforced atomic updates, to prevent update collisions
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The user roles to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCompanyRoleUpdate'
+        required: true
+      responses:
+        '200':
+          description: The complete list of roles after applying this update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCompanyRoles'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /user-roles/acknowledge/{workspace_id}:
+    post:
+      tags:
+      - User
+      summary: Acknowledge users own role in the specified workspace
+      description: Acknowledging a workspace role means the user has been presented with and dismissed information about their role and joining their new workspace
+      operationId: acknowledgeWorkspaceRole
+      parameters:
+      - name: workspace_id
+        in: path
+        description: The workspace in which the role will be acknowledged
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No content response indicates successful acknowledgement of the role.
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User or user role not found in this workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /users/{id}/organizations:
+    get:
+      tags:
+      - User
+      summary: Get User Organizations
+      description: Used to get all of a user's organizations
+      operationId: getUserOrganizations
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the user whose organizations should be retrieved
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The complete list of organizations for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationQueryResult'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+  /users/{id}/companies:
+    get:
+      tags:
+      - User
+      summary: Get User Companies
+      description: Used to get all of a user's companies
+      operationId: getUserCompanies
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the user whose companies should be retrieved
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The complete list of companies for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyQueryResult'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+  /users/{id}/roleGrants:
+    get:
+      tags:
+      - User
+      summary: Get User RoleGrants
+      description: Used to query RoleGrants for a User
+      operationId: getUserRoleGrants
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the user whose companies should be retrieved
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: parent_namespace
+        in: query
+        description: Namespace of the parent for which to query RoleGrants for this User
+        required: true
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/RoleGrantParentNamespace'
+      - name: parent_id
+        in: query
+        description: ID of the parent for which to query RoleGrants for this User
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleGrantQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+  /user-verification/email:
+    post:
+      tags:
+      - User
+      summary: Send a verification e-mail to the user who made the API call
+      description: Sends a verification e-mail to the calling user. The user ID is retrieved from the OAuth token.
+      operationId: sendUserVerificationEmail
+      responses:
+        '201':
+          description: Request submitted successfully
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User metadata not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::User
+  /users/okta-user/{email}:
+    delete:
+      tags:
+      - User
+      summary: Remove Okta User
+      description: Used to only remove the user from Okta
+      operationId: removeOktaUser
+      parameters:
+      - name: email
+        in: path
+        description: The user email
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful removal of the user from Okta
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::User
+  /users/search:
+    get:
+      tags:
+      - User
+      summary: Search users
+      description: Search users with optional filters, backed by Spanner
+      operationId: searchUsers
+      parameters:
+      - name: email
+        in: query
+        description: Filter by email address (case-insensitive substring match)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: Filter by user name (case-insensitive substring match)
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: id
+        in: query
+        description: Filter by exact user ID
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Maximum number of results to return (default 100, max 1000)
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: Pagination cursor from a previous response
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Users matching the search criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSearchResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::User
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    RoleGrantParentNamespace:
+      type: string
+      description: Namespace of the parent to which this RoleGrant belongs
+      enum:
+      - workspaces
+    CompanyQueryResult:
+      type: object
+      properties:
+        companies:
+          type: array
+          description: All companies that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Company'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    OrganizationQueryResult:
+      type: object
+      properties:
+        organizations:
+          type: array
+          description: All organizations that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Organization'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ExecutionLocation:
+      required:
+      - cloud
+      - region
+      type: object
+      properties:
+        cloud:
+          type: string
+          description: Cloud identifier, e.g. gcp or aws
+        region:
+          type: string
+          description: Region as the cloud names it, e.g. us-south1
+      description: 'Where test runs execute: a cloud and one of that cloud''s regions. A region name means nothing without its cloud, so the two are always set together.'
+    UserRoleUpdate:
+      type: object
+      properties:
+        add:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+        remove:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+    LinkAccessConfig:
+      type: object
+      properties:
+        created_time:
+          type: integer
+          description: created time, epoch millis
+          format: int64
+        created_by_id:
+          type: string
+          description: created by user id
+        last_updated_time:
+          type: integer
+          description: last updated time, epoch millis
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: last update by user id
+        enable_link_access_by_support:
+          type: boolean
+          description: 'When true, a mabl support admin may reach the tunnel''s published services, such as the SOCKS proxy and reachability probes. When false they may still reach the tunnel''s control plane — draining a host, inspecting carriers — which is never gated, but no traffic-carrying service.
+
+            '
+        member_access_roles:
+          type: array
+          description: 'Which member roles may reach the tunnel''s published services with their own credentials — the tunnel''s audience. A caller is admitted when they hold at least one role named here, so holding a role is necessary and never sufficient: the owner has to have named it. An empty array admits nobody, which is where every owner starts, and leaves only api keys — cloud execution is unaffected.
+
+
+            Absent and empty both admit nobody; the difference is about the PATCH, not about access. A PATCH omitting this field leaves the audience as it is, and one sending an empty array clears it.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAccessRoleEnum'
+      description: 'Consent settings governing who may reach a Link (mablnet) tunnel owned by this workspace or company. Deliberately separate from support_access_config: not all of this has anything to do with support, and reaching a customer''s network is a distinct decision from seeing their workspace.
+
+
+        This is the set an owner of either kind carries. A workspace additionally carries enable_personal_tunnels — see WorkspaceLinkAccessConfig, which extends this. That flag is meaningless for a company: a personal tunnel belongs to a user, and both halves of the decision it governs are asked of a workspace.
+
+
+        Everything here is opt-in. An absent config, and an absent setting within a present config, both admit nobody. The exception is a workspace on a trial account, which reads each setting its owner has not set as the most permissive value — support may reach the tunnel, every role is admitted, personal tunnels are allowed — and is returned that way. Those defaults are never stored, so they end with the trial. None of this affects api-key access to a tunnel — an `execution` key reaching a tunnel for a cloud test run is unaffected throughout.
+
+        '
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    UserCompanyRole:
+      required:
+      - company_id
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        company_id:
+          type: string
+          description: The company to which this role applies
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the organization
+        cloud_safe_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP and Kubernetes safe)
+        created_time:
+          type: integer
+          description: Time at which the organization was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this organization
+        resource_bucket_name:
+          type: string
+          description: Input/output artifact bucket. Null if not yet created.
+        last_updated_time:
+          type: integer
+          description: Time at which the organization was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this organization
+        name:
+          type: string
+          description: The display name of the organization
+        account_id:
+          type: string
+          description: The id of the account this organization is in
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        support_access_config:
+          $ref: '#/components/schemas/WorkspaceSupportAccess'
+        link_access_config:
+          $ref: '#/components/schemas/WorkspaceLinkAccessConfig'
+        onboarded:
+          type: boolean
+          description: flag indicating whether the organization has gone through onboarding
+        allocations:
+          allOf:
+          - $ref: '#/components/schemas/BillingAllocations'
+          x-dao-apply-nulls: true
+        allocated_test_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of test runs allocated to this workspace
+        allocated_api_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of API test runs allocated to this workspace
+        allocated_a11y_runs:
+          type: integer
+          description: Legacy billing accounts only -- The number of a11y step runs allocated to this workspace
+        labs_features:
+          type: array
+          description: Set of labs features activated for this workspace
+          items:
+            type: string
+        excluded_features:
+          type: array
+          description: 'Set of features to exclude from this workspace, overriding account-level grants. When a feature appears here, authorization checks against this workspace will deny it even if the parent account has the feature enabled. Admin-only field.
+
+            '
+          items:
+            type: string
+        execution_runner_size:
+          $ref: '#/components/schemas/ExecutionRunnerSizeEnum'
+        execution_location_pin:
+          description: Where this workspace's test runs execute, ahead of any pin on its account or company. Set and cleared only by mabl through PUT/DELETE /organizations/{id}/executionLocationPin; ignored by the generic workspace update. A run whose test type does not execute in the pinned location runs in the default one.
+          allOf:
+          - $ref: '#/components/schemas/ExecutionLocation'
+          x-dao-unindexed: true
+        generated_artifact_locale:
+          type: string
+          description: The workspace's locale used to create new artifacts (e.g. test failure summaries, element descriptions). Default is 'en'.
+        test_recovery_agent_mode:
+          $ref: '#/components/schemas/TestRecoveryAgentModeEnum'
+        auto_assign_failure_reason_enabled:
+          type: boolean
+          description: 'When true, agent-generated failure analysis assigns its suggested failure reason to the test run automatically. When false, the suggested failure reason is still persisted but is not assigned. New workspaces enable this by default. Manual assignments always take precedence.
+
+            '
+        require_agent_edits_on_branches:
+          type: boolean
+          description: 'When true, agents must save new tests and edits to a branch rather than the main branch. Owner-editable; behind the agentic_test_editing feature flag.
+
+            '
+        recovery_agent_auto_edits:
+          type: boolean
+          description: 'When true, the recovery agent automatically kicks off test edits when it identifies a fix. Owner-editable; behind the agentic_test_editing feature flag.
+
+            '
+        require_cloud_only_credentials:
+          type: boolean
+          description: 'When true, credentials created in this workspace must be cloud credentials, whose secrets can never be read back. Enforced on create for every caller, including API keys, rather than left to whoever creates the credential. Existing non-cloud credentials are unaffected and stay editable. Owner-editable.
+
+            '
+        effective_credit_allocation:
+          type: integer
+          description: 'Computed effective credit allocation for this workspace. Equals allocations.credits if explicitly set, otherwise the workspace''s equal share of remaining account credits.
+
+            '
+          format: int64
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasAccountId
+      - HasName
+    UserOnboarding:
+      type: object
+      properties:
+        lang_prompt_shown:
+          type: boolean
+          description: Indicates if the user was ever prompted to change the language.
+        existing_email_domain:
+          type: boolean
+          description: Indicates if the user has an email that matched the registered ones in the CompanyDomain entity, at the moment of the user creation. This is a ReadOnly field that's only filled when the user doesn't have a role in any workspace.
+        should_create_trial_with_existing_email_domain:
+          type: boolean
+          description: Indicates if a trial workspace should be created even when the email domain matches an existing one.
+        guided_test_creation:
+          type: string
+          description: Indicates the status of the browser test creation guided tour
+          enum:
+          - complete
+          - skipped
+          - not_started
+          - not_available
+          - incomplete
+        guided_run_test_results:
+          type: string
+          description: Indicates the status of the browser test run guided tour
+          enum:
+          - complete
+          - skipped
+          - not_started
+          - not_available
+          - incomplete
+        mobile_testing_guide_status:
+          type: string
+          description: Indicates the status of the guided mobile testing experience
+          enum:
+          - complete
+          - skipped
+          - not_started
+          - not_available
+          - incomplete
+      description: An object containing the onboarding information for a specific User.
+    UserCompanyRoles:
+      required:
+      - roles
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCompanyRole'
+    UserWithAllAttributesQueryResult:
+      type: object
+      properties:
+        users:
+          type: array
+          description: All users that matched the query, including their hidden attributes
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/UserWithAllAttributes'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    RegisterUserRequest:
+      required:
+      - email
+      - family_name
+      - given_name
+      type: object
+      properties:
+        email:
+          type: string
+          description: The user's E-Mail address
+        given_name:
+          type: string
+          description: The user's given (first) name
+        family_name:
+          type: string
+          description: The user's family (last) name
+        invitation_acceptance_secret:
+          type: string
+          description: The labeled acceptance secret from the invitation accept URL. Required (or `invitation_id`, deprecated) if credentials is specified.
+        invitation_id:
+          type: string
+          description: Deprecated. Use `invitation_acceptance_secret` instead.
+          deprecated: true
+        company:
+          type: string
+          description: The user's company
+        country_code:
+          maxLength: 2
+          minLength: 2
+          type: string
+          description: The user's country specified as an ISO 3166-1 alpha-2 country code
+        credentials:
+          required:
+          - bcrypt_hash
+          type: object
+          properties:
+            bcrypt_hash:
+              type: string
+          description: The user's credentials
+        language:
+          type: string
+          description: The user's preferred language specified as a 2-letter language code.
+          enum:
+          - en
+          - ja
+    RoleGrant:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID of the RoleGrant
+        parent_namespace:
+          $ref: '#/components/schemas/RoleGrantParentNamespace'
+        parent_id:
+          type: string
+          description: Id of the Parent to which this RoleGrant belongs
+        role_id:
+          type: string
+          description: ID of the Role associated with this RoleGrant
+        managed_role:
+          type: boolean
+          description: Specifies if this is a ManagedRole. ManagedRoles are controlled by mabl and statically defined in code. Only CustomRoles are persisted.
+        principal_id:
+          type: string
+          description: ID of the Principal for which this RoleGrant applies
+        principal_namespace:
+          $ref: '#/components/schemas/RoleGrantPrincipalNamespace'
+        scope:
+          $ref: '#/components/schemas/RoleGrantScope'
+        target:
+          type: string
+          description: ID of the Resource for which this RoleGrant applies
+        created_time:
+          type: integer
+          description: Time at which the RoleGrant was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this RoleGrant
+          readOnly: true
+        acknowledged_status:
+          type: string
+          description: LEGACY PROPERTY. Status marking whether the user has acknowledged the welcome message in the joined workspace.
+          readOnly: true
+          enum:
+          - requires_acknowledgement
+          - acknowledged
+      description: A RoleGrant
+    TestRecoveryAgentModeEnum:
+      type: string
+      description: Test Recovery Agent mode. Use `inherit` (plan-level only) to defer to the workspace-level default.
+      enum:
+      - 'off'
+      - fail_at_end
+      - pass
+      - inherit
+    LinkAccessRoleEnum:
+      type: string
+      description: 'A role that may be admitted to a Link (mablnet) tunnel''s published services, as named in member_access_roles.
+
+
+        `company_admin` is the company OWNER: of the owning workspace''s company for a workspace-owned tunnel, of the company itself for a company-owned one. The three workspace roles mean that role in the owning workspace; on a company-owned tunnel they mean that role in any workspace belonging to the company.
+
+        '
+      enum:
+      - company_admin
+      - workspace_owner
+      - workspace_editor
+      - workspace_viewer
+    UserSearchResult:
+      type: object
+      properties:
+        users:
+          type: array
+          description: Users matching the search criteria
+          items:
+            $ref: '#/components/schemas/UserSearchReference'
+        cursor:
+          type: string
+          description: Pagination cursor for the next page of results
+    UserQueryResult:
+      type: object
+      properties:
+        users:
+          type: array
+          description: All users that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/User'
+          x-mabl-scope: public
+        historic_users:
+          type: array
+          description: All users who had historic activity in the workspace, but are no longer users in that workspace. Only populated if include_historic_users is set to true.
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/User'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    Company:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the Company
+        name:
+          type: string
+          description: The Company name
+        created_time:
+          type: integer
+          description: Time at which the account was created
+          format: int64
+          readOnly: true
+        created_by_id:
+          type: string
+          description: The ID of the user who created this account
+        last_updated_time:
+          type: integer
+          description: Time at which the account was last updated
+          format: int64
+          readOnly: true
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this account
+        sso_connections:
+          type: array
+          description: Array of sso connections
+          items:
+            $ref: '#/components/schemas/CompanySSOConnection'
+        session_timeout:
+          type: string
+          description: The desired session timeout
+          enum:
+          - default
+          - hours_04
+          - hours_08
+          - hours_10
+          - hours_12
+          - hours_24
+          - hours_72
+        link_infrastructure_key:
+          type: string
+          description: 'Key of the dedicated Link (mablnet) infrastructure cluster this company''s tunnels are pinned to (e.g. `acme` -> `acme-wss.link.mabl.com`). Absent for the multi-tenant shared cluster (key `mabl`). Operator-managed via PUT/DELETE /companies/{id}/linkInfrastructureKey only — never via the generic company update.
+
+            '
+          readOnly: true
+        execution_location_pin:
+          description: Where test runs of this company's workspaces execute, unless their account or workspace has its own pin. Set and cleared only by mabl through PUT/DELETE /companies/{id}/executionLocationPin; ignored by the generic company update.
+          allOf:
+          - $ref: '#/components/schemas/ExecutionLocation'
+          x-dao-unindexed: true
+        link_access_config:
+          $ref: '#/components/schemas/LinkAccessConfig'
+      description: A billing company
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+    BillingAllocations:
+      type: object
+      properties:
+        credits:
+          type: integer
+          description: Total number of credits allocated for the billing period
+          format: int64
+        automators:
+          type:
+          - integer
+          - 'null'
+          description: Total number of automators allocated for the billing period. Absent for unlimited (mabl Core accounts).
+          format: int32
+          x-dao-apply-nulls: true
+        participants:
+          type:
+          - integer
+          - 'null'
+          description: Total number of participants allocated for the billing period. Absent for unlimited (mabl Core accounts).
+          format: int32
+          x-dao-apply-nulls: true
+        enforce_limit:
+          type:
+          - boolean
+          - 'null'
+          description: 'When true on a workspace''s allocations, the workspace''s explicit credit allocation is enforced: new cloud runs are blocked once the allocation is exhausted for the billing period. Absent or false, the allocation is informational only. Requires an explicit credits value. Only meaningful on a workspace''s allocations; ignored on an account subscription''s allocations.
+
+            '
+      description: Allocations for the billing period
+    UserPreferences:
+      type: object
+      properties:
+        default_workspace_id:
+          type: string
+          description: The workspace to start in each new session
+        web_ui_theme:
+          type: string
+          description: The users preferred theme for the web ui
+          enum:
+          - standard
+          - dark
+        page_settings:
+          type: object
+          additionalProperties:
+            type: string
+          description: The settings to load for specified pages
+        trainer_type:
+          type: string
+          description: The users preferred type for the trainer
+          enum:
+          - chrome_extension
+          - electron
+        customer_view_mode:
+          type: string
+          description: When set to customer, hides employee-only features for demo purposes
+          enum:
+          - standard
+          - customer
+        default_workspace_summary_schedule:
+          type: string
+          description: Schedule for the workspace summary email this user is subscribed to when they join a workspace. `none` leaves them unsubscribed. Unset is treated as `weekly`.
+          enum:
+          - none
+          - daily
+          - weekly
+    UserRoles:
+      required:
+      - roles
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+          x-mabl-scope: public
+    UserWithAllAttributes:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        source:
+          type: string
+          description: The auth provider where the user exists.
+          enum:
+          - auth0
+          - okta
+        source_id:
+          type: string
+          description: The id of the user at the auth provider.
+        is_support_admin:
+          type: boolean
+          description: User is support administrator
+        is_global_admin:
+          type: boolean
+          description: Indicates if the user is a global administrator.
+      description: An object containing the User and all the extra attributes.
+    RoleGrantQueryResult:
+      type: object
+      properties:
+        role_grants:
+          type: array
+          description: All RoleGrants that matched the query
+          items:
+            $ref: '#/components/schemas/RoleGrant'
+    WorkspaceRoleUpdate:
+      required:
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier representing a specific user
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the user was created
+          format: int64
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this user
+        desktop_app_installed:
+          type: boolean
+          description: Flag indicating whether or not the user has installed electron app
+        last_updated_time:
+          type: integer
+          description: Time at which the user was last updated
+          format: int64
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this user
+        email:
+          type: string
+          description: The user's E-Mail address
+          x-mabl-scope: public
+        email_verified:
+          type: boolean
+          description: Flag indicating whether or not the user's e-mail address has been verified
+        name:
+          type: string
+          description: The user's full name
+          x-mabl-scope: public
+        given_name:
+          type: string
+          description: The user's first/given name
+          x-mabl-scope: public
+        family_name:
+          type: string
+          description: The user's surname
+          x-mabl-scope: public
+        nickname:
+          type: string
+          description: The user's nickname
+          x-mabl-scope: public
+        locale:
+          type: string
+          description: The user's locale
+        picture:
+          type: string
+          description: URL of the user's picture
+        roles:
+          type: array
+          description: This user's roles, scoped to the requested workspace or account
+          items:
+            $ref: '#/components/schemas/UserRole'
+          x-mabl-scope: public
+        company_roles:
+          type: array
+          description: This user's company roles
+          items:
+            $ref: '#/components/schemas/UserCompanyRole'
+        firebase_token:
+          type: string
+          description: Token to use for Firebase authentication
+        onboarded:
+          type: boolean
+          description: flag indicating whether the workspace the user has joined has gone through onboarding
+        accepted_invitation:
+          type: boolean
+          description: flag indicating whether the user has ever accepted invitation to any workspace
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+        company:
+          type: string
+          description: The user's company
+          x-mabl-scope: public
+        phone:
+          type: string
+          description: The user's phone number
+        onboarding:
+          $ref: '#/components/schemas/UserOnboarding'
+        type:
+          $ref: '#/components/schemas/UserType'
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+    WorkspaceLinkAccessConfig:
+      description: 'A workspace''s consent flags: everything an owner of either kind carries, plus enable_personal_tunnels, which only a workspace has.
+
+        '
+      allOf:
+      - $ref: '#/components/schemas/LinkAccessConfig'
+      - type: object
+        properties:
+          enable_personal_tunnels:
+            type: boolean
+            description: 'When true, members of this workspace may start personal tunnels, and this workspace may route cloud test traffic to one. A user may start a personal tunnel if any workspace they belong to allows it, since no single workspace owns it; but only a workspace that allows them may send its runs through one.
+
+              '
+    UserCompanyRoleUpdate:
+      type: object
+      properties:
+        add:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCompanyRole'
+        remove:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCompanyRole'
+    UserType:
+      type: string
+      description: 'Classification of the user. A null/unset value is equivalent to `normal`
+
+        and is the default for existing users. `agent` users are synthetic users
+
+        created to act on behalf of AI agent sessions that were initiated by an
+
+        API key rather than a human user.
+
+        '
+      enum:
+      - agent
+      - normal
+    WorkspaceSupportAccess:
+      required:
+      - enable_support_access
+      type: object
+      properties:
+        created_time:
+          type: integer
+          description: created time, epoch millis
+          format: int64
+        created_by_id:
+          type: string
+          description: created by user id
+        last_updated_time:
+          type: integer
+          description: last updated time, epoch millis
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: last update by user id
+        enable_support_access:
+          type: boolean
+          description: Enables support access to workspace
+    UserIdAndRolesResult:
+      type: object
+      properties:
+        users:
+          type: array
+          description: All Users for the current query page. These users will only have id and roles populated.
+          items:
+            $ref: '#/components/schemas/User'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    UserRole:
+      required:
+      - role
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        workspace_id:
+          type: string
+          description: The workspace this role applies to. Preferred over `organization_id`. At least one of `workspace_id` or `organization_id` must be present.
+          x-mabl-scope: public
+        organization_id:
+          type: string
+          description: Deprecated alias for `workspace_id`. Retained so legacy callers keep working; new code should use `workspace_id`.
+          deprecated: true
+        acknowledged_status:
+          type: string
+          description: Status marking whether the user has acknowledged the welcome message in the joined workspace
+          enum:
+          - requires_acknowledgement
+          - acknowledged
+    UserSearchReference:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The user ID
+        email:
+          type: string
+          description: The user's email address
+        name:
+          type: string
+          description: The user's full name
+        given_name:
+          type: string
+          description: The user's first/given name
+        family_name:
+          type: string
+          description: The user's surname
+        created_by_id:
+          type: string
+          description: ID of the user who created this user
+        created_time:
+          type: integer
+          description: Time at which the user was created
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: ID of the user who last updated this user
+        last_updated_time:
+          type: integer
+          description: Time at which the user was last updated
+          format: int64
+        type:
+          $ref: '#/components/schemas/UserType'
+    CompanySSOConnection:
+      type: object
+      properties:
+        connection_id:
+          type: string
+          description: ID of SSO connection entity
+      description: SSO connection information associated with the Company
+    RoleGrantPrincipalNamespace:
+      type: string
+      description: Namespace of the principal to which this RoleGrant applies
+      enum:
+      - users
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    UserRoleEnum:
+      type: string
+      description: The possible values for user role
+      enum:
+      - owner
+      - editor
+      - viewer
+    WorkspaceUsersBatchRequest:
+      required:
+      - user_ids
+      type: object
+      properties:
+        user_ids:
+          maxItems: 100
+          minItems: 1
+          type: array
+          description: User IDs to resolve. At most 100 may be requested in a single call.
+          items:
+            type: string
+      description: Request body for batch workspace user resolution
+    ReactivateUserRequest:
+      required:
+      - email
+      type: object
+      properties:
+        email:
+          type: string
+          description: The user's E-Mail address
+    ExecutionRunnerSizeEnum:
+      type: string
+      description: available runner sizes
+      enum:
+      - x1
+      - x2
+      - x3
+      - x4
+      - x5
+      - x6
+      - small
+      - medium
+      - large
+      - inherit
+    RoleGrantScope:
+      type: string
+      description: Scope of the Resource for which this RoleGrant applies
+      enum:
+      - global
+      - companies
+      - workspaces
+      - resource_groups
+      - credentials
+      - datatables
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

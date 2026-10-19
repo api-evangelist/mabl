@@ -1,0 +1,2470 @@
+openapi: 3.2.0
+info:
+  title: mabl Flow API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Flow
+paths:
+  /flows:
+    get:
+      tags:
+      - Flow
+      summary: Retrieve a set of flows based by query
+      description: Used to query Flows
+      operationId: queryFlows
+      parameters:
+      - name: workspace_id
+        in: query
+        description: Restricts the query to flows associated with the given organization ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: flow_type
+        in: query
+        description: Restricts the query to flows of a given type
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - validate_page
+          - login
+          - verify_url
+          - mablscript
+          - check_links
+          - visual_page_validation
+          - api
+          - mobile
+      - name: reusable
+        in: query
+        description: Restricts the query to reusable or non-reusable flows
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: has_snippet
+        in: query
+        description: Restricts the query to flows that have or don't have snippets
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: snippetId
+        in: query
+        description: Restricts the query to flows that use a given snippet
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: branch
+        in: query
+        description: The branch to retrieve flows from.  Flows not on the branch will failover to their master versions, if they exist on master.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: resolvable_on_branch
+        in: query
+        description: If true, will only return flows that have a version that can be resolved on the specified branch
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of flows matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+    put:
+      tags:
+      - Flow
+      summary: Batch update and create flows
+      description: Supports updating and creating a batch of flows, such as those associated with a single test
+      operationId: batchPutFlows
+      parameters:
+      - name: branch
+        in: query
+        description: The branch the flows should be saved to.  Defaults to master
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: force
+        in: query
+        description: Force an update to occur, even if no changes have been made
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      requestBody:
+        description: The flows to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowUpdate'
+        required: true
+      responses:
+        '200':
+          description: The updated test and flows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowUpdate'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Flow
+    post:
+      tags:
+      - Flow
+      summary: Create Flow
+      description: Used to create new Flows
+      operationId: createFlow
+      parameters:
+      - name: branch
+        in: query
+        description: The branch the flow should be created on.  Defaults to master
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: master
+      requestBody:
+        description: The flow to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Flow'
+        required: true
+      responses:
+        '201':
+          description: The Flow that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Flow
+  /flows/metadata:
+    post:
+      tags:
+      - Flow
+      summary: Retrieve reusable flow metadata for workspace
+      description: Get metadata for all reusable flows in a workspace
+      operationId: queryReusableFlowsMetadata
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace ID to query flows for
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of flow metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlowMetadata'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/references/task:
+    post:
+      tags:
+      - Flow
+      summary: Query flows by task
+      description: Used to query flows by task using flow references for most recent main version
+      operationId: queryFlowsByTask
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace associated with this query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant flows.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryEntityByTaskParameters'
+        required: true
+      responses:
+        '200':
+          description: Array of flows matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/references/search:
+    post:
+      tags:
+      - Flow
+      summary: Search active reusable flow references by full-text token query
+      description: 'Token-based full-text search across flow name, description (usage notes),
+
+        annotated step descriptions, GenAI task summary, and labels using the Spanner
+
+        SEARCH() function and `idx_flow_reference_search_v3`. Returns rich per-flow rows
+
+        ordered by SCORE() descending.
+
+
+        The `query` follows Spanner search syntax — multi-token queries default to AND.
+
+        Callers can join keywords with " OR " for broader recall, or quote phrases.
+
+        `OR` binds only the two words beside it and parentheses do not group terms, so
+
+        prefer one plain multi-word query (all words required) over mixing `OR` with
+
+        other terms.'
+      operationId: searchFlowReferences
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace to search in.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowReferenceTextSearchRequest'
+        required: true
+      responses:
+        '200':
+          description: Search results ordered by relevance score (descending).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowReferenceTextSearchResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/references/usage:
+    post:
+      tags:
+      - Flow
+      summary: Query flows by usage
+      description: Used to query flows by usage using flow references for most recent main version
+      operationId: queryFlowsByUsage
+      parameters:
+      - name: workspace_id
+        in: query
+        description: The workspace associated with this query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: Filters to get the relevant flows.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryEntityParameters'
+        required: true
+      responses:
+        '200':
+          description: Array of flows matching the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/{id}:
+    get:
+      tags:
+      - Flow
+      summary: Get flow
+      description: Used to retrieve a flow by ID
+      operationId: getFlow
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the flow to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: sourceControlTag
+        in: query
+        description: A source control tag to retrieve the version of the flow for
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The flow with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+    delete:
+      tags:
+      - Flow
+      summary: Remove Flow
+      description: Used to remove a flow
+      operationId: removeFlow
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the flow to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Confirms the flow does not exist
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Flow
+    patch:
+      tags:
+      - Flow
+      summary: Update Flow
+      description: Used to update existing flows. flow_type is fixed at create; a value sent here is ignored.
+      operationId: updateFlow
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the flow to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: branch
+        in: query
+        description: The branch the flow update should be applied to.  Defaults to master
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: force
+        in: query
+        description: Force an update to occur, even if no changes have been made
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      requestBody:
+        description: The update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Flow'
+        required: true
+      responses:
+        '200':
+          description: The updated flow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Flow
+  /flows/{id}/metadata:
+    get:
+      tags:
+      - Flow
+      summary: Get flow metadata
+      description: Get the unversioned metadata of an existing flow
+      operationId: getFlowMetadata
+      parameters:
+      - name: id
+        in: path
+        description: ID of the flow
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The flow metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowMetadata'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          $ref: '#/components/responses/ErrorResponse404'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Read::Flow
+    patch:
+      tags:
+      - Flow
+      summary: Update flow metadata only
+      description: Update the unversioned metadata of an existing flow. flow_type is fixed at create; a value sent here is ignored.
+      operationId: updateFlowMetadata
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the flow to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The flow metadata fields to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowMetadata'
+        required: true
+      responses:
+        '200':
+          description: The updated flow metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowMetadata'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-scope: public
+      x-mabl-action: Edit::Flow
+  /flows/{id}/{version}:
+    get:
+      tags:
+      - Flow
+      summary: Get flow Version
+      description: Used to retrieve a flow by ID and version
+      operationId: getFlowVersion
+      parameters:
+      - name: id
+        in: path
+        description: The invariant ID of the flow to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: version
+        in: path
+        description: The specific version of the flow to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: The flow with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/{id}/version:
+    get:
+      tags:
+      - Flow
+      summary: Retrieve flow versions
+      description: Used to retrieve a list of flow versions
+      operationId: listFlowVersions
+      parameters:
+      - name: id
+        in: path
+        description: The flow invariant or variant ID.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: branch
+        in: query
+        description: Filter the returned versions to those created on this mabl branch. Omit to return the full version history across all branches.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The maximum number of versions to return, newest first. Omit to return every version.
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor from a previous page, used to fetch the next page. Requires limit.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The flow variant versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowVariantVersionQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/{id}/flowReferences:
+    get:
+      tags:
+      - Flow
+      summary: Retrieve nested flow references for this flow
+      description: Used to retrieve all flow references used by a specific flow
+      operationId: getNestedFlowReferences
+      parameters:
+      - name: id
+        in: path
+        description: The flow id to find nested flow references for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: source_control_tag
+        in: query
+        description: Optional branch name for version resolution
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: include_flows
+        in: query
+        description: When true, include the resolved Flow object on each FlowReference
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Result of all nested flow references for this flow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowReferencesQueryResult'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/{id}/elements:
+    get:
+      tags:
+      - Flow
+      summary: Get element screenshots and metadata for a flow and environment
+      description: Used to retrieve element screenshots/metadata for all steps in a flow with respect to a given environment
+      operationId: getFlowElements
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the flow to retrieve element screenshots/metadata for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: environment_id
+        in: query
+        description: ID of environment with respect to which element screenshots/metadata should be retrieved
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The element screenshots and associated metadata for the specified flow and environment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepElementQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/{id}/selectors:
+    post:
+      tags:
+      - Flow
+      summary: Re-extract selectors and update flow if necessary
+      description: Used to fix a flow whose selectors may not have been extracted correctly on the last save
+      operationId: reextractFlowSelectors
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the flow for which to re-extract teh selectors
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: dry_run
+        in: query
+        description: If true, logs what would happen but does not make any changes
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: branch
+        in: query
+        description: The branch to use to find the variant version if not specified.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '209':
+          description: Selector re-extraction was successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReextractSelectorsResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Flow
+  /recover/flow/{id}:
+    post:
+      tags:
+      - Flow
+      summary: Recover Flow
+      description: Used to undelete a flow
+      operationId: recoverFlow
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the flow to recover
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The recovered flow with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flow'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Recover::Flow
+  /flows/{flow_invariant_id}/stepIds:
+    get:
+      tags:
+      - Flow
+      summary: Get step ids for flow for corresponding test runs
+      operationId: getStepIdsInFlowByTestRun
+      parameters:
+      - name: flow_invariant_id
+        in: path
+        description: The flow invariant ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: journey_run_ids
+        in: query
+        description: The test run ids
+        required: true
+        style: form
+        explode: false
+        schema:
+          minItems: 1
+          type: array
+          items:
+            type: string
+      responses:
+        '200':
+          description: The step ids for the Flow corresponding to the test runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityStepIds'
+        '400':
+          description: Invalid ID was supplied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '401':
+          description: Wrong credentials for supplied test ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '404':
+          description: Test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/{id}/usedBy:
+    get:
+      tags:
+      - Flow
+      summary: Retrieve tests that use this flow
+      description: Used to retrieve tests that use a specific flow (assumed reusable)
+      operationId: getFlowUsedBy
+      parameters:
+      - name: id
+        in: path
+        description: The unversioned flow id to find used-by entities for
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated results of tests that use the flow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowUsedByQueryResult'
+        '404':
+          description: Flow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/flowReferences:
+    get:
+      tags:
+      - Flow
+      summary: Retrieve nested flow references for multiple flows
+      description: Batch version of /flows/{id}/flowReferences. Performs a single BFS traversal across all provided root flows to resolve their nested flow references.
+      operationId: getBatchNestedFlowReferences
+      parameters:
+      - name: flow_ids
+        in: query
+        description: The flow IDs to resolve nested references for
+        required: true
+        style: form
+        explode: false
+        schema:
+          minItems: 1
+          type: array
+          items:
+            type: string
+      - name: source_control_tag
+        in: query
+        description: Optional branch name for version resolution
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: include_flows
+        in: query
+        description: When true, include the resolved Flow object on each FlowReference
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: All nested flow references across the provided flows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowReferencesQueryResult'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+  /flows/usedBy/batch:
+    post:
+      tags:
+      - Flow
+      summary: Retrieve tests that use any of the provided flows
+      description: Used to retrieve tests that use any of the provided flows in a single request
+      operationId: getFlowUsedByBatch
+      parameters:
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 1000
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: The unversioned flow ids to find used-by entities for
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowUsedByBatchRequest'
+        required: true
+      responses:
+        '200':
+          description: Paginated results of tests that use any of the provided flows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowUsedByBatchQueryResult'
+        '400':
+          description: Invalid request - too many flow IDs or invalid IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Flow
+components:
+  schemas:
+    FlowUsedByBatchRequest:
+      required:
+      - flow_ids
+      type: object
+      properties:
+        flow_ids:
+          maxItems: 100
+          minItems: 1
+          type: array
+          description: Array of unversioned flow ids to find used-by entities for
+          items:
+            type: string
+      description: Request body for batch flow used-by query
+    FlowReferencesQueryResult:
+      type: object
+      properties:
+        references:
+          type: array
+          description: All nested flow references inside a flow
+          items:
+            $ref: '#/components/schemas/FlowReference'
+    Flow:
+      type: object
+      description: A Flow represents a set of steps in a Test
+      allOf:
+      - $ref: '#/components/schemas/FlowMetadata'
+      - $ref: '#/components/schemas/FlowVersion'
+      - $ref: '#/components/schemas/MergedVariant'
+      - type: object
+        properties:
+          api_steps:
+            type: object
+            description: API steps for API only flow (stored in postman collection format)
+          json_steps:
+            type: object
+            description: Steps in the new json format that replaces mablscript
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasOrganizationId
+      - HasWorkspaceId
+      - HasVersion
+    FlowTypeEnum:
+      type: string
+      description: the type of flow
+      enum:
+      - validate_page
+      - login
+      - verify_url
+      - mablscript
+      - check_links
+      - visual_page_validation
+      - api
+      - mobile
+      - desktop
+      x-mobile-scope: public
+    Label:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: name
+          x-mabl-scope: public
+        color:
+          type: string
+          description: color
+    FlowUpdate:
+      type: object
+      properties:
+        flows:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlowUpdateFlows'
+      description: A container for a set of flow updates
+    SnippetReference:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the snippet invariant used
+        snippetType:
+          $ref: '#/components/schemas/SnippetTypeEnum'
+    FlowReferenceTextSearchResult:
+      required:
+      - matches
+      - truncated
+      type: object
+      properties:
+        matches:
+          type: array
+          description: Flows matching the query, ordered by SCORE(combined_tokens, query) descending.
+          items:
+            $ref: '#/components/schemas/FlowReferenceTextSearchMatch'
+        truncated:
+          type: boolean
+          description: 'True if any match''s steps_text was trimmed by the server-side character cap.
+
+            Derived from the per-match steps_truncated flags.
+
+            '
+    FileDownloadReference:
+      required:
+      - object_key
+      - test_run_id
+      type: object
+      properties:
+        id:
+          type: string
+          description: stable logical handle for this downloaded file within the producing run
+        test_run_id:
+          type: string
+          description: the id of the test run that produced this download
+        object_key:
+          type: string
+          description: 'Bucket-relative storage key (e.g. execution-output/<nonce>/downloads/<run>/<step>/<name>). Excludes the bucket name; the backend prepends the workspace bucket at resolution time.
+
+            '
+      description: 'Run-scoped coordinates locating a file downloaded during a test run. The backend derives the workspace from test_run_id and reconstructs the artifact location from object_key server-side; the bucket name is never stored here or returned to clients. Valid only within the producing run''s artifact-retention window.
+
+        '
+    FlowUsedByBatchQueryResult:
+      type: object
+      properties:
+        entities:
+          type: array
+          description: List of tests that use any of the provided flows, ordered by flow invariant ID and then by test invariant ID
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/UsedByEntity'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for batch flow used-by query results
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    FlowStepIds:
+      type: object
+      properties:
+        flowInvariantId:
+          type: string
+          description: The flow invariant id
+        flowId:
+          type: string
+          description: The flow variant id
+        flowSourceIndexInTest:
+          type: integer
+          description: The index of the flow within a test if relevant
+          format: int64
+        flowReusable:
+          type: boolean
+          description: Boolean for if the flow is reusable
+        flowType:
+          type: string
+          description: The type of flow
+        stepIdsInFlow:
+          type: array
+          description: The step ids for the flow (hashing info about the step with flowInvariantId)
+          items:
+            type: string
+        stepIdsInJourney:
+          type: array
+          description: The step ids for the flow within a test if relevant (hashing stepIdInFlow with testInvariantId and flowSourceIndexInTest)
+          items:
+            type: string
+      description: The step IDs in a particular Flow with associated context about the flow
+    FlowReference:
+      required:
+      - invariantId
+      type: object
+      properties:
+        invariantId:
+          type: string
+          description: The ID of a referenced flow
+        flowType:
+          $ref: '#/components/schemas/FlowTypeEnum'
+        flow:
+          $ref: '#/components/schemas/Flow'
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    StepElement:
+      type: object
+      properties:
+        step_index:
+          type: integer
+          description: Index of the step in the flow
+          format: int64
+        element_screenshot_uri:
+          type: string
+          description: URI for element screenshot artifact
+        page_screenshot_uri:
+          type: string
+          description: URI for element screenshot artifact
+        bounding_box:
+          type: object
+          properties:
+            x:
+              type: integer
+              description: X coordinate of element bounding box (upper left corner)
+              format: int64
+            y:
+              type: integer
+              description: Y coordinate of element bounding box (upper left corner)
+              format: int64
+            width:
+              type: integer
+              description: Width of element bounding box
+              format: int64
+            height:
+              type: integer
+              description: Height of element bounding box
+              format: int64
+          description: Element bounding box in page screenshot
+        selector_invariant_id:
+          type: string
+          description: ID of the selector associated with this element
+        selector_is_target:
+          type: boolean
+          description: Flag indicating whether this element is the primary target of the step, if true, or else an ancestor of target element
+    FlowVariantVersionQueryResult:
+      type: object
+      properties:
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        latest_version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        versions:
+          type: array
+          description: The versions for this entity.
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/VariantVersion'
+        mobile_platform:
+          description: Mobile platform of the flow, when it is a mobile flow.
+          allOf:
+          - $ref: '#/components/schemas/MobilePlatformEnum'
+        cursor:
+          type: string
+          description: Cursor for the next page of versions. Set only when limit was given and older versions remain.
+          readOnly: true
+      description: result envelope for flow variant version query results
+    FileValue:
+      required:
+      - mime_type
+      - name
+      - origin
+      - size
+      type: object
+      properties:
+        origin:
+          type: string
+          description: 'Provenance of the file. `upload` is a durable, reusable FileUpload (see file_upload_id). `download` is a transient file produced by a test run (see download_ref).
+
+            '
+          enum:
+          - upload
+          - download
+        name:
+          type: string
+          description: the base file name
+        mime_type:
+          type: string
+          description: the true MIME type (e.g. application/pdf), not a file extension
+        size:
+          type: integer
+          description: the size of the file in bytes
+          format: int64
+        checksum:
+          type: string
+          description: optional content checksum
+        file_upload_id:
+          type: string
+          description: 'Set when origin == upload; the id of a durable FileUpload (FileUpload.id). This is how a persisted or authored file variable references its file.
+
+            '
+        download_ref:
+          description: Set when origin == download; run-scoped coordinates for a file downloaded during a test run.
+          allOf:
+          - $ref: '#/components/schemas/FileDownloadReference'
+      description: 'A typed file value for a file-typed variable, reconciling field-for-field with the runtime FileValue (mabl-cli mablscript-find). `origin` selects which reference is populated: `upload` uses file_upload_id, `download` uses download_ref. This one-of invariant is NOT enforced by the schema (a oneOf/discriminator would make the generated Java/TS clients polymorphic and diverge from the flat runtime FileValue); it must be enforced by validation on the Flow/Test write path, tracked in MABL-20387, before file variables are consumed (first reader: MABL-20718). Until then a malformed file_value is accepted but unused. The run-local localUri from the runtime shape is intentionally omitted (ephemeral, never persisted).
+
+        '
+    FlowUsedByQueryResult:
+      type: object
+      properties:
+        entities:
+          type: array
+          description: List of tests that use the flow, ordered by test invariant ID
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/UsedByEntity'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+      description: result envelope for flow used-by query results
+    FlowReferenceTextSearchMatch:
+      required:
+      - flow_invariant_id
+      - flow_type
+      - reusable
+      - score
+      type: object
+      properties:
+        flow_invariant_id:
+          type: string
+        name:
+          type: string
+          description: The flow's display name.
+        description:
+          type: string
+          description: 'The flow''s usage notes and considerations. On flows that predate the name field this may still hold the display name.
+
+            '
+        task_summary:
+          type: string
+          description: GenAI-generated summary of what the flow does.
+        precondition_summary:
+          type: string
+          description: GenAI-generated summary of the state the flow requires before running.
+        labels:
+          type: array
+          items:
+            type: string
+        flow_type:
+          $ref: '#/components/schemas/FlowTypeEnum'
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        reusable:
+          type: boolean
+        usage_count:
+          type: integer
+          description: Number of tests using this flow.
+          format: int64
+        last_updated_time:
+          type: string
+          description: 'When the flow was last edited. Derived from the creation time of the latest
+
+            flow variant.
+
+            '
+          format: date-time
+        steps_text:
+          type: string
+          description: 'The flow''s step content. Annotated step descriptions for browser/mobile
+
+            flows; the api_steps JSON for api-type flows (which have no annotated
+
+            steps). Server caps the text at a defensive character limit; the calling
+
+            agent service applies its own adaptive truncation on top.
+
+            '
+        steps_truncated:
+          type: boolean
+          description: True when steps_text was trimmed by the server-side character cap.
+        score:
+          type: number
+          description: Spanner SCORE(combined_tokens, query). Higher = better. Not bounded above.
+          format: double
+        matched_field:
+          type: string
+          description: 'The field where the match landed when search_field is not "combined".
+
+            "api_endpoint" and "api_parameters" only ever appear for api-type flows.
+
+            '
+          enum:
+          - combined
+          - name
+          - description
+          - steps
+          - task_summary
+          - labels
+          - api_endpoint
+          - api_parameters
+    UserDefinedInputVariable:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: the fully qualified symbol name of the variable
+        default_value:
+          type: string
+          description: the value to use when the variable is not otherwise defined
+        value_type:
+          type: string
+          description: 'The kind of value this variable carries. Absent implies `string` for backward compatibility; existing string variables are unaffected.
+
+            '
+          enum:
+          - string
+          - file
+        file_value:
+          description: The file value; present only when value_type == file. Additive and optional, so string variables serialize unchanged.
+          allOf:
+          - $ref: '#/components/schemas/FileValue'
+    UsedByEntity:
+      type: object
+      properties:
+        resource_id:
+          type: string
+          description: The ID of the resource used by this entity
+        entity_invariant_id:
+          type: string
+          description: The invariant ID of the entity
+        entity_type:
+          type: string
+          description: The type of entity (test or flow)
+          enum:
+          - test
+          - flow
+        entity_name:
+          type: string
+          description: The name of the entity
+        workspace_id:
+          type: string
+          description: The workspace ID of the entity
+        created_time:
+          type: integer
+          description: When the entity was created
+          format: int64
+        last_updated_time:
+          type: integer
+          description: When the entity was last updated
+          format: int64
+        branches:
+          type: array
+          description: Branches of the test or flow that use this resource
+          items:
+            type: string
+          default: []
+      description: A description of an entity (test or flow) that uses a resource (file upload, etc.)
+    QueryEntityParameters:
+      required:
+      - limit
+      type: object
+      properties:
+        application_id:
+          type: string
+          description: Restricts the query to entities of a given application ID
+        database_connection_id:
+          type: string
+          description: Restricts the query to entities with the given database connection ID (only used for Snippet queries)
+        flow_type:
+          $ref: '#/components/schemas/FlowTypeEnum'
+        limit:
+          minimum: 1
+          type: integer
+          description: The max results to return
+          format: int32
+          default: 10
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        reusable:
+          type: boolean
+          description: If specified, will only return entities with the given reusable flag
+        snippet_types:
+          type: array
+          description: Restricts the query to entities with the given snippet type (only used for Snippet queries)
+          items:
+            $ref: '#/components/schemas/SnippetTypeEnum'
+    ImportSourceId:
+      type: string
+      enum:
+      - postman
+      - selenium_node_proxy
+      - selenium_java_agent
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    Invariant:
+      type: object
+      properties:
+        id:
+          maxLength: 50
+          type: string
+          description: Unique identifier
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The ID of the user who created this test
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time the test was last updated in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this test
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time the test was created in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+        revision_history:
+          type: string
+          description: Serialized graph describing the test's version history. Managed by mabl API only.
+          x-dao-unindexed: true
+        version_tags:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+          description: Mapping of version tags to version numbers that the tag is currently applied to
+          x-dao-unindexed: true
+        latest_version:
+          type: integer
+          description: The latest numeric version of this test
+          format: int64
+        organization_id:
+          type: string
+          description: (deprecated) The ID of the organization that this journey belongs to
+        workspace_id:
+          type: string
+          description: Workspace Id
+          x-mabl-scope: public
+      x-implements-interface:
+      - IsInvariant
+    StepElementQueryResult:
+      type: object
+      properties:
+        elements:
+          type: array
+          description: All elements (with screenshot and metadata) for steps in a flow with respect to a given environment
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/StepElement'
+    MobilePlatformEnum:
+      type: string
+      description: The mobile platform associated with this object
+      enum:
+      - android
+      - ios
+      x-mabl-scope: public
+    UserDefinedVariables:
+      type: object
+      properties:
+        inputs:
+          type: array
+          description: the input variables for the flow/test (used before they are defined) with set semantics on name
+          items:
+            $ref: '#/components/schemas/UserDefinedInputVariable'
+        outputs:
+          type: array
+          description: the variables defined by this script with set semantics. this is not used by the test.
+          items:
+            $ref: '#/components/schemas/UserDefinedOutputVariable'
+    FlowSummary:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+          description: The workspace ID of the flow
+        flow_invariant_id:
+          type: string
+          description: The invariant ID of the flow
+        flow_annotated_steps:
+          type: string
+          description: The flow steps with annotations
+        flow_summary:
+          type: string
+          description: The GenAI flow summary
+        flow_preconditions:
+          type: string
+          description: The GenAI summary of the flow preconditions
+        flow_name:
+          type: string
+          description: The flow's display name
+        flow_description:
+          type: string
+          description: The flow description
+        usage_count:
+          type: integer
+          description: The number of tests using this flow
+          format: int64
+        labels:
+          type: array
+          description: User provided labels on the flow.
+          items:
+            type: string
+        flow_type:
+          $ref: '#/components/schemas/FlowTypeEnum'
+        mobile_platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        reusable:
+          type: boolean
+          description: Whether this flow can be used by multiple tests.
+        distance:
+          type: number
+          description: 'Cosine distance between the query embedding and the flow''s task embedding.
+
+            Lower = more similar. Only populated by semantic (by-task) queries.
+
+            '
+          format: double
+        last_updated_time:
+          type: string
+          description: 'When the flow was last edited. Derived from the creation time of the latest
+
+            flow variant (every flow edit creates a new variant).
+
+            '
+          format: date-time
+      description: A summary of a Flow
+    MobileTrainingInfo:
+      type: object
+      properties:
+        device_name:
+          type: string
+          description: The name of the mobile device
+        device_api_level:
+          type: string
+          description: The API level of the mobile device
+        device_os_version:
+          type: string
+          description: The OS version of the mobile device
+        screen_dimensions:
+          $ref: '#/components/schemas/DeviceScreenDimensions'
+        is_cloud_training:
+          type: boolean
+          description: Whether the training took place on a cloud device or local device
+        is_real_device:
+          type: boolean
+          description: Whether the training took place on a real device or an emulator/simulator
+        app_file_name:
+          type: string
+          description: The mobile app file name (only present for local training)
+        app_file_id:
+          type: string
+          description: The file id of the mobile app (only present for cloud training)
+    FlowReferenceTextSearchRequest:
+      required:
+      - limit
+      - query
+      type: object
+      properties:
+        query:
+          maxLength: 2000
+          type: string
+          description: 'Token query. Multi-token defaults to AND; join with " OR " to broaden
+
+            recall (e.g., "login OR signin OR authentication"). Adjacent tokens are
+
+            treated as a phrase. Empty query returns zero rows.
+
+            '
+        search_field:
+          type: string
+          description: 'Which tokenized column to search. "combined" searches
+
+            name+description+steps+task_summary+labels plus api flow url, parameter-name/value,
+
+            and assertion text. Use a single field name to scope to one column. "name" is the
+
+            flow''s display name; "description" holds its usage notes (on flows that predate the
+
+            name field, the name may still live there). "api_endpoint" scopes to api_steps request URL paths and
+
+            "api_parameters" to api_steps request parameter names, each optionally paired with
+
+            a truncated value (e.g. a search for "42" can match a "customerId" parameter valued
+
+            "42"); both match api-type flows only — browser/mobile flows never match on them
+
+            ("steps" covers their annotated step text), and flow input parameters are not
+
+            searched. All fields match whole words (relevance-ranked); partial-word fragments
+
+            do not match.
+
+            '
+          enum:
+          - combined
+          - name
+          - description
+          - steps
+          - task_summary
+          - labels
+          - api_endpoint
+          - api_parameters
+          default: combined
+        application_id:
+          type: string
+          description: 'Optional. When set, returns flows used by at least one test that resolves
+
+            to this application (plan membership, training-time application, or recent
+
+            run history), plus reusable flows used by no test at all (returned with
+
+            usage_count 0); flows used only by tests that resolve to a different
+
+            application are excluded. Tests with no discoverable application
+
+            association are treated as in-scope (the same resolution
+
+            application-scoped test search uses), so flows used only by such tests
+
+            stay findable. usage_count reflects usage within this application.
+
+            '
+        flow_type:
+          description: Optional filter on flow_type.
+          allOf:
+          - $ref: '#/components/schemas/FlowTypeEnum'
+        mobile_platform:
+          description: Optional filter on mobile_platform.
+          allOf:
+          - $ref: '#/components/schemas/MobilePlatformEnum'
+        label_filter:
+          maxItems: 20
+          type: array
+          description: 'Exact-match label filter. When set, only flows whose `labels` array
+
+            contains every entry in this list are returned. Max 20 entries.
+
+            '
+          items:
+            type: string
+        updated_after:
+          type: string
+          description: 'Optional. Only return flows edited at or after this timestamp. Backed by the
+
+            creation time of the flow''s latest variant (every flow edit creates a new
+
+            variant).
+
+            '
+          format: date-time
+        include_non_reusable:
+          type: boolean
+          description: 'When true, include non-reusable flows (inline test-step fragments) in the
+
+            results. These rows rarely have descriptions and are sparsely indexed, so
+
+            the default excludes them.
+
+            '
+          default: false
+        limit:
+          maximum: 200
+          minimum: 1
+          type: integer
+          description: Per-call hard limit. Capped at 200 server-side.
+          default: 20
+      description: 'Parameters for token-based full-text search over `flow_reference` using the
+
+        Spanner SEARCH() function and `idx_flow_reference_search_v3`.
+
+        '
+    FlowVersion:
+      type: object
+      description: A Flow represents a set of steps in a Test
+      allOf:
+      - $ref: '#/components/schemas/Variant'
+      - type: object
+        properties:
+          variant_last_updated_by_app_version:
+            type: string
+            description: The version of the desktop app used to create this version.
+          script:
+            type: string
+            description: The flow's script
+          script_description:
+            type: string
+            description: Description of what the script does
+          step_annotations:
+            type: object
+            additionalProperties:
+              type: object
+              properties:
+                description:
+                  type: string
+                  description: step description
+                note:
+                  type: string
+                  description: step note
+                auto_generated_description:
+                  type: string
+                  description: description generated by the AI
+                step_description_source:
+                  type: string
+                  description: the source of the step description
+                  enum:
+                  - user
+                  - ai
+                  - default
+            description: Step descriptions and notes keyed by the step index
+          selectors:
+            type: array
+            description: the selectors from mablscript
+            items:
+              type: string
+              description: the JSON string of a selector
+          file_references:
+            type: array
+            description: the file references from mablscript
+            items:
+              $ref: '#/components/schemas/FileReference'
+          flow_references:
+            type: array
+            description: reusable flows referenced by steps in this flow
+            items:
+              $ref: '#/components/schemas/FlowReference'
+          snippet_references:
+            type: array
+            description: this snippets referenced by this Flow
+            items:
+              $ref: '#/components/schemas/SnippetReference'
+          variables:
+            $ref: '#/components/schemas/UserDefinedVariables'
+          parameters:
+            type: array
+            description: Configurable parameters mapping parameter name to a default value for that parameter
+            items:
+              $ref: '#/components/schemas/UserDefinedInputVariable'
+          step_features:
+            type: array
+            description: Steps that are associated with specific features
+            items:
+              $ref: '#/components/schemas/StepFeature'
+          page_urls:
+            type: array
+            description: URLs that should be visited for a visual page checker test
+            items:
+              type: string
+              description: A URL to run visual inspection and other page validation against
+          api_steps:
+            type: object
+            description: API steps for API only flow (stored in postman collection format)
+            x-dao-serialize: true
+            x-dao-compress: true
+          json_steps:
+            type: object
+            description: Steps in the new json format that replaces mablscript
+            x-dao-serialize: true
+            x-dao-compress: true
+          mobile_training_info:
+            $ref: '#/components/schemas/MobileTrainingInfo'
+          created_by_app_version:
+            type: string
+            description: The version of the desktop app used to create this version.
+          url:
+            type: string
+            description: the URL used when creating the flow
+          agent_session_id:
+            type: string
+            description: the id of the agent session that authored this flow version, if any
+      x-implements-interface:
+      - IsVariant
+      - HasVersion
+    ReextractSelectorsResponse:
+      required:
+      - modified
+      type: object
+      properties:
+        modified:
+          type: boolean
+          description: True if the flow was modified as a result of re-extracting the flow's selectors'
+          readOnly: true
+    VariantVersion:
+      type: object
+      properties:
+        variant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+        version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        previous_version:
+          type: integer
+          description: The generation number of the variant that was edited to create this variant (if applicable)
+          format: int64
+        merged_version:
+          type: integer
+          description: The generation number of the variant that was merged with the previous version to create this variant (if applicable)
+          format: int64
+        next_versions:
+          type: array
+          description: An array of generation numbers for the variants that were edited over this variant (if applicable)
+          items:
+            type: integer
+            format: int64
+        created_on_branch:
+          type: string
+          description: Name of the branch the variant was created on
+        change_description:
+          type: string
+          description: Description of the change between this variant and the previous variant
+        source_control_tags:
+          type: array
+          description: An array of source control tags that apply to this variant version
+          items:
+            type: string
+        created_time:
+          type: integer
+          description: Time at which the variant was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this variant
+        agent_session_id:
+          type: string
+          description: The ID of the agent session that authored this variant, if any. Not set for snippets.
+        mobile_training_info:
+          description: Device and app details recorded when a mobile variant was trained. Not set for snippets or non-mobile variants.
+          allOf:
+          - $ref: '#/components/schemas/MobileTrainingInfo'
+      x-implements-interface:
+      - HasCreatedActivity
+    EntityStepIds:
+      type: object
+      properties:
+        entityInvariantId:
+          type: string
+          description: The invariant id of the entity
+        journeyRunId:
+          description: The corresponding test run id if relevant
+        entityId:
+          type: string
+          description: The version of the entity (variant ID)
+        stepIdsByFlow:
+          type: array
+          description: The step ids for each flow in the entity in order
+          items:
+            $ref: '#/components/schemas/FlowStepIds'
+      description: The step ids for a versioned test or flow used in a particular test run
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    UserDefinedOutputVariable:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: the fully qualified symbol name of the variable
+    FlowMetadata:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Invariant'
+      - type: object
+        properties:
+          flow_type:
+            description: 'Type of flow. Set at create and immutable afterwards: the value sent to either PATCH is ignored, and a create that omits it is classified from the step content the request carries.'
+            allOf:
+            - $ref: '#/components/schemas/FlowTypeEnum'
+            x-mabl-scope: public
+          reusable:
+            type: boolean
+            description: Indicates whether this can be used by multiple tests
+          name:
+            type: string
+            description: 'The display name of the flow. Required (non-blank) for reusable flows.
+
+              When absent on older reusable data, the API serves the description value
+
+              here; non-reusable flows are never given a name they did not have.
+
+              '
+            x-mabl-scope: public
+          description:
+            type: string
+            description: 'Usage notes and considerations for the flow. Historically this field held
+
+              the flow''s display name; that role has moved to `name`. To rename a flow,
+
+              write `name` — writing this field edits the description only. When a flow
+
+              has no description, the API serves the flow''s name here for backwards
+
+              compatibility.
+
+              '
+            x-mabl-scope: public
+          labels:
+            type: array
+            description: User provided labels
+            items:
+              $ref: '#/components/schemas/Label'
+            x-mabl-scope: public
+          source_control_tags:
+            type: object
+            additionalProperties:
+              type: integer
+              format: int64
+            description: mapping of tags to version numbers the tag is currently applied to
+          import_source_id:
+            $ref: '#/components/schemas/ImportSourceId'
+          import_source_version:
+            type: string
+            description: Version of the import tool used to import this flow
+            x-mabl-scope: public
+          mobile_platform:
+            $ref: '#/components/schemas/MobilePlatformEnum'
+          minimize_execution_overhead:
+            type: boolean
+            description: 'When enabled, mabl will not capture screenshots, network logs, DOM snapshots,
+
+              or other test artifacts in order to report the most accurate flow execution time
+
+              '
+            x-mabl-scope: public
+          reuse_browser_state_in_plan_run:
+            type: boolean
+            description: 'Shares the browser state this flow produces with the rest of a cloud plan run.
+
+
+              Tests that reach the flow before any state has been stored each run it and store
+
+              their own result. The tests in a plan stage start together, so that is the common
+
+              case; a test that starts once state already exists for the same application and
+
+              credentials begins from that stored state instead.
+
+
+              To sign in once per plan run, put a test that runs this flow in an earlier plan
+
+              stage, against the same application URL and with the same credentials. Stages run
+
+              in order, so the tests of later stages all start from the state that test stored.
+
+
+              A marked flow still runs every time. It is not skipped, so it must decide for
+
+              itself whether there is anything left to do — a login flow, for example, should
+
+              wrap its sign-in steps in a condition that only holds when the login page is
+
+              actually showing. A marked flow that unconditionally repeats its work will do so
+
+              on a browser that already carries the session.
+
+
+              The stored state lasts only for the plan run. Has no effect on local CLI runs.
+
+              '
+            x-mabl-scope: public
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasWorkspaceId
+      - HasOrganizationId
+      - HasName
+      - IsInvariant
+    FlowUpdateFlows:
+      type: object
+      properties:
+        update_type:
+          type: string
+          enum:
+          - create
+          - update
+        e_tag:
+          type: string
+          description: ETag value according to http/1.1 spec section 14.19.  If used in the request body this will be treated as a If-Match header according to section 14.24
+        flow:
+          $ref: '#/components/schemas/Flow'
+        tracking_id:
+          type: string
+          description: A tracking id for a given flow update or create.  If set, the api will respond with the same id in the response for this flow.  Used for tracking creates where there is no initial flow id.
+    FileReference:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the uploaded file
+        name:
+          type: string
+          description: the base file name
+        size:
+          type: integer
+          description: the size of the file
+          format: int64
+        type:
+          type: string
+          description: the type of the file, i.e., the extension
+    StepFeature:
+      type: object
+      properties:
+        step_index:
+          type: integer
+          description: Index of the step
+          format: int64
+        nested_step_index:
+          type: array
+          description: Array of indices representing the path to nested steps within StepGroups. Empty for top-level steps.
+          items:
+            type: integer
+            format: int64
+        feature_id:
+          type: string
+          description: Id of the Feature is that is associated with this particular step.
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    QueryEntityByTaskParameters:
+      required:
+      - limit
+      - task_description
+      type: object
+      description: Parameters for querying entities by task description
+      allOf:
+      - $ref: '#/components/schemas/QueryEntityParameters'
+      - type: object
+        properties:
+          session_id:
+            type: string
+            description: The id of the mabl AI session, if any
+          task_description:
+            type: string
+            description: The task description
+          rerank_with_llm:
+            type: boolean
+            description: 'When true (default), the candidate list is LLM-reranked against the task
+
+              description before the top `limit` are returned. When false, the LLM rerank
+
+              is skipped and the raw datastore-ordered candidates (ASC by `COSINE_DISTANCE`)
+
+              are returned. Either way the response honors `limit`; the internal candidate
+
+              widening multiplier varies by endpoint (endpoints that group results after the
+
+              fetch keep the widened set so grouping does not underfill `limit`).
+
+              '
+            default: true
+    MergedVariant:
+      type: object
+      properties:
+        variant_last_updated_time:
+          type: integer
+          description: Time the variant was last updated
+          format: int64
+          x-mabl-scope: public
+        variant_last_updated_by_id:
+          type: string
+          description: ID of the user who last updated the variant
+          x-mabl-scope: public
+        cloud_safe_invariant_id:
+          type: string
+          description: Cloud safe ID representation (e.g. GCP/email/Kubernetes safe)
+        invariant_id:
+          maxLength: 50
+          type: string
+          description: Object ID for the parent type. Set by system.
+    Variant:
+      type: object
+      properties:
+        id:
+          maxLength: 50
+          type: string
+          description: Unique identifier
+          x-mabl-scope: public
+        is_latest:
+          type: boolean
+          description: Indicates whether this was the latest variant when retrieved
+        version:
+          type: integer
+          description: The generation number of this variant
+          format: int64
+        previous_version:
+          type: integer
+          description: The generation number of the variant that was edited to create this variant (if applicable)
+          format: int64
+        merged_version:
+          type: integer
+          description: The generation number of the variant that was merged with the previous version to create this variant (if applicable)
+          format: int64
+        merged_from_branch:
+          type: string
+          description: Name of the source branch whose version was merged to create this variant (if applicable)
+        created_on_branch:
+          type: string
+          description: Branch name the test was created on
+        change_description:
+          type: string
+          description: Description of the change between this variant and the previous variant
+        created_by_id:
+          type: string
+          description: The ID of the user who created this test
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time the test was created in epoch milliseconds
+          format: int64
+          x-mabl-scope: public
+      x-implements-interface:
+      - IsVariant
+    DeviceScreenDimensions:
+      required:
+      - height
+      - width
+      type: object
+      properties:
+        height:
+          type: integer
+          description: Height (pixels)
+          format: int32
+          x-mabl-scope: public
+        width:
+          type: integer
+          description: Width (pixels)
+          format: int32
+          x-mabl-scope: public
+    FlowQueryResult:
+      type: object
+      properties:
+        flows:
+          type: array
+          description: All flows that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Flow'
+        flow_summaries:
+          type: array
+          description: Flow summaries, when relevant
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/FlowSummary'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    SnippetTypeEnum:
+      type: string
+      enum:
+      - css
+      - javascript
+      - xpath
+      - sql
+      - postman
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse404:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

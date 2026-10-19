@@ -1,0 +1,2252 @@
+openapi: 3.2.0
+info:
+  title: mabl Link Agent API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: LinkAgent
+paths:
+  /link/agents/distribution-redirect:
+    get:
+      tags:
+      - LinkAgent
+      summary: Download Link Agent
+      description: Redirect the client to download the latest Link Agent distribution
+      operationId: redirectToLatestDistribution
+      parameters:
+      - name: branch
+        in: query
+        description: 'Deprecated: use `channel`. The Link Agent branch to retrieve; `branch=main` is `channel=latest`. May not be combined with `channel`.
+
+          '
+        required: false
+        deprecated: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: format
+        in: query
+        description: The format of the distribution to download
+        required: false
+        style: form
+        explode: true
+        schema:
+          $ref: '#/components/schemas/LinkAgentDistributionFormatEnum'
+      - name: auto_update
+        in: query
+        description: Check for agent updates at start-up?
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
+      - name: channel
+        in: query
+        description: 'The release channel to download from: `stable` (the default) is the released Link Agent, `latest` is the newest build of the main branch, and any other name is that branch''s build. May not be combined with the deprecated `branch`.
+
+          '
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '302':
+          description: Redirect to the latest distribution matching the request
+        '304':
+          description: If-None-Match predicate was not satisfied (current Link Agent matched one of the given ETags)
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent distribution not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+      x-mabl-scope: public
+  /link/agents:
+    get:
+      tags:
+      - LinkAgent
+      summary: Query Link Agents
+      description: Query for Link Agents by workspace ID
+      operationId: queryLinkAgents
+      parameters:
+      - name: workspace_id
+        in: query
+        description: ID of the workspace for which to query Link Agents
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        description: Label for which to query Link Agents
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: max_heartbeat_age_sec
+        in: query
+        description: If specified, will only return Link Agents that have sent a heartbeat in the past max_heartbeat_age_sec seconds
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkAgentQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+      x-mabl-scope: public
+    post:
+      tags:
+      - LinkAgent
+      summary: Indicates that a new or existing Link Agent instance has been started up
+      operationId: onLinkAgentStartup
+      requestBody:
+        description: Details about the agent
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkAgent'
+        required: true
+      responses:
+        '200':
+          description: Complete information about the Link Agent that was started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkAgent'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '410':
+          description: Unsupported Link Agent version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+  /cron/link/agents/cleanup:
+    get:
+      tags:
+      - LinkAgent
+      summary: Clean up dead Link Agents
+      operationId: cleanupLinkAgents
+      responses:
+        '204':
+          description: Cleanup successful
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::LinkAgent
+  /cron/link/agents/metrics:
+    get:
+      tags:
+      - LinkAgent
+      summary: Emit fleet-visibility and Link migration metrics for live Link Agents
+      operationId: emitLinkAgentMetrics
+      responses:
+        '204':
+          description: Metrics emitted
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+  /link/migration/workspaces:
+    get:
+      tags:
+      - LinkAgent
+      summary: List the Link 2.0 to 3.0 migration status of every workspace with a live Link…
+      description: 'Operator-only fleet view of the Link 2.0 to 3.0 migration: one row per workspace that owns a live Link Agent, classified into its migration phase from the workspace''s migration flags and its Agents'' versions and Link 3.0 connection state. See migration-cutover.md in link/mablnet/docs.'
+      operationId: listLinkMigrationWorkspaces
+      responses:
+        '200':
+          description: The migration status of each workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkMigrationWorkspaceList'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+  /link/agents/{id}/heartbeat:
+    patch:
+      tags:
+      - LinkAgent
+      summary: Indicates that a Link Agent has sent a heartbeat
+      operationId: linkAgentHeartbeat
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent sending the heartbeat
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Link Agent update to piggyback on this heartbeat
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkAgent'
+        required: false
+      responses:
+        '204':
+          description: Heartbeat acknowledged
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '410':
+          description: Link Agent has been terminated; the Link Agent process should shut down and should not attempt to reconnect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+  /link/agents/{id}/terminate:
+    post:
+      tags:
+      - LinkAgent
+      summary: Terminate Link Agent
+      description: Send a shutdown signal to a specific Link Agent. When invoked, the Link Agent process will shut down and will not attempt to reconnect.
+      operationId: terminateLinkAgent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent to terminate
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Termination request acknowledged
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+      x-mabl-scope: public
+  /link/agents/{id}/maintenance:
+    post:
+      tags:
+      - LinkAgent
+      summary: Place Link Agent into maintenance mode
+      description: Place a Link Agent into maintenance mode. mabl-side routing immediately stops treating the Agent as an active target — legacy Link Servers no longer dispatch new requests to it, and the Agent's mablnet Host begins draining its carriers (refusing new streams while continuing to service in-flight ones). The Agent's status moves to `draining` immediately and to `drained` once all in-flight connections have finished. If `drain_timeout_seconds` is supplied, the Agent stops waiting for natural drain after that interval and moves to `drained` regardless; without a timeout it waits indefinitely. The Agent does not auto-shutdown — the final shutdown is left to whatever external orchestrator initiated the maintenance window (use `POST .../terminate` to stop it, or `DELETE` this resource to return it to service). Idempotent; re-posting while still draining updates `drain_timeout_seconds`.
+      operationId: enterLinkAgentMaintenance
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent to place into maintenance mode
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkAgentMaintenanceRequest'
+        required: false
+      responses:
+        '204':
+          description: Maintenance-mode request acknowledged
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+      x-mabl-scope: public
+    delete:
+      tags:
+      - LinkAgent
+      summary: Take Link Agent out of maintenance mode
+      description: Take a Link Agent out of maintenance mode. mabl-side routing resumes treating the Agent as eligible for new traffic; the Agent resumes accepting new connections on its next status poll. No-op if the Agent is not in maintenance mode.
+      operationId: exitLinkAgentMaintenance
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent to take out of maintenance mode
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Exit-maintenance request acknowledged
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+      x-mabl-scope: public
+  /link/agents/{id}/operator-debug:
+    post:
+      tags:
+      - LinkAgent
+      summary: Enqueue an operator debug request for a Link Agent
+      description: Append an operator-issued debug request to the Agent's `operator_debug_queue`. The Agent picks it up on its next poll (≈ 10 s), executes idempotently, and acks via `operator_debug_results` on the following heartbeat. The api drops the queued entry on ack — callers watch `operator_debug_results` for the matching `request_id` to learn the outcome.
+      operationId: enqueueLinkAgentOperatorDebugRequest
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent to enqueue the debug request against.
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The debug request to enqueue. `request_id` MUST be unique within the queue.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkAgentOperatorDebugRequest'
+        required: true
+      responses:
+        '202':
+          description: Request enqueued. The Agent acks on its next heartbeat.
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '409':
+          description: 'Queue is full (16 entries) or the `request_id` collides with a still-pending request. Caller should drain the queue (let the Agent ack) or pick a fresh id.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::LinkAgent
+  /link/agents/{id}/server:
+    get:
+      tags:
+      - LinkAgent
+      summary: Finds a Link Server for this Link Agent
+      operationId: getLinkServerForAgent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent for which to find a Link Server
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Connection details about the link server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkServerConnection'
+        '204':
+          description: Request for Link Server is acknowledged, but the server is not ready for connections yet
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+  /link/agents/{id}:
+    get:
+      tags:
+      - LinkAgent
+      summary: Get Link Agent
+      description: Fetch the current state of a Link Agent, including operator-managed fields like `maintenance`. The Agent itself can poll this on its heartbeat cycle to learn about state changes set externally (entering/exiting maintenance, operator-supplied drain timeout, etc.).
+      operationId: getLinkAgent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent to fetch
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The Link Agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkAgent'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+    delete:
+      tags:
+      - LinkAgent
+      summary: Removes an existing Link Agent
+      operationId: removeLinkAgent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The agent that was deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkAgent'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::LinkAgent
+    patch:
+      tags:
+      - LinkAgent
+      summary: Update operator-controlled fields on a Link Agent
+      description: Update operator-managed fields on a Link Agent. v1 surface is restricted to `operator_tunables_overrides` — the only writable field on this endpoint. The resolved `operator_tunables` view that the Agent reads is recomputed on every read (defaults ⊕ label overrides ⊕ agent overrides); see the operator-control-plane design doc for details. To clear all per-Agent overrides at once, use DELETE `/link/agents/{id}/operator-tunables-overrides`.
+      operationId: updateLinkAgent
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: Conditional update — succeeds only if the agent's current ETag matches.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: field_mask
+        in: query
+        description: 'Comma-separated list of fields to update. If provided, only fields in the mask are written; fields in the mask but absent from the body are cleared. Without a mask the entire sparse body is applied (fields with `x-dao-apply-nulls` honour null-clears).
+
+          '
+        required: false
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
+        description: Sparse Link Agent update. Only `operator_tunables_overrides` is honoured.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkAgent'
+        required: true
+      responses:
+        '200':
+          description: The updated Link Agent (with the resolved `operator_tunables` view recomputed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkAgent'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '412':
+          description: If-Match precondition failed (ETag mismatch).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+  /link/agents/{id}/operator-tunables-overrides:
+    delete:
+      tags:
+      - LinkAgent
+      summary: Clear all operator-tunable overrides on a Link Agent
+      description: Clear every per-Agent operator-tunable override in one call, restoring the Agent to the resolved defaults ⊕ label-level overrides. The resolved `operator_tunables` view is recomputed on the response. To clear a single override instead, PATCH that field to `null` via `PATCH /link/agents/{id}`. Idempotent — clearing when no per-Agent overrides are set is a no-op success.
+      operationId: clearLinkAgentOperatorTunablesOverrides
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the agent whose operator-tunable overrides should be cleared
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: Conditional clear — succeeds only if the agent's current ETag matches.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The updated Link Agent (with the resolved `operator_tunables` view recomputed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkAgent'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Link Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        '412':
+          description: If-Match precondition failed (ETag mismatch).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::LinkAgent
+      x-mabl-scope: public
+  /link/owner/{owner_type}/{owner_id}/agents:
+    get:
+      tags:
+      - LinkAgent
+      summary: Query Link Agents by owner
+      description: Owner-scoped sibling of queryLinkAgents, for the fleet views that span tunnel owners other than a single workspace (the company dashboard). Workspace owners behave exactly like queryLinkAgents; company owners return the company's agents, enriched with the same computed fields as workspace reads. User (personal) owners return the caller's own personal agents — a user tunnel is private to its owner, so this query is authorized self-only (a caller can only list agents they own).
+      operationId: queryLinkAgentsByOwner
+      parameters:
+      - name: owner_type
+        in: path
+        description: The kind of owner the agents' tunnels are scoped to
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+      - name: owner_id
+        in: path
+        description: ID of the owner (workspace ID or company ID) whose Link Agents to query
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: label
+        in: query
+        description: Label for which to query Link Agents
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: max_heartbeat_age_sec
+        in: query
+        description: If specified, will only return Link Agents that have sent a heartbeat in the past max_heartbeat_age_sec seconds
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int32
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkAgentQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::LinkAgent
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    LinkAgentCapacityResourceEnum:
+      type: string
+      description: A resource dimension whose live utilization the api compares against its ceiling.
+      enum:
+      - cpu
+      - memory
+      - file_descriptors
+      - ephemeral_ports
+      - conntrack
+      - disk
+      - network
+      x-mabl-scope: public
+    LinkAgentDistributionFormatEnum:
+      type: string
+      description: 'Archive formats the Link Agent is distributed in, plus `msi` — the Windows installer, which registers the agent as a service so that it starts on boot. `auto_update` does not apply to `msi`: there is a single installer, and a service takes upgrades through the installer rather than through the in-place updater, so the parameter is ignored for that format.
+
+        '
+      enum:
+      - tbz2
+      - zip
+      - msi
+      x-mabl-scope: public
+    LinkAgentConfiguration:
+      type: object
+      properties:
+        connection_filter:
+          $ref: '#/components/schemas/LinkAgentConnectionFilter'
+        proxy_mode:
+          $ref: '#/components/schemas/LinkAgentProxyMode'
+        http_proxy:
+          type: string
+          description: 'The configured upstream HTTP CONNECT proxy as `host:port`. Credentials, if any, are omitted — see `proxy_auth_configured`. Absent when no fixed proxy is configured.
+
+            '
+          x-mabl-scope: public
+        proxy_pac_url:
+          type: string
+          description: 'The proxy auto-configuration (PAC) URL the Agent evaluates to pick a proxy per destination, when PAC-based proxying is configured. Absent for fixed-proxy or no-proxy setups.
+
+            '
+          x-mabl-scope: public
+        proxy_exclusions:
+          type: array
+          description: 'Destinations that bypass the proxy and are dialed directly — suffix, IPv4, IPv6, or CIDR expressions.
+
+            '
+          items:
+            type: string
+          x-mabl-scope: public
+        proxy_auth_configured:
+          type: boolean
+          description: 'Whether proxy credentials (fixed-proxy or PAC) are configured. The credentials themselves are never reported; this flag lets support confirm auth is present when diagnosing a 407 from the customer''s proxy.
+
+            '
+          x-mabl-scope: public
+        upstream_proxy:
+          $ref: '#/components/schemas/LinkAgentUpstreamProxy'
+        mablnet_update_channel:
+          type: string
+          description: 'The release channel this Agent pulls its mablnet worker binary from — e.g. `stable`, `latest`, or a `branch:<name>` channel.
+
+            '
+          x-mabl-scope: public
+        link_agent_update_channel:
+          type: string
+          description: 'The release channel this Agent updates *itself* from — e.g. `stable` (the default, published only when the Agent is tagged), `latest` (every build of the Agent''s trunk), a major version such as `3`, or a branch channel. The counterpart of `mablnet_update_channel`, which governs the worker binary rather than the Agent.
+
+            '
+          x-mabl-scope: public
+        auto_updates_enabled:
+          type: boolean
+          description: Whether the Agent applies mablnet worker auto-updates.
+          x-mabl-scope: public
+        tunnels:
+          type: array
+          description: 'The unique set of tunnel names served by this same Agent process. A single Agent instance can serve several tunnels; every one of that instance''s LinkAgent records reports the same set, so any one of them shows the full picture.
+
+            '
+          items:
+            type: string
+          x-mabl-scope: public
+        log_level:
+          type: string
+          description: The Agent's configured logging level. Support diagnostics.
+        max_concurrent_connections:
+          type: integer
+          description: Configured cap on concurrent tunnel connections. Support diagnostics.
+          format: int32
+        max_connection_attempts:
+          type: integer
+          description: Configured cap on connection retry attempts. Support diagnostics.
+          format: int32
+        shutdown_drain_timeout_seconds:
+          type: integer
+          description: 'How long the Agent drains in-flight work on shutdown before exiting. Support diagnostics.
+
+            '
+          format: int32
+        mablnet_router:
+          type: string
+          description: The configured mablnet Router endpoint override as `host:port`, if any. Support diagnostics.
+        mablnet_peer_ca_path:
+          type: string
+          description: Filesystem path to the mablnet peer CA override, if configured. Support diagnostics.
+        mablnet_update_pull_interval_seconds:
+          type: integer
+          description: How often the Agent polls for a new mablnet worker build, in seconds. Support diagnostics.
+          format: int32
+      description: 'A Link Agent''s effective, credential-free runtime configuration. Populated by both the Java Link Agent (the full surface below) and the mabl-cli Link Agent (its narrower carrier/uplink surface); fields the reporting Agent has no value for are omitted. Never carries secrets — proxy, PAC, and tunnel credentials are represented only by the `proxy_auth_configured` boolean. The first group of fields is surfaced to customers on the Link Agent details view; the rest is support-oriented detail.
+
+        '
+    LinkAgentDistributionEnum:
+      type: string
+      description: 'Which Link Agent distribution an instance is — the Java Link Agent (`java`), the mabl-cli Link Agent (`mabl_cli`), or the personal Link Agent built into the mabl desktop app (`mabl_desktop`).
+
+        '
+      enum:
+      - java
+      - mabl_cli
+      - mabl_desktop
+      x-mabl-scope: public
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    LinkAgentState:
+      type: object
+      properties:
+        mablnet:
+          $ref: '#/components/schemas/LinkAgentMablnetState'
+        legacy:
+          $ref: '#/components/schemas/LinkAgentLegacyState'
+        host:
+          $ref: '#/components/schemas/LinkAgentHostState'
+        recent_errors:
+          maxItems: 5
+          type: array
+          description: 'Fingerprint-deduped ring of the 5 most recent error categories the Agent has seen since process start (or since the last `recent_errors` rotation). Categories — not stack traces or messages — so the field is bounded and PII-safe. Full traces stay in the Agent''s local log.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentRecentError'
+          x-mabl-scope: public
+      description: 'Rolled-up just-in-time snapshot the Agent pushes on every heartbeat. Snapshot semantics — the api stores only the most recent value as the canonical "current state" view. Trend graphs live in Cloud Monitoring via the mablnet-metrics-collector OTel pipeline; this surface is for incident-triage ergonomics ("show me this Agent''s view of the world right now").
+
+        '
+      x-mabl-scope: public
+    LinkServerConnection:
+      required:
+      - client_certificate
+      - host
+      - link_server_id
+      - port
+      - server_fingerprint
+      type: object
+      properties:
+        link_server_id:
+          type: string
+          description: The ID of the Link Server
+          readOnly: true
+        host:
+          type: string
+          description: The Link Server host (hostname or IP address) for SSL connections
+          readOnly: true
+        port:
+          type: integer
+          description: The Link Server port for SSL connections
+          format: int32
+          readOnly: true
+        fqdn:
+          type: string
+          description: The fully qualified domain name of the Link Server
+          readOnly: true
+        client_certificate:
+          type: string
+          description: The serialized client certificate to use when connecting to the server
+          readOnly: true
+        server_fingerprint:
+          type: string
+          description: The fingerprint of the server that should be expected when connecting
+          readOnly: true
+        server_public_key:
+          type: string
+          description: The public key of the server
+          readOnly: true
+      description: Contains information that the Link Agent should use to connect to a Link Server
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+    LinkAgentLegacyState:
+      type: object
+      properties:
+        tunnel_clients_connected:
+          type: integer
+          description: Number of `TunnelClient` instances reporting `is_connected = true`.
+          format: int32
+          x-mabl-scope: public
+      description: Legacy WSS Tunnel snapshot.
+      x-mabl-scope: public
+    LinkAgentOperatorDebugResult:
+      required:
+      - completed_at
+      - outcome
+      - request_id
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: Matches the `request_id` from the corresponding `LinkAgentOperatorDebugRequest`.
+          x-mabl-scope: public
+        outcome:
+          type: string
+          description: 'Agent-side outcome. `skipped-duplicate` = Agent saw this id in its recent-requests LRU and short-circuited; `unknown-action` = Agent''s version of the schema doesn''t know the requested action (older Agent + newer api).
+
+            '
+          enum:
+          - success
+          - failure
+          - skipped-duplicate
+          - unknown-action
+          x-mabl-scope: public
+        detail:
+          maxLength: 256
+          type: string
+          description: 'Free-form additional context. PII-sanitised on the Agent side — categories and identifiers only, no payload contents.
+
+            '
+          x-mabl-scope: public
+        completed_at:
+          type: string
+          description: When the Agent finished executing this request.
+          format: date-time
+          x-mabl-scope: public
+      description: 'Agent → api ack for a previously-issued debug request. The api matches by `request_id`, marks the queued request as completed, and surfaces the result to whoever issued it. The api drops the queued request once the ack lands so the Agent doesn''t have to re-send results on subsequent heartbeats.
+
+        '
+      x-mabl-scope: public
+    LinkAgentOperatorTunables:
+      type: object
+      properties:
+        mablnet_min_carriers:
+          maximum: 16
+          minimum: 1
+          type:
+          - integer
+          - 'null'
+          description: 'Steady-state target carrier count for the mablnet Host. PATCH `null` to clear an override and fall back to the next merge layer.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_max_carriers:
+          maximum: 32
+          minimum: 1
+          type:
+          - integer
+          - 'null'
+          description: 'Advisory ceiling — overlap budget for in-flight carrier churn.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_join_timeout:
+          type:
+          - string
+          - 'null'
+          description: 'Per-carrier-join timeout. Tighten only when investigating a misbehaving LB.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_telemetry_export_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Cadence at which the Agent-side SDK MeterProvider flushes to the mablnet-metrics-collector. Drop to ~`PT5S` during incidents.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_recycle_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Period between proactive carrier-recycle ticks: the worker retires its oldest carrier (make-before-break, so existing QUIC sessions migrate without disruption) and the LB redistributes the replacement across the Router fleet. Default `PT60M`. Set `PT0S` to disable proactive recycle (the worker still retires unhealthy carriers). PATCH `null` to clear an override.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_recycle_jitter:
+          type:
+          - string
+          - 'null'
+          description: 'Random offset added to the first carrier-recycle tick, to desync the fleet so recycles don''t bunch into a thundering-herd reconnect. Default `PT30M`. No effect when `mablnet_carrier_recycle_interval` is `PT0S`.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_allowed_protocols:
+          type:
+          - array
+          - 'null'
+          description: 'The set of mablnet carrier protocols this tunnel is allowed to use (default `[mablnet_quic, mablnet_wss]`). This is the mabl-controlled *policy* — which carriers are permitted — NOT a try-order: order here is not significant. Each host selects the best available protocol from this set (and the fallback order among them) using local signals the operator can''t know ahead of time — UDP socket-buffer clamp, an HTTP proxy in the path, live reachability. Set `[mablnet_wss]` to disable QUIC for a tunnel on a known UDP-blocked network, or `[mablnet_quic]` to require QUIC. Only `mablnet_*` values are valid; the worker rebuilds on change. PATCH `null` to clear an override.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentProtocolEnum'
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_carrier_connect_timeouts:
+          type:
+          - object
+          - 'null'
+          additionalProperties:
+            type: integer
+            format: int32
+          description: 'Per-protocol carrier establishment deadline in milliseconds, keyed by `LinkAgentProtocolEnum` value (default `{mablnet_quic: 8000, mablnet_wss: 45000}`): how long the worker waits for a carrier on that protocol to JOIN before falling back to the next protocol the host tries (from `mablnet_allowed_protocols`). The deadline is intrinsic to the protocol — QUIC fast-fails to escape silently-blackholing networks; WSS is patient — and is independent of order. A protocol absent from the map uses the worker''s built-in default. PATCH `null` to clear the override.
+
+            '
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        mablnet_client_pool_size:
+          type:
+          - integer
+          - 'null'
+          description: 'Multi-carrier peer-pool size for CLIENT legs connecting to this tunnel. Deliberately has NO server-side default: unset means each client auto-selects a fixed pool size from its own machine''s resources (total memory, capped by cores) — the api can''t know them. An explicit value pins the size for every client of the tunnel: `1` = pool off, N > 1 boots N mablnet Hosts per client — one slot identity each, each with its own carriers — and spreads connections across them, lifting the one-pinned-carrier-per-peer throughput cap for many-connection workloads (browser tests). Does not speed up a single bulk stream, and the Link Agent itself is unaffected — this rides to clients on the resolved tunnel (`client_pool_size`). Consumers treat explicit values < 1 as 1; keep N modest (2-4). PATCH `null` to restore client auto-selection.
+
+            '
+          format: int32
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        ready_heartbeat_interval:
+          type:
+          - string
+          - 'null'
+          description: 'Heartbeat cadence once the Agent reaches `ready` status. While the Agent is still bringing up the legacy / mablnet stacks (status != `ready`) it heartbeats at the hard-coded 10 s tick — fast feedback is what ops + the UI need during startup, and the startup window is short. Once `ready` the cadence drops to this value (default `PT60S`); steady-state Agents mostly only need the heartbeat to guard against sudden death (laptop suspend, network drop) and that doesn''t repay 10 s × every Agent in the fleet of api-side load. The Agent reverts to 10 s if `status` ever leaves `ready`. Must stay below the api''s dead-agent cleanup threshold (10 min) — `PT300S` (5 min) is a safe upper bound.
+
+            '
+          format: duration
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+        agent_log_level:
+          type:
+          - string
+          - 'null'
+          description: 'Root logger level. Applied in-place — no Host rebuild.
+
+            Deliberately has no server-side default, and should not be given one. The Agent applies this to its process-global root logger on the first announce, which happens *after* it has applied the level from its own config file / command line — so any value set here silently overrides what the customer configured locally. Left unset (the default) the local config stays authoritative; set explicitly, it means an operator chose this level for this tunnel and it wins.
+
+            '
+          enum:
+          - trace
+          - debug
+          - info
+          - warn
+          - error
+          x-dao-apply-nulls: true
+          x-mabl-scope: public
+      description: 'Operator-tunable parameters for a running Link Agent. Used in two contexts: as the read-only resolved view (`operator_tunables`) and as the sparse overrides (`operator_tunables_overrides`). In the overrides context absent fields fall through to the next merge layer; `null` explicitly clears the override (`x-dao-apply-nulls: true` per-field). In the resolved-view context the api populates every field by merging static defaults (in `LinkLabelServiceImpl`) with label-level overrides and (on `LinkAgent`) agent-level overrides.
+
+        '
+      x-mabl-scope: public
+    LinkAgentMaintenanceRequest:
+      type: object
+      properties:
+        drain_timeout_seconds:
+          minimum: 0
+          type: integer
+          description: 'Maximum seconds the Agent should wait for in-flight connections to drain before signalling that it is safe to terminate. Omit to wait indefinitely.
+
+            '
+          format: int32
+          x-mabl-scope: public
+      description: 'Optional parameters for placing a Link Agent into maintenance mode.
+
+        '
+      x-mabl-scope: public
+    LinkAgentEndpoint:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Protocol-specific connection target.
+          x-mabl-scope: public
+      description: 'api-set connection target for one protocol''s Link Agent → mabl-side connection. Address format is protocol-specific: legacy `wss` carries an `<fqdn>` string (matches the legacy `current_link_server_endpoint` shape); `mablnet_wss` / `mablnet_quic` carry an FQDN that the Agent resolves at connect time. The api is the source of truth for these values — the Agent reads from `endpoints` to learn where to connect and never writes back to it (corresponding agent-set per-protocol health lives in `connection_status`).
+
+        '
+      x-mabl-scope: public
+    LinkAgentCapacity:
+      type: object
+      properties:
+        health:
+          $ref: '#/components/schemas/LinkAgentCapacityStatusEnum'
+        binding_constraint:
+          $ref: '#/components/schemas/LinkAgentCapacityResourceEnum'
+        dimensions:
+          type: array
+          description: Per-resource utilization-vs-ceiling, one entry per computable dimension.
+          items:
+            $ref: '#/components/schemas/LinkAgentCapacityDimension'
+          x-mabl-scope: public
+        os_warnings:
+          type: array
+          description: 'Conditions on the Agent''s host or network the customer should act on — OS settings below recommended values, the host''s memory against the tunnels it runs, and mabl endpoints the Agent cannot reach. Empty when the host is well-tuned, adequately sized, and reaching mabl.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentOsWarning'
+          x-mabl-scope: public
+        supported_tunnels:
+          type: integer
+          description: 'How many tunnels this host''s memory supports — a projection, not a limit the api enforces, and not a health signal: it is informational even when the Agent runs fewer. Pair it with `tunnels_on_host` to render "running 4 of 14".
+
+
+            Derived from `total_memory_bytes` alone, allowing for the Agent process and for the extra worker an update runs alongside the others, since each tunnel runs its own worker process. It therefore assumes the host is dedicated to the Agent — a host also running a database supports fewer, which the `memory` dimension''s live utilization is what reveals. Absent when the Agent reported no memory total, and `0` for a host too small for even one tunnel.
+
+
+            Capped at 64 however much memory the host has. Memory is the only term measured, and on a large host it is not the binding one — core count, the file-descriptor limit and the ephemeral-port range bite first, and turning those into a tunnel count needs data we do not have. Those limits are reported separately instead: as `open_file_limit` and `ephemeral_port_range` advisories, and as the live `cpu` dimension.
+
+            '
+          format: int32
+          x-mabl-scope: public
+      description: 'Server-derived capacity insights, recomputed on every read (never persisted) from the heartbeat `agent_state.host` utilization peaks, the static headroom denominators (`cpu_cores`, `total_memory_bytes`, `os_settings`), and the `connections_rejected` saturation counter. Answers "how close is this Agent to its limits, and is its host tuned?" for the capacity-insights UI. Present once the Agent has announced its memory total — enough for the `supported_tunnels` projection — with the utilization dimensions filling in from its first heartbeat carrying host stats.
+
+        '
+      x-mabl-scope: public
+    LinkAgentCapacityDimension:
+      type: object
+      properties:
+        resource:
+          $ref: '#/components/schemas/LinkAgentCapacityResourceEnum'
+        utilization_pct:
+          type: number
+          description: Peak usage as a percentage (0–100) of the ceiling for this dimension.
+          format: double
+          x-mabl-scope: public
+        status:
+          $ref: '#/components/schemas/LinkAgentCapacityStatusEnum'
+        used:
+          type: integer
+          description: 'Peak raw usage in the dimension''s native unit (memory bytes, file-descriptor count, ephemeral-port count). Omitted for `cpu`, whose utilization is already a percentage.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        limit:
+          type: integer
+          description: 'Ceiling in the same unit as `used`. Omitted for `cpu`, and when the limit is unbounded (e.g. an unlimited file-descriptor rlimit).
+
+            '
+          format: int64
+          x-mabl-scope: public
+      description: 'One resource dimension''s peak utilization against its ceiling, derived server-side from the heartbeat `agent_state.host` peaks and the static headroom denominators (`cpu_cores`, `total_memory_bytes`, `os_settings`). Peaks — not instantaneous samples — drive the band, so a burst between heartbeats still registers.
+
+        '
+      x-mabl-scope: public
+    LinkAgentOperatorDebugRequest:
+      required:
+      - action
+      - request_id
+      - requested_at
+      type: object
+      properties:
+        request_id:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: 'Opaque caller-supplied identifier (recommended: ULID). Agent dedupes by this value and surfaces it back on the ack.
+
+            '
+          x-mabl-scope: public
+        action:
+          type: string
+          description: 'Discriminator. Each value maps to a typed sub-schema with that action''s argument shape.
+
+            '
+          enum:
+          - dump-state
+          - redial-carriers
+          - redial-carrier
+          - force-peer-ca-refetch
+          - synthetic-dial
+          x-mabl-scope: public
+        requested_at:
+          type: string
+          description: When the api enqueued this request.
+          format: date-time
+          x-mabl-scope: public
+        requested_by:
+          type: string
+          description: 'Operator identifier (e.g. mabl user id). Audit-only — not used for authorization.
+
+            '
+          x-mabl-scope: public
+      description: 'Operator-issued debug request, queued by the api on the LinkAgent and pulled by the Agent on its next poll. Discriminated by `action`; each variant has its own arg shape. Idempotent by design — the Agent dedupes by `request_id` (an LRU of the last 64 ids in-process), so the api re-sending a pending request after an Agent restart is a no-op rather than a re-execute.
+
+        '
+      discriminator:
+        propertyName: action
+        mapping:
+          dump-state: '#/components/schemas/LinkAgentDumpStateRequest'
+          redial-carriers: '#/components/schemas/LinkAgentRedialCarriersRequest'
+          redial-carrier: '#/components/schemas/LinkAgentRedialCarrierRequest'
+          force-peer-ca-refetch: '#/components/schemas/LinkAgentForcePeerCaRefetchRequest'
+          synthetic-dial: '#/components/schemas/LinkAgentSyntheticDialRequest'
+      x-mabl-scope: public
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    LinkMigrationPhaseEnum:
+      type: string
+      description: 'Where a workspace is in the Link 2.0 to 3.0 migration. link_2_only, link_3_partially_installed and link_3_installed are before Link 3.0 is enabled, split by how many live Agents run a Link 3.0 capable version. link_3_blocked, link_3_upgrade_pending and link_3_ready have Link 3.0 enabled with test runs still on Link 2.0: blocked when a Link 3.0 capable Agent lacks a Link 3.0 connection, upgrade_pending when only Agents on Link 2.x do, and ready when every live Agent has one. tests_on_link_3 and link_3_only (Link 2.0 retired) route test runs over Link 3.0, each with an unhealthy variant when a live Agent lacks a Link 3.0 connection. misconfigured flags route test runs over a Link version the Agents are not told to use.'
+      enum:
+      - link_2_only
+      - link_3_partially_installed
+      - link_3_installed
+      - link_3_blocked
+      - link_3_upgrade_pending
+      - link_3_ready
+      - tests_on_link_3_unhealthy
+      - tests_on_link_3
+      - link_3_only_unhealthy
+      - link_3_only
+      - misconfigured
+    LinkAgentRecentError:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          description: Last time the Agent saw an error matching this fingerprint.
+          format: date-time
+          x-mabl-scope: public
+        fingerprint:
+          type: string
+          description: 'Stable category for this error (e.g. `carrier-connect-failed`, `peer-ca-fetch-401`, `mablnet-host-rebuild`). Categories, not stack traces — kept narrow so the field stays bounded across noisy upstreams.
+
+            '
+          x-mabl-scope: public
+        count:
+          type: integer
+          description: Number of distinct errors that mapped to this fingerprint in the window.
+          format: int32
+          x-mabl-scope: public
+      description: One fingerprint-deduplicated entry in `agent_state.recent_errors`.
+      x-mabl-scope: public
+    LinkAgentQueryResult:
+      type: object
+      properties:
+        link_agents:
+          type: array
+          description: All Link Agents that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/LinkAgent'
+          x-mabl-scope: public
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+          x-mabl-scope: public
+    LinkAgentCapabilityEnum:
+      type: string
+      description: "Optional behaviors a Link Agent has been built to support. Reported by the Agent on startup; mabl-side endpoints gate operator actions on the presence of the relevant capability so that hitting a feature-dependent endpoint against an older Agent (which would silently fail to act on it) is rejected with a clear error.\n- `maintenance`: the Agent polls `GET /link/agents/{id}` to learn about\n  operator-set state and drains its tunnels when placed into maintenance\n  (`status=draining`), reporting `status=drained` once it has finished.\n"
+      enum:
+      - maintenance
+      x-mabl-scope: public
+    LinkAgentProxyMode:
+      type: string
+      description: 'Which classes of the Agent''s traffic route through the configured HTTP proxy: `all` — both the mabl control-plane connection and customer-test-target traffic; `mabl` — only the Agent''s connection to mabl; `upstream` — only customer-test-target traffic; `none` — no proxy.
+
+        '
+      enum:
+      - all
+      - mabl
+      - upstream
+      - none
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    LinkAgentProtocolEnum:
+      type: string
+      description: "Protocol the Link Agent uses to reach the mabl side.\nLegacy values (pre-mablnet): - `wss`: WebSocket over TLS to a Link Server (the only one of the three that\n  shipped — `ssl` and `https` are historical placeholders).\n- `ssl`, `https`: never implemented; kept in the enum for backwards\n  compatibility with serialized records that captured them.\n\nNew values (mablnet): - `mablnet_wss`: WSS carrier to a mablnet Router, through the Application LB on\n  :443. The fallback substrate, and the only one that traverses an HTTP proxy.\n- `mablnet_quic`: UDP/QUIC carrier to a mablnet Router, on :443. The preferred\n  substrate where the network passes UDP; Agents fall back to `mablnet_wss`\n  where it does not.\n"
+      enum:
+      - ssl
+      - https
+      - wss
+      - mablnet_wss
+      - mablnet_quic
+      x-mabl-scope: public
+    LinkMigrationFlagSourceEnum:
+      type: string
+      description: Where a Link migration flag is turned on, if anywhere
+      enum:
+      - account
+      - workspace
+      - none
+    LinkAgentCarrier:
+      type: object
+      properties:
+        router_id:
+          type: string
+          description: 'The Router these carriers terminate on, and the id the per-carrier debug actions target. Absent when the Agent could not learn it — the carrier is no longer tracked, or the Router advertised none. Not derivable from `endpoint`: behind the load balancer every Router answers on the same address.
+
+            '
+          x-mabl-scope: public
+        endpoint:
+          type: string
+          description: 'The carrier wire-form the Agent dialed, e.g. `udp://mabl-quic.link.mabl.com:443` or `wss://mabl-wss.link.mabl.com:443/mablnet/v1/carrier`. Identifies the address the customer''s network has to allow, not the Router — Routers share it.
+
+            '
+          x-mabl-scope: public
+        protocol:
+          description: Transport carrying this group, `mablnet_quic` or `mablnet_wss`. Reported rather than parsed back out of `endpoint`, so no consumer has to know how a substrate spells its scheme.
+          allOf:
+          - $ref: '#/components/schemas/LinkAgentProtocolEnum'
+          x-mabl-scope: public
+        count:
+          type: integer
+          description: Open carriers in this group.
+          format: int32
+          x-mabl-scope: public
+      description: 'One group of the Agent''s open carriers: those terminating on the same Router over the same endpoint. Rebuilt from the worker''s live carrier snapshot on every heartbeat, open carriers only.
+
+        '
+      x-mabl-scope: public
+    LinkAgentCapacityStatusEnum:
+      type: string
+      description: 'Capacity health band, used both for the Agent overall and per resource dimension. `healthy` = comfortable headroom; `warning` = approaching a limit (tune or scale soon); `critical` = at/over a limit, or the Agent has already rejected connections for want of capacity; `unknown` = not enough data yet (no heartbeat carrying host stats). As an OS-warning severity only `warning` / `critical` are used.
+
+        '
+      enum:
+      - healthy
+      - warning
+      - critical
+      - unknown
+      x-mabl-scope: public
+    LinkMigrationBlockingAgent:
+      type: object
+      properties:
+        agent_id:
+          type: string
+        label:
+          type: string
+        version:
+          type: string
+        last_error:
+          type: string
+          description: The Agent's most recent Link 3.0 connection error, if it reported one
+      description: A live Link Agent without a Link 3.0 connection that blocks its workspace's next migration step
+    LinkMigrationWorkspace:
+      type: object
+      properties:
+        workspace_id:
+          type: string
+        workspace_name:
+          type: string
+        account_id:
+          type: string
+        account_name:
+          type: string
+        company_id:
+          type: string
+        phase:
+          $ref: '#/components/schemas/LinkMigrationPhaseEnum'
+        held:
+          type: boolean
+          description: The account excludes link_protocol_mablnet, which marks it as not to be migrated by fleet tooling
+        native_link_3:
+          type: boolean
+          description: The account was created on Link 3.0 rather than migrated to it
+        link_protocol_mablnet:
+          description: Where link_protocol_mablnet is turned on
+          allOf:
+          - $ref: '#/components/schemas/LinkMigrationFlagSourceEnum'
+        link_proxy_mablnet:
+          description: Where link_proxy_mablnet is turned on
+          allOf:
+          - $ref: '#/components/schemas/LinkMigrationFlagSourceEnum'
+        link_protocol_tunnel:
+          type: boolean
+          description: Whether link_protocol_tunnel is on, from the account or the workspace's labs
+        live_agent_count:
+          type: integer
+          format: int32
+        link_3_capable_agent_count:
+          type: integer
+          description: Live Agents running a Link 3.0 capable version
+          format: int32
+        link_3_connected_agent_count:
+          type: integer
+          description: Live Agents with a working Link 3.0 connection
+          format: int32
+        blocking_agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkMigrationBlockingAgent'
+      description: One workspace's Link 2.0 to 3.0 migration status
+    LinkTunnelOwnerType:
+      type: string
+      description: 'The kind of entity a mablnet tunnel is scoped to — its "owner". `workspace` is the classic scope: one tunnel per workspace. `company` scopes a single tunnel to an entire company, so every workspace under that company shares one mablnet tenant (and one Link Agent fleet) instead of needing a tunnel each. `user` is a personal tunnel scoped to a single user, private to that user — its egress is the user''s own machine, used to route a cloud test run through it. All three are mablnet-only: legacy Link Tunnel is always workspace-scoped.
+
+        '
+      enum:
+      - workspace
+      - company
+      - user
+      x-mabl-scope: public
+    LinkAgentUpstreamProxy:
+      type: object
+      properties:
+        host:
+          type: string
+          description: Proxy host.
+          x-mabl-scope: public
+        port:
+          type: integer
+          description: Proxy port.
+          format: int32
+          x-mabl-scope: public
+        exclusions:
+          type: array
+          description: Destinations that bypass this proxy and are dialed directly.
+          items:
+            type: string
+          x-mabl-scope: public
+      description: 'A fixed upstream HTTP CONNECT proxy applied to customer-test-target dials, with its bypass list. Credentials are never included.
+
+        '
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    LinkAgentConnectionStatus:
+      type: object
+      properties:
+        is_connected:
+          type: boolean
+          description: 'Whether the Agent currently has a working connection on this protocol. Updated on each heartbeat. Per-protocol state lets mabl ops identify accounts where one protocol is failing (e.g. firewall blocking mablnet''s :443 while legacy `wss` works) without losing the working path.
+
+            '
+          x-mabl-scope: public
+        last_error:
+          type: string
+          description: 'Most recent connection error for this protocol, if `is_connected` is false. Empty when the connection is up.
+
+            '
+          x-mabl-scope: public
+        last_connected_time:
+          type: integer
+          description: 'Time of the most recent successful connection on this protocol. Helps operators distinguish "never worked" from "worked recently and just dropped". Absent if the Agent has never seen a successful connection for this protocol.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        unreachable_seconds:
+          type: integer
+          description: 'How long this protocol has been without a working connection, measured by the Agent from its own clock and reset the moment it connects. Absent while `is_connected` is true, and absent on Agents that predate the field.
+
+
+            A duration rather than a timestamp on purpose: the api compares it against a threshold, and a customer host''s clock can be arbitrarily skewed from mabl''s. This is what lets the api tell a sustained loss of access apart from an Agent that is still on its first connect attempt — see the `link_endpoint_unreachable` advisory.
+
+            '
+          format: int64
+          x-mabl-scope: public
+      description: 'Agent-set per-protocol connection health. Keys align with `endpoints` so operators can pair "where the api told the Agent to go" with "what the Agent reports about it". Reported on heartbeat.
+
+        '
+      x-mabl-scope: public
+    LinkAgentHostState:
+      type: object
+      properties:
+        cpu_utilization_pct:
+          type: number
+          description: Host CPU utilization at the most recent sample, as a percentage (0–100) averaged across all cores.
+          format: double
+          x-mabl-scope: public
+        peak_cpu_utilization_pct:
+          type: number
+          description: Highest CPU-utilization percentage (0–100) observed since the previous heartbeat.
+          format: double
+          x-mabl-scope: public
+        memory_used_bytes:
+          type: integer
+          description: Host memory in use at the most recent sample, in bytes.
+          format: int64
+          x-mabl-scope: public
+        peak_memory_used_bytes:
+          type: integer
+          description: Peak host memory in use since the previous heartbeat, in bytes.
+          format: int64
+          x-mabl-scope: public
+        memory_available_bytes:
+          type: integer
+          description: Host memory available at the most recent sample, in bytes.
+          format: int64
+          x-mabl-scope: public
+        open_fds:
+          type: integer
+          description: 'Open file descriptors held by the worker process at the most recent sample. Each proxied connection consumes one; compare against `os_settings.open_file_limit` for the dominant connection-ceiling headroom.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        peak_open_fds:
+          type: integer
+          description: Peak worker open file descriptors since the previous heartbeat.
+          format: int64
+          x-mabl-scope: public
+        ephemeral_ports_in_use:
+          type: integer
+          description: 'Outbound connections the worker currently holds open, each consuming one ephemeral port — compare against the `os_settings.ephemeral_port_range` size. Counts active connections only; sockets lingering in TIME_WAIT (which still hold a port briefly) are not included.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        peak_ephemeral_ports_in_use:
+          type: integer
+          description: Peak worker ephemeral-port usage since the previous heartbeat.
+          format: int64
+          x-mabl-scope: public
+        connections_rejected:
+          type: integer
+          description: 'Cumulative count, since the worker process started, of outbound dials the worker rejected because a host resource limit was hit (open-file-descriptor or ephemeral-port exhaustion) — not ordinary connection-refused/timeout failures. The unambiguous saturation signal: any nonzero value means the Agent has already turned customer traffic away for want of capacity.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        load_average:
+          type: number
+          description: 'System load average (1-minute) at the most recent sample, from the JVM OperatingSystemMXBean. Compare against `cpu_cores`: a load approaching or exceeding the core count means the run queue is backed up (CPU- or IO-bound) in a way instantaneous CPU% can miss. Absent on Windows (the JVM doesn''t expose it there).
+
+            '
+          format: double
+          x-mabl-scope: public
+        swap_used_bytes:
+          type: integer
+          description: 'Swap space in use at the most recent sample, in bytes. Non-zero (and growing) swap use is a memory-pressure signal even when `memory_available_bytes` still looks healthy.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        swap_total_bytes:
+          type: integer
+          description: Total swap space on the host, in bytes (the denominator for `swap_used_bytes`).
+          format: int64
+          x-mabl-scope: public
+        disk_free_bytes:
+          type: integer
+          description: 'Free space, in bytes, on the filesystem holding the Agent''s working directory. A full disk breaks worker auto-updates, update staging, and logging.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        disk_total_bytes:
+          type: integer
+          description: Total size, in bytes, of the filesystem holding the Agent's working directory.
+          format: int64
+          x-mabl-scope: public
+        conntrack_count:
+          type: integer
+          description: 'Netfilter connection-tracking entries currently in use at the most recent sample (Linux `nf_conntrack_count`). On a connection-heavy host behind a stateful firewall/NAT, conntrack-table exhaustion drops new connections before any FD/port limit is hit. Absent when the conntrack module isn''t loaded.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        peak_conntrack_count:
+          type: integer
+          description: Peak netfilter conntrack entries observed since the previous heartbeat.
+          format: int64
+          x-mabl-scope: public
+        udp_rcvbuf_errors:
+          type: integer
+          description: 'UDP datagrams the kernel dropped for lack of receive-buffer space since the previous heartbeat (Linux `/proc/net/snmp` `Udp: RcvbufErrors`). Read as a trend, not as an attribution: the kernel sums this over **every** UDP socket in the host''s network namespace, so it covers the worker''s QUIC carrier sockets but also everything else on the box — a browser''s QUIC connections, mDNS, a local DNS resolver — and on a general-purpose host those usually dominate it. A nonzero value therefore means inbound UDP throughput is being lost somewhere on the host, not that the carrier lost anything. Correlate with `os_settings.udp_buffer_clamped` before concluding the buffers are too small: that flag is what says a requested socket buffer was actually capped, and it is the only case where raising `net.core.rmem_max` changes the outcome. Absent off Linux.
+
+            '
+          format: int64
+          x-mabl-scope: public
+      description: 'Host + worker-process resource-utilization snapshot the Agent assembles at heartbeat time. CPU and memory are host-wide, read from the JVM''s OperatingSystemMXBean (so they include the worker subprocess); the file-descriptor, ephemeral-port, and connection-rejection counts are the worker process''s own, pushed to the Agent over the worker IPC. Current samples plus high-water marks since the previous heartbeat — peaks matter for "how close to its limits" because a periodic sample misses bursts. Pair with the static `cpu_cores` / `total_memory_bytes` / `os_settings` on the Agent for the headroom denominators.
+
+        '
+      x-mabl-scope: public
+    LinkAgentMablnetState:
+      type: object
+      properties:
+        carriers_open:
+          type: integer
+          description: Number of carriers currently in OPEN state.
+          format: int32
+          x-mabl-scope: public
+        carriers:
+          maxItems: 32
+          type: array
+          description: 'The Agent''s open carriers, one row per (Router, endpoint) pair — so an Agent holding both a QUIC and a WSS carrier to the same Router reports two rows, and the count of distinct `router_id` values answers "is this Agent multi-homed?". Rows rather than a map keyed by endpoint because behind the load balancer every carrier on a substrate dials the same address, which cannot tell Routers apart. Empty until the worker''s first carrier-stats push and once that snapshot goes stale, alongside `carriers_open` reading 0.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentCarrier'
+          x-mabl-scope: public
+        peer_count:
+          type: integer
+          description: Number of remote peer Hosts the Agent's Host currently knows about.
+          format: int32
+          x-mabl-scope: public
+        socks_streams_active:
+          type: integer
+          description: Number of inbound SOCKS5 streams currently active (handshake + bridging).
+          format: int32
+          x-mabl-scope: public
+        socks_streams_total:
+          type: integer
+          description: Total inbound SOCKS5 streams accepted since the process started.
+          format: int64
+          x-mabl-scope: public
+        rtt_p50_ms:
+          type: number
+          description: p50 of recent carrier RTT, in milliseconds.
+          format: double
+          x-mabl-scope: public
+        rtt_p99_ms:
+          type: number
+          description: p99 of recent carrier RTT, in milliseconds.
+          format: double
+          x-mabl-scope: public
+        send_window_saturation_pct:
+          type: number
+          description: 'Share of the last heartbeat window (0-100) during which the Agent''s tunnel send path was network-bound — SOCKS sessions sitting at their in-flight write-window high-water mark, i.e. customer data queued behind available tunnel capacity. Computed by the Agent from the worker''s cumulative saturation clock; clamped, so overlapping saturated sessions read as fully saturated rather than >100. Sustained high values mean the tunnel itself (not the host) is the constraint — the "add Link Agents" signal. Absent when the Agent or worker predates the signal.
+
+            '
+          format: double
+          x-mabl-scope: public
+        worker_version:
+          type: string
+          description: 'Version of the native mablnet host worker binary the Agent is currently running. Distinct from the Agent''s top-level `version` (the Agent software / distribution version): the worker self-updates on its own channel, so this tracks the running worker generation independently. Absent until the worker has started.
+
+            '
+          x-mabl-scope: public
+      description: Per-Host mablnet snapshot, populated by the Agent from MablnetClient.
+      x-mabl-scope: public
+    LinkMigrationWorkspaceList:
+      type: object
+      properties:
+        workspaces:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkMigrationWorkspace'
+      description: The Link 2.0 to 3.0 migration status of every workspace with a live Link Agent
+    LinkAgent:
+      type: object
+      properties:
+        id:
+          type: string
+          description: UUID for this Link Agent instance
+          x-mabl-scope: public
+        created_time:
+          type: integer
+          description: Time at which the Link Agent was created
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        created_by_id:
+          type: string
+          description: The principal that registered this Link Agent — normally the API key the agent runs under. Server-set from the authenticated caller; supplying it is ignored. Activity feed attribution reads this, so an agent without it is reported as having been registered by mabl itself.
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_time:
+          type: integer
+          description: Time at which the Link Agent record last changed
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_updated_by_id:
+          type: string
+          description: The principal behind the most recent change to this Link Agent — the API key for a status change reported by the agent, or the user who started or ended a maintenance window. Server-set from the authenticated caller; supplying it is ignored.
+          readOnly: true
+          x-mabl-scope: public
+        deleted_time:
+          type: integer
+          description: Time at which the Link Agent was stopped or removed
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        last_heartbeat_time:
+          type: integer
+          description: Time at which the Link Agent last sent a heartbeat
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        version:
+          type: string
+          description: The version of the Link Agent software that this instance is running
+          x-mabl-scope: public
+        distribution:
+          $ref: '#/components/schemas/LinkAgentDistributionEnum'
+        update_available:
+          type: boolean
+          description: 'Whether a newer Link Agent release than this agent''s version is available for download. Computed for the Java distribution only — the mabl-cli distribution self-updates via its own channels and its version is not comparable to Java releases. Server-computed on read; absent when it cannot be determined (the mabl-cli distribution, an unknown or unparseable agent version, or the release inventory being unavailable).
+
+            '
+          readOnly: true
+        latest_available_version:
+          type: string
+          description: The newest released Link Agent version, present whenever update_available is computed
+          readOnly: true
+        label:
+          pattern: '[a-z0-9\-]{1,24}'
+          type: string
+          description: The user-provided label for this Link Agent instance
+          x-mabl-scope: public
+        point_of_contact:
+          type: string
+          description: 'Optional point of contact (a name or email address) for this Link Agent, supplied by the operator via config file or command-line at startup. Surfaced so support can tell who to contact about a given Agent. Free-form — not validated as an email.
+
+            '
+          x-mabl-scope: public
+        no_ssl_verify:
+          type: boolean
+          description: Flag indicating whether the agent was started with SSL verification disabled
+          x-mabl-scope: public
+        tunnel_port:
+          maximum: 65535
+          minimum: 1
+          type: integer
+          description: DEPRECATED - Not used as of Link 2.0
+          format: int32
+        hostname:
+          type: string
+          description: The Link Agent instance's local hostname
+          x-mabl-scope: public
+        machine_identity:
+          maxLength: 128
+          type: string
+          description: 'Opaque persisted per-machine identity — a mabl-minted UUID stored in the standard OS-specific mabl config directory — required when announcing a personal (`user`-owned) tunnel. The server derives the tunnel''s label from it (SHA-256 of `machine_identity ":" link_infrastructure_key`, lowercase hex, truncated to the 24-char label limit), so one machine keeps one stable tunnel identity per cluster across restarts, reboots, and hostname changes. Not used for workspace- or company-owned agents.
+
+            '
+          x-mabl-scope: public
+        link_infrastructure_key:
+          type: string
+          description: 'On request, personal (`user`-owned) announces only: the explicit placement choice when the user''s workspace associations resolve to more than one link infrastructure — the ambiguous announce fails with an error naming the candidate keys, and the shared cluster''s key is always a valid choice. Omit when the associations are unambiguous. Ignored on requests for workspace- and company-owned agents. On response, for every agent: the link infrastructure key of the dedicated cluster this agent''s tunnel is on, omitted on the shared cluster (absent means shared). A personal tunnel reports its recorded placement; a workspace or company agent its owning company''s current key, which changes when the company moves between clusters. An agent fetches its peer-CA bundle for this key (`GET /link/mablnet/peer-ca?infrastructure_key=`).
+
+            '
+          x-mabl-scope: public
+        address:
+          type: string
+          description: The Link Agent instance's local IP address
+          x-mabl-scope: public
+        java_version:
+          type: string
+          description: Value of the 'java.version' Java system property
+          x-mabl-scope: public
+        java_vm_name:
+          type: string
+          description: Value of the 'java.vm.name' Java system property
+          x-mabl-scope: public
+        operating_system_architecture:
+          type: string
+          description: Value of the 'os.arch' Java system property
+          x-mabl-scope: public
+        operating_system_name:
+          type: string
+          description: Value of the 'os.name' Java system property
+          x-mabl-scope: public
+        operating_system_version:
+          type: string
+          description: Value of the 'os.version' Java system property
+          x-mabl-scope: public
+        cpu_cores:
+          type: integer
+          description: Number of CPU cores available to the Agent host — the headroom denominator for CPU utilization.
+          format: int32
+          x-mabl-scope: public
+        total_memory_bytes:
+          type: integer
+          description: Total physical memory on the Agent host, in bytes — the headroom denominator for memory utilization.
+          format: int64
+          x-mabl-scope: public
+        tunnels_on_host:
+          type: integer
+          description: 'How many tunnels this Agent process supervises, as the Agent itself counts them. Every mablnet tunnel runs its own worker process, so this is the multiplier on the host''s memory requirement — the api pairs it with `total_memory_bytes` to flag an undersized host. Each of a multi-tunnel process''s Agent records reports the same value. Reported by the Agent rather than derived from records sharing a hostname, which containers and cloned VM images make unreliable. Absent from Agents predating the field.
+
+            '
+          format: int32
+          x-mabl-scope: public
+        os_settings:
+          $ref: '#/components/schemas/LinkAgentOsSettings'
+        capacity:
+          $ref: '#/components/schemas/LinkAgentCapacity'
+        protocol:
+          $ref: '#/components/schemas/LinkAgentProtocolEnum'
+        protocols:
+          type: array
+          description: 'The set of protocols this Link Agent is currently attempting to keep connections open for. Successor to the singular `protocol` field. A dual-stack Agent during the mablnet migration reports both `wss` (legacy Link Tunnel) and one of the `mablnet_*` values; mabl ops watches this set to determine which accounts are migration-eligible.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentProtocolEnum'
+          x-mabl-scope: public
+        capabilities:
+          type: array
+          description: 'Optional behaviors this Link Agent supports. Reported by the Agent at startup. Operator endpoints that depend on Agent-side handling (`POST /link/agents/{id}/maintenance`, etc.) reject requests when the relevant capability is missing — older Agents that predate the capability simply omit it.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentCapabilityEnum'
+          x-mabl-scope: public
+        is_connected:
+          type: boolean
+          description: 'DEPRECATED: legacy single-protocol connection state. Agents reporting `protocols` populate `endpoints` with per-protocol connection state; this field stays populated as `true` if any of the per-protocol states are connected.
+
+            '
+          x-mabl-scope: public
+        current_link_server_id:
+          type: string
+          description: 'DEPRECATED: legacy single-Link-Server binding. Mablnet Agents are not bound to a single Server — they multi-home across Routers. Stays populated for legacy Agents.
+
+            '
+          x-mabl-scope: public
+        current_link_server_endpoint:
+          type: string
+          description: 'DEPRECATED: legacy single-endpoint field. Use `endpoints[wss].address` for the same value; the legacy field stays populated for pre-mablnet Agents that don''t yet understand the `endpoints` map.
+
+            '
+          x-mabl-scope: public
+        endpoints:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LinkAgentEndpoint'
+          description: 'Per-protocol endpoint the Link Agent should connect to, keyed by protocol name (matches `LinkAgentProtocolEnum`). Legacy Link Tunnel Agents only see (and need) the `wss` entry, which mirrors `current_link_server_endpoint`. Mablnet-capable Agents additionally see `mablnet_wss` and (when UDP/QUIC is exposed externally) `mablnet_quic`, pointing at the Application LB FQDN for this environment.
+
+            api-set and read-only from the client perspective: the value flows api → Agent. Per-protocol connection health flowing the other direction (Agent → api) is reported via `connection_status`.
+
+            Computed on every read from the LinkLabel + workspace migration flags + deployment config (`com.mabl.mablnet.domain` + the owner''s link infrastructure key); NOT persisted on the LinkAgent itself. A feature-flag flip, FQDN change, or LinkLabel-level update propagates to running Agents on their next poll (≈ 10 s), with no agent restart and no backfill cron. Downstream consumers that need the same view (BigQuery, Pub/Sub) should read via the api rather than the raw DAO entity.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        connection_status:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LinkAgentConnectionStatus'
+          description: 'Per-protocol connection health, keyed by protocol name (same keys as `endpoints`). Reported by the Agent on heartbeat and merged in.
+
+            '
+          x-mabl-scope: public
+        mablnet_tenant_id:
+          type: integer
+          description: 'Denormalised view of `LinkLabel.mablnet_tenant_id` for this Agent''s label. Computed on every read alongside `endpoints` (see that field''s description for the full server-set-fields contract); NOT persisted on the LinkAgent. Tenant ids themselves are immutable for a LinkLabel''s lifetime, so the value is stable across reads in practice.
+
+            '
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        mablnet_tenant_id_hex:
+          type: string
+          description: 'Zero-padded 8-character lowercase hex form of `mablnet_tenant_id`, e.g. `bee85e2b`. Provided for log/grep/observability ergonomics; the numeric and hex forms always agree (both computed together). Same lifecycle as `mablnet_tenant_id` — computed on every read, not persisted.
+
+            '
+          readOnly: true
+          x-mabl-scope: public
+        status:
+          type: string
+          description: The current status of the Link Agent
+          enum:
+          - initializing
+          - updating
+          - announcing
+          - locating
+          - connecting
+          - ready
+          - draining
+          - drained
+          - terminated
+          x-mabl-scope: public
+        maintenance:
+          $ref: '#/components/schemas/LinkAgentMaintenance'
+        operator_tunables:
+          $ref: '#/components/schemas/LinkAgentOperatorTunables'
+        operator_tunables_overrides:
+          $ref: '#/components/schemas/LinkAgentOperatorTunables'
+        agent_state:
+          $ref: '#/components/schemas/LinkAgentState'
+        agent_configuration:
+          $ref: '#/components/schemas/LinkAgentConfiguration'
+        operator_debug_queue:
+          maxItems: 16
+          type: array
+          description: 'Debug requests queued by mabl ops for this Agent to execute on its next poll. Bounded — the api rejects enqueues that would exceed `maxItems`. The Agent drains entries on its next tick, executes idempotently (and short-circuits any `request_id` it''s seen recently), and acks the outcome via `operator_debug_results` on the next heartbeat. The api drops the matching queue entry on ack so the queue stays self-draining.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentOperatorDebugRequest'
+          x-mabl-scope: public
+        operator_debug_results:
+          maxItems: 16
+          type: array
+          description: 'Acks pushed by the Agent on heartbeat for previously-queued debug requests. The api matches by `request_id`, drops the matching queue entry, and surfaces the outcome to whichever caller originally enqueued the request.
+
+            '
+          items:
+            $ref: '#/components/schemas/LinkAgentOperatorDebugResult'
+          x-mabl-scope: public
+        workspace_id:
+          type: string
+          description: 'The workspace that owns this Link Agent, for `workspace`-owned tunnels. Unset for `company`-owned agents (mablnet-only) — read `owner_type`/`owner_id` for the canonical scope.
+
+            '
+          x-mabl-scope: public
+        owner_type:
+          $ref: '#/components/schemas/LinkTunnelOwnerType'
+        owner_id:
+          type: string
+          description: 'The id of the owning entity — equals `workspace_id` for `workspace`-owned agents, the company id for `company`-owned agents.
+
+            '
+          x-mabl-scope: public
+      description: Represents a single instance of a running Link Agent
+      x-implements-interface:
+      - HasId
+      - HasWorkspaceId
+      - HasCreatedActivity
+      - HasUpdatedActivity
+    LinkAgentOsSettings:
+      type: object
+      properties:
+        open_file_limit:
+          type: integer
+          description: 'Soft `RLIMIT_NOFILE` — the max open file descriptors the process may hold and the limit that actually binds at runtime. Each proxied connection consumes one. `-1` means unlimited. The common Linux default (1024) is low for a busy tunnel.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        open_file_limit_hard:
+          type: integer
+          description: 'Hard `RLIMIT_NOFILE` — the ceiling the soft limit can be raised to without privilege. `-1` means unlimited. When this is also low, raising the soft limit needs a `limits.conf` / systemd change rather than a plain `ulimit -n`.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        max_user_processes:
+          type: integer
+          description: 'Soft `RLIMIT_NPROC` — the max processes/threads for the Agent''s user. `-1` means unlimited. JVM and worker threads (Netty event loops, etc.) count against it.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        ephemeral_port_range_low:
+          type: integer
+          description: 'Low end of `net.ipv4.ip_local_port_range` — the first ephemeral port the kernel hands out to outbound connections. With `ephemeral_port_range_high` it bounds how many simultaneous outbound connections (per remote tuple) the host can open.
+
+            '
+          format: int32
+          x-mabl-scope: public
+        ephemeral_port_range_high:
+          type: integer
+          description: High end of `net.ipv4.ip_local_port_range` (inclusive).
+          format: int32
+          x-mabl-scope: public
+        socket_recv_buffer_max:
+          type: integer
+          description: '`net.core.rmem_max` — the max receive socket buffer (bytes) an application may request. Caps carrier throughput on high-latency links when set below what the carrier asks for (the default of ~208 KB is a common bottleneck).
+
+            '
+          format: int64
+          x-mabl-scope: public
+        socket_send_buffer_max:
+          type: integer
+          description: '`net.core.wmem_max` — the max send socket buffer (bytes) an application may request.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        udp_recv_buffer_achieved:
+          type: integer
+          description: 'Actual `SO_RCVBUF` (bytes) a UDP socket obtains when it requests the QUIC carrier''s target buffer — the post-clamp value `getsockopt` returns, which the kernel caps near `net.core.rmem_max` (and doubles for bookkeeping on Linux). The Agent measures this with a throwaway probe socket, so it is present on every OS (unlike `socket_recv_buffer_max`, which is Linux `/proc`-only). The real signal for whether this host can honor the QUIC carrier''s receive flow-control window.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        udp_send_buffer_achieved:
+          type: integer
+          description: 'Actual `SO_SNDBUF` (bytes) a UDP socket obtains for the carrier''s target request — the send-side counterpart of `udp_recv_buffer_achieved`, capped near `net.core.wmem_max`.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        udp_buffer_clamped:
+          type: boolean
+          description: 'True when the achieved UDP socket buffer fell materially short of the QUIC carrier''s request — i.e. the kernel clamped it (the host needs `net.core.rmem_max` / `wmem_max` raised, or, in a container, the host / WSL2 VM tuned). A clamped buffer throttles QUIC throughput on higher-latency links, so this is the health signal for deciding whether to default this host to the QUIC carrier or fall back to WSS.
+
+            '
+          x-mabl-scope: public
+        conntrack_max:
+          type: integer
+          description: '`net.netfilter.nf_conntrack_max` — the connection-tracking table size limit, the ceiling for the dynamic `agent_state.host.conntrack_count`. Present only on Linux hosts with the conntrack module loaded (a stateful firewall/NAT); absent otherwise.
+
+            '
+          format: int64
+          x-mabl-scope: public
+      description: 'Static host OS resource limits and network sysctls the Agent reads once at startup (from `/proc` on Linux) and reports on announce. These bind a connection-heavy tunnel well before the mablnet protocol''s own stream ceiling: every proxied connection costs a file descriptor and an outbound ephemeral port, so a low open-file limit or a narrow ephemeral-port range caps how many concurrent connections the Agent — and its worker subprocess, which inherits the Agent''s rlimits — can carry. Surfaced so operators can audit whether a host is tuned for the Agent''s load. Fields are individually omitted when unreadable (e.g. on a non-Linux host), so the object may be sparse or absent.
+
+        '
+      x-mabl-scope: public
+    LinkAgentConnectionFilter:
+      type: object
+      properties:
+        mode:
+          type: string
+          description: '`allow` — only listed destinations are reachable; `deny` — listed destinations are refused and all others allowed; `disabled` — no filtering, every destination allowed.
+
+            '
+          enum:
+          - allow
+          - deny
+          - disabled
+          x-mabl-scope: public
+        destinations:
+          type: array
+          description: 'The host/port rules the mode applies to — `host`, `host:port`, `:port`, IPv4/IPv6 literals, and CIDR ranges (IPv6 bracketed as `[addr]:port`).
+
+            '
+          items:
+            type: string
+          x-mabl-scope: public
+      description: A Link Agent's destination allow/deny connection policy.
+    LinkAgentMaintenance:
+      type: object
+      properties:
+        drain_started:
+          type: integer
+          description: When the Agent was placed into maintenance and began draining (epoch millis).
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        drain_completed:
+          type: integer
+          description: 'When the Agent finished draining — either all in-flight connections completed or `drain_timeout_seconds` elapsed (status `drained`). Set server-side when the Agent first reports it has drained; absent while the status is still `draining`. When present, the Agent is safe to terminate.
+
+            '
+          format: int64
+          readOnly: true
+          x-mabl-scope: public
+        drain_timeout_seconds:
+          minimum: 0
+          type: integer
+          description: 'Operator-supplied upper bound on how long the Agent will wait for in-flight connections to drain before transitioning to `drained`. Omitted for an unbounded wait.
+
+            '
+          format: int32
+          readOnly: true
+          x-mabl-scope: public
+      description: 'Operator-requested maintenance state for a Link Agent. While the Agent''s status is `draining` or `drained`, mabl-side routing treats it as ineligible for new traffic (mablnet drains its carriers), but in-flight connections continue to be serviced until they finish or the drain timeout expires. The object persists as a record of the most-recent maintenance window after the Agent returns to service.
+
+        '
+      x-mabl-scope: public
+    LinkAgentOsWarning:
+      type: object
+      properties:
+        setting:
+          type: string
+          description: 'The flagged property, and the stable key a client localizes on — one of `open_file_limit`, `ephemeral_port_range`, `socket_buffer_limits`, `host_minimum_memory`, `host_minimum_cpu_cores`, `host_memory`, `link_endpoint_unreachable`. A client that does not recognise a value should skip the advisory: there is no prose here to fall back on.
+
+            '
+          x-mabl-scope: public
+        severity:
+          $ref: '#/components/schemas/LinkAgentCapacityStatusEnum'
+        current:
+          type: integer
+          description: 'The Agent''s current value for the setting. Absent for an advisory that is not about a numeric setting at all (`link_endpoint_unreachable`).
+
+            '
+          format: int64
+          x-mabl-scope: public
+        recommended:
+          type: integer
+          description: 'The minimum value the api recommends for a busy tunnel. Absent where `current` is.
+
+            '
+          format: int64
+          x-mabl-scope: public
+        params:
+          type: object
+          additionalProperties:
+            type: string
+          description: 'Everything this advisory''s copy needs that `current` / `recommended` do not already carry. Keys are stable per `setting`:
+
+
+            * `open_file_limit` — none; `current` and `recommended` are the whole story.
+
+            * `ephemeral_port_range` — `low`, `high`: the range endpoints (`current` is its size).
+
+            * `socket_buffer_limits` — `variant`: `sysctls_known` when the host''s `net.core.rmem_max` / `wmem_max` were readable and the advice can name them, else `sysctls_unknown`. The two texts differ in structure rather than in values, so a client selects between them (i18next: pass it as `context`) rather than interpolating. Both reproduce from `recommended`; nothing about the remediation needs prose from the api.
+
+            * `host_minimum_memory` — none; `current` and `recommended` (the minimum) are in MiB. Always `critical`: the Agent cannot run its mablnet worker on such a host.
+
+            * `host_minimum_cpu_cores` — none; `current` and `recommended` (the minimum) are cores.
+
+            * `host_memory` — `tunnels`: how many tunnels the host runs, the multiplier behind `recommended`.
+
+            * `link_endpoint_unreachable` — `quic_endpoint` / `wss_endpoint`: the `host:port` the Agent could not reach, present only for an endpoint it actually attempted (a mabl-bound HTTP proxy suppresses the QUIC carrier entirely, and naming an endpoint the Agent never dialled would send the customer after the wrong firewall rule). The Agent''s own account of the failure is on `connection_status[*].last_error`. Plus `variant`: `fallback_available` when the Agent is reporting a working legacy `wss` connection to carry traffic over meanwhile, `no_fallback` when it is not — either because the tunnel is mablnet-only or because the Agent cannot reach anything at all. The two consequences are different sentences, so a client selects between them (i18next: `context`) rather than interpolating. The transport belongs to the key, not a param: `quic_endpoint` is UDP, `wss_endpoint` is TCP.
+
+            '
+          x-mabl-scope: public
+      description: 'Something about the Agent''s host or network that needs the customer''s action — an OS setting (`open_file_limit`, `ephemeral_port_range`, `socket_buffer_limits`), a host below the published minimums (`host_minimum_memory`, `host_minimum_cpu_cores`), the host''s memory against the tunnels it runs (`host_memory`), or a mabl endpoint the Agent cannot reach (`link_endpoint_unreachable`). Advisory — it flags a condition the customer can fix, distinct from a dimension''s live `status` (which reflects actual utilization). Thresholds live in the api; see the capacity-insights design doc.
+
+
+        `setting` is a stable key, and `current` / `recommended` / `params` carry every value the copy needs, so a client renders its own localized string from them. There is deliberately no prose here: the api has no request locale, so anything it composed would be English for every reader, and a second copy of a sentence the client owns is only somewhere for the two to drift apart. A client is therefore expected to ship copy for a `setting` before — or with — the api starts sending it, and to skip an advisory whose key it does not recognise.
+
+        '
+      x-mabl-scope: public
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header

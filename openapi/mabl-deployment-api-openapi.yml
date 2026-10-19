@@ -1,0 +1,496 @@
+openapi: 3.2.0
+info:
+  title: mabl Deployment API
+  description: APIs for interacting with mabl services
+  version: 0.599.3.1792436330
+  x-readme-id: 62c896636916ce01d2ff4f5a
+servers:
+- url: /
+security:
+- basicAuth: []
+- bearerAuth: []
+tags:
+- name: Deployment
+paths:
+  /deployments:
+    get:
+      tags:
+      - Deployment
+      summary: Query Deployments
+      description: Used to query deployments
+      operationId: queryDeployments
+      parameters:
+      - name: organization_id
+        in: query
+        description: ID of the organization for which to query deployments
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: environment_id
+        in: query
+        description: ID of the environment for which to query deployments
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: application_id
+        in: query
+        description: ID of the application for which to query deployments
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The limit to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          format: int32
+      - name: cursor
+        in: query
+        description: The cursor to use for pagination
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Results of the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentQueryResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Deployment
+    put:
+      tags:
+      - Deployment
+      summary: Find or Create Deployment
+      description: 'If a deployment already exists with the given environment, application, and uri,
+
+        returns the existing deployment. Otherwise creates a new one.'
+      operationId: findOrCreateDeployment
+      requestBody:
+        description: The deployment to find or create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Deployment'
+        required: true
+      responses:
+        '200':
+          description: The deployment that was retrieved or created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Deployment
+    post:
+      tags:
+      - Deployment
+      summary: Create Deployment
+      description: Used to create new deployments
+      operationId: createDeployment
+      requestBody:
+        description: The deployment to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Deployment'
+        required: true
+      responses:
+        '201':
+          description: The deployment that was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Create::Deployment
+  /deployments/{id}:
+    get:
+      tags:
+      - Deployment
+      summary: Get Deployment
+      description: Used to retrieve information about a deployment
+      operationId: getDeployment
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the deployment to retrieve
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The deployment with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Read::Deployment
+    delete:
+      tags:
+      - Deployment
+      summary: Remove Deployment
+      description: Used to remove a deployment
+      operationId: removeDeployment
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the deployment to remove
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The deployment that was removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Delete::Deployment
+    patch:
+      tags:
+      - Deployment
+      summary: Update Deployment
+      description: Used to update existing deployments
+      operationId: updateDeployment
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the deployment to update
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        description: If-Match header according to http/1.1 spec section 14.24
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The update to apply
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Deployment'
+        required: true
+      responses:
+        '200':
+          description: The updated deployment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          $ref: '#/components/responses/ErrorResponse400'
+        '401':
+          $ref: '#/components/responses/ErrorResponse401'
+        '403':
+          $ref: '#/components/responses/ErrorResponse403'
+        '404':
+          description: Deployment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseGeneric'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+      x-mabl-action: Edit::Deployment
+components:
+  responses:
+    ErrorResponse400:
+      description: Invalid or missing parameter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse401:
+      description: User not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse403:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+    ErrorResponse:
+      description: Unknown error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponseGeneric'
+  schemas:
+    Deployment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the deployment
+        created_time:
+          type: integer
+          description: Time at which the deployment was created
+          format: int64
+        created_by_id:
+          type: string
+          description: The ID of the user who created this deployment
+        last_updated_time:
+          type: integer
+          description: Time at which the deployment was last updated
+          format: int64
+        last_updated_by_id:
+          type: string
+          description: The ID of the user who last updated this deployment
+        organization_id:
+          type: string
+          description: The ID of the organization associated with this deployment
+        application_id:
+          type: string
+          description: The ID of the application associated with this deployment
+        environment_id:
+          type: string
+          description: The ID of the environment associated with this deployment
+        name:
+          type: string
+          description: The display name of the deployment
+        tags:
+          type: array
+          description: Free text tags associated with this entity
+          items:
+            $ref: '#/components/schemas/Tag'
+        uri:
+          type: string
+          description: URI of the deployment (empty for mobile_application deployment type)
+        deployment_type:
+          type: string
+          description: The type of the deployment.
+          enum:
+          - web_application
+          - api
+          - mobile_application
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+          description: Variables for this deployment.  Overrides variables with the same name specified in the environment configuration.
+        link_agent_label:
+          type: string
+          description: DEPRECATED - use link_agent_labels
+          deprecated: true
+        link_agent_labels:
+          type: array
+          description: Overrides the link_agent_labels in the associated environment
+          items:
+            type: string
+        link_bypass_mabl_proxy:
+          type: boolean
+          description: Overrides the link_bypass_mabl_proxy in the associated environment (mabl link only)
+        use_personal_link_agent:
+          type: boolean
+          description: 'Route this run''s test traffic through the triggering user''s own personal Link 3.0 tunnels (tunnels whose egress is that user''s machine) instead of the environment''s configured Link tunnels: when any personal tunnel is used, it is the run''s only Link path. The owner is the user who triggers the run, resolved server-side — there is no id to pass. By default the run stripes across every live personal tunnel the user has (e.g. one per machine); set personal_link_tunnel_label to pin it to one. When no personal tunnel can be used (no triggering user, personal tunnels are off for the workspace, or no live personal Link Agent), the run proceeds over its normal network path rather than failing.
+
+            '
+        personal_link_tunnel_label:
+          type: string
+          description: 'Restrict use_personal_link_agent to a single personal tunnel by its Link label (the tunnel-safe machine hostname the user''s `link-agents start --personal` registers under), instead of striping across all of the user''s live personal tunnels. Ignored when use_personal_link_agent is not set.
+
+            '
+        source_control_tag_target:
+          type: string
+          description: Overrides the source_control_tag_target in the associated environment
+        mobile_app_file_id:
+          type: string
+          description: Identifier of mobile app file for this deployment (empty for web_application and api deployment types)
+      x-implements-interface:
+      - ActivityTrackingBaseEntity
+      - HasName
+      - HasOrganizationId
+    DeploymentQueryResult:
+      type: object
+      properties:
+        deployments:
+          type: array
+          description: All deployments that matched the query
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Deployment'
+        cursor:
+          type: string
+          description: Cursor used for pagination
+          readOnly: true
+    ErrorResponseGeneric:
+      type: object
+      properties:
+        id:
+          type: string
+          x-mabl-scope: public
+        code:
+          maximum: 599
+          minimum: 100
+          type: integer
+          format: int32
+          x-mabl-scope: public
+        message:
+          type: string
+          x-mabl-scope: public
+        error_code:
+          type: string
+          description: Machine-readable reason for the error, present only when the API names one. Values are guardrail_blocked (a guardrail policy refused an agent request), approval_required (a guardrail policy requires a person to approve the request first).
+        guardrail:
+          description: The guardrail policy that refused the request; present only when error_code is guardrail_blocked or approval_required.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailRefusal'
+    Tag:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: tag name
+          x-mabl-scope: public
+        values:
+          maxItems: 32
+          minItems: 0
+          type: array
+          items:
+            type: string
+    GuardrailApprovalRef:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The approval's id.
+        state:
+          description: Where the approval stands.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalState'
+        kind:
+          description: Who decides the approval.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalKind'
+        request_expires_time:
+          type: integer
+          description: When the approval expires if nobody decides it, in epoch milliseconds.
+          format: int64
+        url:
+          type: string
+          description: The mabl app page where a person reviews the approval.
+      description: 'An approval a guardrail policy asks for. While it is PENDING, stop: give the person the url, tell them the request is waiting for approval, and do not repeat the request or poll in a loop. Once a person tells you it is APPROVED, repeat the identical request with the header X-Mabl-Approval set to id. DENIED means a person said no, so do not work around it.'
+    GuardrailApprovalState:
+      type: string
+      description: Where a guardrail approval stands. PENDING awaits a decision and expires undecided after 24 hours; APPROVED lets the agent repeat the request, as often as it does, for 20 minutes; DENIED refuses the same request for 20 minutes after the decision, after which asking again opens a new approval; CANCELLED means a person withdrew it while pending or revoked it while approved. EXPIRED and CANCELLED are final.
+      enum:
+      - PENDING
+      - APPROVED
+      - DENIED
+      - EXPIRED
+      - CANCELLED
+    GuardrailRefusal:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the guardrail policy that decided the refusal.
+        reason:
+          type: string
+          description: Why the policy refuses the request, written for the person the agent acts for.
+        decision_id:
+          type: string
+          description: The id of this decision in the guardrail decision log.
+        action:
+          type: string
+          description: The action the request was evaluated as, written Verb::Resource (for example Delete::Test), as declared by the operation's x-mabl-action extension.
+        policy_source:
+          type: string
+          description: 'Who set the deciding policy: workspace for a rule the workspace''s owners wrote, account for a rule set for the workspace''s account, mabl_agent_type for the agent type''s ceiling, and mabl_default for mabl''s own defaults.'
+        approval:
+          description: The approval for this request; present when error_code is approval_required and the approval could be recorded. Without it the request cannot be approved.
+          allOf:
+          - $ref: '#/components/schemas/GuardrailApprovalRef'
+      description: The guardrail policy that refused an agent request.
+    GuardrailApprovalKind:
+      type: string
+      description: Who decides a guardrail approval. SELF is decided by the person the agent acts for; WORKSPACE, for an agent acting for an API key, by a workspace owner or editor.
+      enum:
+      - SELF
+      - WORKSPACE
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: apiKey
+      name: Authorization
+      in: header
