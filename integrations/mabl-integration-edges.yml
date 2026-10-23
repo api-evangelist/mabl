@@ -112,6 +112,24 @@ edges:
       - Track
   detected_by: sweep-cdp.py
   first_seen: '2026-10-14'
+- partner_name: Jenkins (own)
+  partner: jenkins
+  partner_match: mirror
+  mirror_match: domain
+  type: marketplace
+  relationship: platform-app
+  direction: third-party
+  channel: partner-built
+  marketplace: own
+  evidence: https://plugins.jenkins.io/mabl-integration/
+  mirror_of: jenkins/integrations/jenkins-integration-edges.yml
+  apps:
+  - mabl
+  - mabl (mabl-integration)
+  listing_count: 1
+  detected: '2026-10-22'
+  detected_by: mirror-platform-listings.py
+  category: Jenkins plugin
 method: searched
 checked:
 - https://github.com/marketplace?type=actions
@@ -119,5 +137,6 @@ checked:
 - https://marketplace.atlassian.com/
 - https://registry.modelcontextprotocol.io/v0/servers
 - https://www.twilio.com/docs/segment/connections/destinations/catalog/mabl
+- jenkins/integrations/jenkins-integration-edges.yml
 source: https://www.twilio.com/docs/segment/connections/destinations/catalog/mabl
 marketplace_apps: []
