@@ -1,4 +1,4 @@
-# Mabl (mabl)
+# Mabl
 
 <!-- API-EVANGELIST-PROVENANCE:BEGIN -->
 > ### About this repository
@@ -66,57 +66,145 @@
 
 mabl, the leading AI-native test automation platform, empowers software teams to accelerate innovation while ensuring exceptional quality. Their unified platform streamlines testing across web, mobile, API, accessibility, and performance, enabling teams to release faster with confidence. Trusted by industry leaders like Microsoft, Charles Schwab, and JetBlue, mabl transforms how teams approach software quality.
 
-**APIs.json:** [https://raw.githubusercontent.com/api-evangelist/mabl/refs/heads/main/apis.yml](https://raw.githubusercontent.com/api-evangelist/mabl/refs/heads/main/apis.yml)
+**Areas:** Test Automation · QA · DevOps · AI Testing · Platform · Testing
 
-## Scope
+## Mabl on APIs.io
 
-- **Position:** Consuming
-- **Access:** 3rd-Party
+Everything profiled for Mabl is published on APIs.io rather than in this repository. Start at the provider page — **[apis.io/providers/mabl/](https://apis.io/providers/mabl/)** — or go straight to one of the APIs or properties below.
 
-## Tags
+### APIs (11)
 
-- Test Automation
-- QA
-- DevOps
-- AI Testing
-- Platform
+- [Mabl API](https://apis.io/apis/mabl/mabl-api/) — Manage resources in your workspace programmatically with the mabl API. By integrating mabl API endpoints into your workflow, you can manage tests, runs,…
+- [Mabl Applications API](https://apis.io/apis/mabl/mabl-applications-api/) — The Applications API from Mabl — 2 operation(s) for applications.
+- [Mabl Credentials API](https://apis.io/apis/mabl/mabl-credentials-api/) — The Credentials API from Mabl — 2 operation(s) for credentials.
+- [Mabl Database Connections API](https://apis.io/apis/mabl/mabl-database-connections-api/) — The Database Connections API from Mabl — 2 operation(s) for database connections.
+- [Mabl Deployment Events API](https://apis.io/apis/mabl/mabl-deployment-events-api/) — The Deployment Events API from Mabl — 2 operation(s) for deployment events.
+- [Mabl Environments API](https://apis.io/apis/mabl/mabl-environments-api/) — The Environments API from Mabl — 2 operation(s) for environments.
+- [Mabl Flows API](https://apis.io/apis/mabl/mabl-flows-api/) — The Flows API from Mabl — 1 operation(s) for flows.
+- [Mabl Issues API](https://apis.io/apis/mabl/mabl-issues-api/) — The Issues API from Mabl — 2 operation(s) for issues.
+- [Mabl Test Runs API](https://apis.io/apis/mabl/mabl-test-runs-api/) — The Test Runs API from Mabl — 3 operation(s) for test runs.
+- [Mabl Tests API](https://apis.io/apis/mabl/mabl-tests-api/) — The Tests API from Mabl — 1 operation(s) for tests.
+- [Mabl Users API](https://apis.io/apis/mabl/mabl-users-api/) — The Users API from Mabl — 1 operation(s) for users.
 
-## Timestamps
+### Published properties
 
-- **Created:** 2025-01-08
-- **Modified:** 2026-04-28
+Each property below is a page on APIs.io carrying the machine-readable artifact and what it says.
 
-## APIs
+#### MCP servers (1)
 
-### Mabl API
+Model Context Protocol servers that expose the API to agents.
 
-Manage resources in your workspace programmatically with the mabl API. By integrating mabl API endpoints into your workflow, you can manage tests, runs, environments, applications, plans, deployments, and reporting. Authentication uses API tokens generated from the mabl Workspace settings.
+- [mabl](https://apis.io/servers/mabl/mabl/)
 
-- **Human URL:** [https://mabl.com](https://mabl.com)
+#### Agentic access (1)
 
-#### Tags
+Which operations an agent can call, which act, and which need a human in the loop.
 
-- Test Automation
-- QA
-- API
+- [Mabl Agentic Access](https://apis.io/agentic-access/mabl/mabl-agentic-access/)
 
-#### Properties
+#### Collections (11)
 
-- [Documentation](https://help.mabl.com/)
-- [API Reference](https://api.help.mabl.com/reference/intro-to-the-mabl-api)
-- [Postman Collection](collections/mabl.postman_collection.json) — [Postman Collection 2.1](https://schema.getpostman.com/json/collection/v2.1.0/collection.json)
-- [Open Collection](collections/mabl.opencollection.json) — [Open Collection 1.0](https://schema.opencollection.com/opencollection/v1.0.0.json)
+Postman and Open Collection request collections.
 
-## Common Properties
+- [mabl API](https://apis.io/collections/mabl/open-mabl/)
+- [mabl Applications API](https://apis.io/collections/mabl/open-mabl-applications-api/)
+- [mabl Applications Credentials API](https://apis.io/collections/mabl/open-mabl-credentials-api/)
+- [mabl Applications Database Connections API](https://apis.io/collections/mabl/open-mabl-database-connections-api/)
+- [mabl Applications Deployment Events API](https://apis.io/collections/mabl/open-mabl-deployment-events-api/)
+- [mabl Applications Environments API](https://apis.io/collections/mabl/open-mabl-environments-api/)
+- [mabl Applications Flows API](https://apis.io/collections/mabl/open-mabl-flows-api/)
+- [mabl Applications Issues API](https://apis.io/collections/mabl/open-mabl-issues-api/)
+- [mabl Applications Test Runs API](https://apis.io/collections/mabl/open-mabl-test-runs-api/)
+- [mabl Applications Tests API](https://apis.io/collections/mabl/open-mabl-tests-api/)
+- [mabl Applications Users API](https://apis.io/collections/mabl/open-mabl-users-api/)
 
-- [GitHub Organization](https://github.com/mablhq)
-- [LinkedIn](https://www.linkedin.com/company/mabl)
+#### Security (3)
+
+Authentication, trust centre, and vulnerability disclosure.
+
+- [Mabl Authentication](https://apis.io/security/mabl/mabl-authentication/)
+- [Mabl Domain Security](https://apis.io/security/mabl/mabl-domain-security/)
+- [Mabl Trust Center](https://apis.io/security/mabl/mabl-trust-center/)
+
+#### Plans and pricing (1)
+
+Published plans, tiers and prices.
+
+- [Mabl Plans Pricing](https://apis.io/plans/mabl/mabl-plans-pricing/)
+
+#### Rate limits (1)
+
+Published request limits.
+
+- [Mabl Rate Limits](https://apis.io/rate-limits/mabl/mabl-rate-limits/)
+
+#### FinOps (1)
+
+What the API costs to run, by operation.
+
+- [Mabl Finops](https://apis.io/finops/mabl/mabl-finops/)
+
+## Where to find this API
+
+Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
+
 - [Website](https://www.mabl.com)
 - [Documentation](https://help.mabl.com/)
-- [API Reference](https://api.help.mabl.com/reference/intro-to-the-mabl-api)
-- [L L Ms Txt](https://api.help.mabl.com/llms.txt)
+- [API reference](https://api.help.mabl.com/reference/intro-to-the-mabl-api)
+- [Blog](https://www.mabl.com/blog/rss.xml)
+- [GitHub](https://github.com/mablhq)
 
-## Maintainers
+## API Evangelist rating
 
-**FN:** Kin Lane
-**Email:** kin@apievangelist.com
+**Kin Score 28.4** — thin · rubric 0.25.0 · scored 2026-10-23
+
+| Facet | Score |
+|---|---|
+| Discoverability | 66.7 |
+| Contract quality | 48.7 |
+| Contract governance | 0.0 |
+| Operational transparency | 10.5 |
+| Developer ergonomics | 27.4 |
+| Access clarity | 15.8 |
+
+**Agent readiness 31.6** — agent-ready
+
+| Agent-readiness dimension | Result |
+|---|---|
+| Spec Presence | yes |
+| Agentic Access | derived (partial credit) |
+| Reversibility Documented | — |
+| MCP Server | verified |
+| Auth Clarity | bearer (partial credit) |
+| Idempotency | — |
+| Error Semantics | — |
+| OpenAPI Examples | — |
+| Rate Limit Signal | derived (partial credit) |
+| Event Surface Described | — |
+| Agent Skills | — |
+| Well Known Catalog | — |
+| Consent Identity | — |
+| Agent Card | — |
+| Dry Run Mode | — |
+| Delegated Identity | — |
+| Protected Resource Metadata | verified |
+| Dynamic Client Registration | — |
+| Agentic Commerce | — |
+| Pagination Ratio | na |
+| Operation Distinctiveness | distinct |
+
+**Regulatory alignment 16.7** — Horizontal (data, software, accessibility, platform)
+
+The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/mabl/](https://apis.io/providers/mabl/).
+
+## How this profile is made
+
+API Evangelist profiles a company's public API surface the way a developer would find it: the website, developer portal and documentation, the specifications it publishes, its public repositories, and its pricing, status and changelog pages. From that it derives the properties above — contracts split per API, workflows, schemas, collections, governance rules, plans and rate limits — and scores them against the published [Kin Score rubric](https://github.com/api-evangelist/kin-score).
+
+The artifacts are published on [APIs.io](https://apis.io), not in this repository. This repository is the public record for Mabl: the place to say something is wrong, missing or out of date, and to ask for a re-score or a removal.
+
+## Open an issue
+
+- **Something about this listing** — a wrong description, a missing API, a stale artifact or a question about the rating: [open an issue on this repository](https://github.com/api-evangelist/mabl/issues/new).
+- **A new API, or one that is not in the catalog yet** — [submit it on APIs.io](https://apis.io/add/).
+- **Anything else** — [the APIs.io inbox](https://github.com/api-search/inbox/issues/new) or [info@apievangelist.com](mailto:info@apievangelist.com).
